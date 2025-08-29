@@ -210,24 +210,27 @@
       const btn = $(".add", row);
       const cat = row.dataset.cat;
       btn.onclick = async ()=>{
-        if(!currentUser){ alert("로그인 후 추가할 수 있어요."); return; }
-        const subj = $(".subj", row).value.trim();
-        const text = $(".text", row).value.trim();
-        const date = $(".date", row).value || "";
-        if(!subj || !text){ alert("과목/내용을 입력해 주세요."); return; }
-        try{
-          await col(cat).add({
-            subj, text, due: date || "", done: false,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          $(".subj", row).value = "";
-          $(".text", row).value = "";
-          $(".date", row).value = "";
-        }catch(e){
-          alert("저장 실패: " + e.message);
-          console.error(e);
-        }
-      };
+  if(!currentUser){ alert("로그인 후 추가할 수 있어요."); return; }
+
+  const subj = $(".subj", row).value.trim();
+  const text = $(".text", row).value.trim();
+  const date = $(".date", row).value || "";
+  if(!subj || !text){ alert("과목/내용을 입력해 주세요."); return; }
+
+  try{
+    await col(cat).add({
+      subj, text, due: date || "", done: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    $(".subj", row).value = "";
+    $(".text", row).value = "";
+    $(".date", row).value = "";
+  }catch(e){
+    alert("저장 실패: " + e.message);   // ⬅️ 실패 원인 바로 표시됨
+    console.error(e);
+  }
+};
+
     });
   }
 
