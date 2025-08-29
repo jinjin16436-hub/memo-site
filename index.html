@@ -68,26 +68,18 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-  <script>
-  // ===== Firebase 초기화 (네 firebaseConfig 그대로 두세요) =====
-  const firebaseConfig = {
-    apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
-    authDomain: "my-memo-site.firebaseapp.com",
-    projectId: "my-memo-site",
-    storageBucket: "my-memo-site.firebasestorage.app",
-    messagingSenderId: "196036694705",
-    appId: "1:196036694705:web:8988d12919420130464890"; // <-- 네 값 그대로
-  };
-  firebase.initializeApp(firebaseConfig);
+ <script>
+  // ===== Firebase 초기화 (네 firebaseConfig는 이미 위에 있음) =====
+  // 예: const firebaseConfig = { ... }; firebase.initializeApp(firebaseConfig);
 
   // ✅ 로그아웃 상태에서 보여줄 주인 UID
   const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
 
-  // ===== 핸들 =====
+  // ===== Firebase handles =====
   const auth = firebase.auth();
   const db   = firebase.firestore();
 
-  // ===== DOM 유틸 =====
+  // ===== DOM helpers =====
   const $  = (q, root=document) => root.querySelector(q);
   const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
 
@@ -100,6 +92,13 @@
   let currentUser = null;
   let unsubscribers = [];
 
+  // ===== 섹션 토글 (없어서 에러났던 함수) =====
+  function toggleSection(id){
+    const box = document.getElementById(id);
+    if(!box) return;
+    box.classList.toggle("open");
+  }
+
   // ===== 편집 UI 보이기/숨기기 =====
   function setEditVisible(v){
     $$(".add-row").forEach(r => r.style.display = v ? "" : "none");
@@ -108,19 +107,21 @@
   setEditVisible(false);
 
   // ===== 로그인/로그아웃 =====
-  el.loginBtn.onclick  = async () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-  el.logoutBtn.onclick = async () => auth.signOut();
+  el.loginBtn?.addEventListener("click", () =>
+    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+  );
+  el.logoutBtn?.addEventListener("click", () => auth.signOut());
 
   auth.onAuthStateChanged(user => {
     currentUser = user;
-    el.loginBtn.style.display  = user ? "none" : "";
-    el.logoutBtn.style.display = user ? "" : "none";
+    if(el.loginBtn)  el.loginBtn.style.display  = user ? "none" : "";
+    if(el.logoutBtn) el.logoutBtn.style.display = user ? "" : "none";
     setEditVisible(!!user);
-    bindAddRows();     // 추가 버튼 바인딩
-    startListeners();  // ✅ 로그인 여부와 상관없이 구독 시작
+    bindAddRows();
+    startListeners();   // 로그인 여부와 상관없이 구독
   });
 
-  // ===== 경로 유틸 (로그아웃이면 OWNER_UID로 읽기) =====
+  // ===== Firestore 경로 유틸 (로그아웃이면 OWNER_UID로 읽기) =====
   // users/{uid}/tasks/{cat}/items
   const col = (cat) => {
     const uid = (currentUser && currentUser.uid) ? currentUser.uid : OWNER_UID;
@@ -128,7 +129,7 @@
              .collection("tasks").doc(cat).collection("items");
   };
 
-  // ===== 실시간 구독 (로그인/로그아웃 공통) =====
+  // ===== 실시간 구독 =====
   function startListeners(){
     // 기존 리스너 해제
     unsubscribers.forEach(u => u && u());
@@ -143,7 +144,6 @@
         },
         err => {
           console.error("listener error:", err);
-          // 읽기 권한 문제 등 있으면 눈에 보이게
           alert("목록을 불러오지 못했습니다: " + err.message);
         }
       );
@@ -154,6 +154,7 @@
   // ===== 렌더링 & 항목 이벤트 =====
   function renderList(cat, items){
     const ul = el.lists[cat];
+    if(!ul) return;
     ul.innerHTML = "";
     for(const it of items){
       const li = document.createElement("li");
@@ -184,8 +185,7 @@
 
       if(!currentUser){
         alert("수정/삭제는 로그인 후 가능합니다.");
-        // 체크박스 원상복구
-        if(act === "toggle") t.checked = !t.checked;
+        if(act === "toggle") t.checked = !t.checked; // 원상복구
         return;
       }
 
@@ -209,34 +209,35 @@
     $$(".add-row").forEach(row=>{
       const btn = $(".add", row);
       const cat = row.dataset.cat;
+      if(!btn) return;
+
       btn.onclick = async ()=>{
-  if(!currentUser){ alert("로그인 후 추가할 수 있어요."); return; }
+        if(!currentUser){ alert("로그인 후 추가할 수 있어요."); return; }
+        const subj = $(".subj", row).value.trim();
+        const text = $(".text", row).value.trim();
+        const date = $(".date", row).value || "";
+        if(!subj || !text){ alert("과목/내용을 입력해 주세요."); return; }
 
-  const subj = $(".subj", row).value.trim();
-  const text = $(".text", row).value.trim();
-  const date = $(".date", row).value || "";
-  if(!subj || !text){ alert("과목/내용을 입력해 주세요."); return; }
-
-  try{
-    await col(cat).add({
-      subj, text, due: date || "", done: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    $(".subj", row).value = "";
-    $(".text", row).value = "";
-    $(".date", row).value = "";
-  }catch(e){
-    alert("저장 실패: " + e.message);   // ⬅️ 실패 원인 바로 표시됨
-    console.error(e);
-  }
-};
-
+        try{
+          await col(cat).add({
+            subj, text, due: date || "", done: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          $(".subj", row).value = "";
+          $(".text", row).value = "";
+          $(".date", row).value = "";
+        }catch(e){
+          alert("저장 실패: " + e.message);
+          console.error(e);
+        }
+      };
     });
   }
 
   // ===== HTML escape =====
   function esc(s){ return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
 </script>
+
 
 </body>
 </html>
