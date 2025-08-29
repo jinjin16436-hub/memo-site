@@ -1,270 +1,248 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>숙제 메모 (Firebase)</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>숙제 & 수행평가 메모</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <!-- Firebase SDK (compat 빌드) -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-    <!-- 1) 초기화 전용 -->
-<script>
-  const firebaseConfig = {
-    apiKey: "…",
-    authDomain: "my-memo-site.firebaseapp.com",
-    projectId: "my-memo-site",
-    storageBucket: "my-memo-site.firebasestorage.app",
-    messagingSenderId: "196036694705",
-    appId: "1:196036694705:web:8988d12919420130464890"
-  };
-  firebase.initializeApp(firebaseConfig);   // ★ 이게 제일 먼저!
-</script>
-
-<!-- 2) 앱 코드 (auth/firestore 쓰는 코드들) -->
-<script>
-  // 여기부터 firebase.auth(), firebase.firestore() 사용
-  const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
-  const auth = firebase.auth();
-  const db   = firebase.firestore();
-  …
-</script>
-
-    <h1>📒 숙제 & 수행평가 메모</h1>
-    <div class="admin-bar">
-      <button id="loginBtn"  class="btn-sm">🔑 Google 로그인</button>
-      <button id="logoutBtn" class="btn-sm" style="display:none">🔓 로그아웃</button>
-    </div>
+  <!-- 상단 바 -->
+  <header class="admin-bar" style="display:flex;gap:12px;align-items:center;justify-content:flex-start;">
+    <h1 style="margin-right:auto">📒 숙제 & 수행평가 메모</h1>
+    <button id="loginBtn"  class="btn">🔑 Google 로그인</button>
+    <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
   </header>
 
-  <main>
+  <!-- 섹션들 -->
+  <main class="container" style="max-width:980px;margin:24px auto;">
     <!-- 수행평가 -->
     <section>
-      <button class="toggle-btn" onclick="toggleSection('sec_perf')">📑 수행평가 ▼</button>
-      <div id="sec_perf" class="toggle-content open">
+      <button class="section-head" onclick="toggleSection('sec_perf')">📄 수행평가 ▾</button>
+      <div id="sec_perf" class="section-body open">
         <ul id="list_perf" class="task-list"></ul>
+
+        <!-- 추가 폼 (로그인 시에만 보임) -->
         <div class="add-row" data-cat="perf" style="display:none">
-          <input class="in subj" placeholder="과목 (예: 국어)">
-          <input class="in text" placeholder="내용 (예: 발표 준비)">
-          <input class="in date" type="date" placeholder="기한">
-          <button class="btn-sm add">+ 추가</button>
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <input class="date" type="date" />
+          <button class="add btn">+ 추가</button>
         </div>
       </div>
     </section>
 
     <!-- 시험 -->
     <section>
-      <button class="toggle-btn" onclick="toggleSection('sec_exam')">📝 시험 ▼</button>
-      <div id="sec_exam" class="toggle-content open">
+      <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
+      <div id="sec_exam" class="section-body open">
         <ul id="list_exam" class="task-list"></ul>
+
         <div class="add-row" data-cat="exam" style="display:none">
-          <input class="in subj" placeholder="과목 (예: 수학)">
-          <input class="in text" placeholder="내용 (예: 단원평가)">
-          <input class="in date" type="date" placeholder="일자">
-          <button class="btn-sm add">+ 추가</button>
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <input class="date" type="date" />
+          <button class="add btn">+ 추가</button>
         </div>
       </div>
     </section>
 
     <!-- 숙제 -->
     <section>
-      <button class="toggle-btn" onclick="toggleSection('sec_home')">📌 숙제 ▼</button>
-      <div id="sec_home" class="toggle-content open">
+      <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
+      <div id="sec_home" class="section-body open">
         <ul id="list_home" class="task-list"></ul>
+
         <div class="add-row" data-cat="home" style="display:none">
-          <input class="in subj" placeholder="과목 (예: 과학)">
-          <input class="in text" placeholder="내용 (예: 리포트)">
-          <input class="in date" type="date" placeholder="기한">
-          <button class="btn-sm add">+ 추가</button>
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <input class="date" type="date" />
+          <button class="add btn">+ 추가</button>
         </div>
       </div>
     </section>
   </main>
 
-  <footer>
-    <p>🔒 로그인하면 “추가/삭제/완료체크” 가능 (본인만 쓰기)</p>
-  </footer>
+  <!-- ========== Firebase SDK (compat 빌드) ========== -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase CDN (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <!-- ========== Firebase 초기화 ========== -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbThwhLWHJz8mBHGvhWOL88cP9C7Nxio",
+      authDomain: "my-memo-site.firebaseapp.com",
+      projectId: "my-memo-site",
+      storageBucket: "my-memo-site.firebasestorage.app",
+      messagingSenderId: "196036694705",
+      appId: "1:196036694705:web:8988d12919420130464890"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
 
- <script>
-  // ===== Firebase 초기화 (네 firebaseConfig는 이미 위에 있음) =====
-  // 예: const firebaseConfig = { ... }; firebase.initializeApp(firebaseConfig);
+  <!-- ========== 앱 코드 ========== -->
+  <script>
+    // 👤 로그아웃 상태에서 "읽어오기"에 사용할 주인 UID
+    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
 
-  // ✅ 로그아웃 상태에서 보여줄 주인 UID
-  const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
+    // Firebase handles
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
 
-  // ===== Firebase handles =====
-  const auth = firebase.auth();
-  const db   = firebase.firestore();
+    // DOM helpers
+    const $  = (q, root=document) => root.querySelector(q);
+    const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
 
-  // ===== DOM helpers =====
-  const $  = (q, root=document) => root.querySelector(q);
-  const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
+    const el = {
+      loginBtn:  $("#loginBtn"),
+      logoutBtn: $("#logoutBtn"),
+      lists:     { perf: $("#list_perf"), exam: $("#list_exam"), home: $("#list_home") }
+    };
 
-  const el = {
-    loginBtn:  $("#loginBtn"),
-    logoutBtn: $("#logoutBtn"),
-    lists:     { perf: $("#list_perf"), exam: $("#list_exam"), home: $("#list_home") }
-  };
+    let currentUser = null;
+    let unsubscribers = [];
 
-  let currentUser = null;
-  let unsubscribers = [];
-
-  // ===== 섹션 토글 (없어서 에러났던 함수) =====
-  function toggleSection(id){
-    const box = document.getElementById(id);
-    if(!box) return;
-    box.classList.toggle("open");
-  }
-
-  // ===== 편집 UI 보이기/숨기기 =====
-  function setEditVisible(v){
-    $$(".add-row").forEach(r => r.style.display = v ? "" : "none");
-    $$(".btn-ghost").forEach(b => b.style.display = v ? "" : "none");
-  }
-  setEditVisible(false);
-
-  // ===== 로그인/로그아웃 =====
-  el.loginBtn?.addEventListener("click", () =>
-    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-  );
-  el.logoutBtn?.addEventListener("click", () => auth.signOut());
-
-  auth.onAuthStateChanged(user => {
-    currentUser = user;
-    if(el.loginBtn)  el.loginBtn.style.display  = user ? "none" : "";
-    if(el.logoutBtn) el.logoutBtn.style.display = user ? "" : "none";
-    setEditVisible(!!user);
-    bindAddRows();
-    startListeners();   // 로그인 여부와 상관없이 구독
-  });
-
-  // ===== Firestore 경로 유틸 (로그아웃이면 OWNER_UID로 읽기) =====
-  // users/{uid}/tasks/{cat}/items
-  const col = (cat) => {
-    const uid = (currentUser && currentUser.uid) ? currentUser.uid : OWNER_UID;
-    return db.collection("users").doc(uid)
-             .collection("tasks").doc(cat).collection("items");
-  };
-
-  // ===== 실시간 구독 =====
-  function startListeners(){
-    // 기존 리스너 해제
-    unsubscribers.forEach(u => u && u());
-    unsubscribers = [];
-
-    ["perf","exam","home"].forEach(cat => {
-      const u = col(cat).orderBy("due","asc").onSnapshot(
-        snap => {
-          const arr = [];
-          snap.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
-          renderList(cat, arr);
-        },
-        err => {
-          console.error("listener error:", err);
-          alert("목록을 불러오지 못했습니다: " + err.message);
-        }
-      );
-      unsubscribers.push(u);
-    });
-  }
-
-  // ===== 렌더링 & 항목 이벤트 =====
-  function renderList(cat, items){
-    const ul = el.lists[cat];
-    if(!ul) return;
-    ul.innerHTML = "";
-    for(const it of items){
-      const li = document.createElement("li");
-      li.className = "task" + (it.done ? " done" : "");
-      li.innerHTML = `
-        <label class="chk-wrap">
-          <input type="checkbox" ${it.done?"checked":""}
-                 data-act="toggle" data-cat="${cat}" data-id="${it.id}">
-          <span></span>
-        </label>
-        <div class="task__main">
-          <div class="task__line">
-            <b>${esc(it.subj||"")}</b><span class="sep">–</span>
-            <span>${esc(it.text||"")}</span>
-          </div>
-          <div class="task__meta">${it.due ? `📅 ${it.due}` : ""}</div>
-        </div>
-        <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}"
-                style="display:${currentUser?'':'none'}">삭제</button>
-      `;
-      ul.appendChild(li);
+    // 섹션 토글
+    function toggleSection(id){
+      const box = document.getElementById(id);
+      if(!box) return;
+      box.classList.toggle("open");
     }
 
-    ul.onclick = async (e)=>{
-      const t = e.target;
-      const act = t.getAttribute("data-act");
-      if(!act) return;
+    // 편집 UI(추가/삭제) 보이기 제어
+    function setEditVisible(v){
+      $$(".add-row").forEach(r => r.style.display = v ? "" : "none");
+      $$(".btn-ghost").forEach(b => b.style.display = v ? "" : "none");
+    }
 
-      if(!currentUser){
-        alert("수정/삭제는 로그인 후 가능합니다.");
-        if(act === "toggle") t.checked = !t.checked; // 원상복구
-        return;
-      }
+    // 로그인/로그아웃
+    el.loginBtn.addEventListener("click", () =>
+      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    );
+    el.logoutBtn.addEventListener("click", () => auth.signOut());
 
-      const cat2 = t.getAttribute("data-cat");
-      const id   = t.getAttribute("data-id");
-      try{
-        if(act === "toggle"){
-          await col(cat2).doc(id).update({ done: t.checked });
-        }else if(act === "del"){
-          await col(cat2).doc(id).delete();
-        }
-      }catch(e){
-        alert("변경 실패: " + e.message);
-        console.error(e);
-      }
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      el.loginBtn.style.display  = user ? "none" : "";
+      el.logoutBtn.style.display = user ? "" : "none";
+      setEditVisible(!!user);
+      bindAddRows();
+      startListeners();  // 로그인 여부와 상관없이 목록 구독
+    });
+
+    // Firestore 경로 유틸 (로그아웃이면 OWNER_UID 기준으로 읽기)
+    const col = (cat) => {
+      const uid = (currentUser && currentUser.uid) ? currentUser.uid : OWNER_UID;
+      return db.collection("users").doc(uid)
+               .collection("tasks").doc(cat).collection("items");
     };
-  }
 
-  // ===== 추가 폼 바인딩 =====
-  function bindAddRows(){
-    $$(".add-row").forEach(row=>{
-      const btn = $(".add", row);
-      const cat = row.dataset.cat;
-      if(!btn) return;
+    // 실시간 구독
+    function startListeners(){
+      // 기존 리스너 해제
+      unsubscribers.forEach(u => u && u());
+      unsubscribers = [];
 
-      btn.onclick = async ()=>{
-        if(!currentUser){ alert("로그인 후 추가할 수 있어요."); return; }
-        const subj = $(".subj", row).value.trim();
-        const text = $(".text", row).value.trim();
-        const date = $(".date", row).value || "";
-        if(!subj || !text){ alert("과목/내용을 입력해 주세요."); return; }
+      ["perf","exam","home"].forEach(cat => {
+        const u = col(cat).orderBy("due","asc").onSnapshot(
+          snap => {
+            const arr = [];
+            snap.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
+            renderList(cat, arr);
+          },
+          err => {
+            console.error("listener error:", err);
+            alert("목록을 불러오지 못했습니다: " + err.message);
+          }
+        );
+        unsubscribers.push(u);
+      });
+    }
 
+    // 목록 렌더링
+    function renderList(cat, items){
+      const ul = el.lists[cat];
+      ul.innerHTML = "";
+      for(const it of items){
+        const li = document.createElement("li");
+        li.className = "task" + (it.done ? " done" : "");
+        li.innerHTML = `
+          <label class="chk-wrap">
+            <input type="checkbox" ${it.done?"checked":""}
+                   data-act="toggle" data-cat="${cat}" data-id="${it.id}">
+            <span></span>
+          </label>
+          <div class="task__main">
+            <div class="task__line">
+              <b>${esc(it.subj||"")}</b><span class="sep">–</span>
+              <span>${esc(it.text||"")}</span>
+            </div>
+            <div class="task__meta">${it.due ? `📅 ${it.due}` : ""}</div>
+          </div>
+          <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}"
+                  style="display:${currentUser?'':'none'}">삭제</button>
+        `;
+        ul.appendChild(li);
+      }
+
+      // 항목 클릭(체크/삭제)
+      ul.onclick = async (e)=>{
+        const t = e.target;
+        const act = t.getAttribute("data-act");
+        if(!act) return;
+
+        if(!currentUser){
+          alert("수정/삭제는 로그인 후 가능합니다.");
+          if(act === "toggle") t.checked = !t.checked;
+          return;
+        }
+
+        const cat2 = t.getAttribute("data-cat");
+        const id   = t.getAttribute("data-id");
         try{
-          await col(cat).add({
-            subj, text, due: date || "", done: false,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          $(".subj", row).value = "";
-          $(".text", row).value = "";
-          $(".date", row).value = "";
+          if(act === "toggle"){
+            await col(cat2).doc(id).update({ done: t.checked });
+          }else if(act === "del"){
+            await col(cat2).doc(id).delete();
+          }
         }catch(e){
-          alert("저장 실패: " + e.message);
+          alert("변경 실패: " + e.message);
           console.error(e);
         }
       };
-    });
-  }
+    }
 
-  // ===== HTML escape =====
-  function esc(s){ return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
-</script>
+    // 추가 폼 바인딩
+    function bindAddRows(){
+      $$(".add-row").forEach(row=>{
+        const btn = $(".add", row);
+        const cat = row.dataset.cat;
+        btn.onclick = async ()=>{
+          if(!currentUser){ alert("로그인 후 추가할 수 있어요."); return; }
+          const subj = $(".subj", row).value.trim();
+          const text = $(".text", row).value.trim();
+          const date = $(".date", row).value || "";
+          if(!subj || !text){ alert("과목/내용을 입력해 주세요."); return; }
 
+          try{
+            await col(cat).add({
+              subj, text, due: date || "", done: false,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            $(".subj", row).value = "";
+            $(".text", row).value = "";
+            $(".date", row).value = "";
+          }catch(e){
+            alert("저장 실패: " + e.message);
+            console.error(e);
+          }
+        };
+      });
+    }
 
+    // HTML escape
+    function esc(s){ return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+  </script>
 </body>
 </html>
