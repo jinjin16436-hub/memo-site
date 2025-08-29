@@ -1,0 +1,100 @@
+/* 화면 전체 그라데이션 */
+html{
+  min-height:100%;
+  background: linear-gradient(to bottom, #1e3a8a, #3b82f6);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* 본문 기본 */
+body{
+  font-family: system-ui, sans-serif;
+  margin: 0 auto;
+  padding: 20px;
+  max-width: 800px;
+  line-height: 1.6;
+  background: transparent;  /* 바깥과 색 차이 없게 */
+  color: #ffffff;
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+main{ flex:1; }
+
+h1{ color:#60a5fa; }
+h2{
+  border-bottom: 2px solid rgba(255,255,255,0.4);
+  padding-bottom:4px; margin-top:32px;
+  color:#facc15;
+}
+ul{ list-style:square; }
+b{ color:#ffffff; }
+
+footer{
+  margin-top:40px; font-size:14px; color:#ccc;
+  background:none; border:none; text-align:center;
+}
+
+/* 토글 버튼 */
+.toggle-btn{
+  width:100%; text-align:left;
+  padding:10px 14px; margin-top:20px; font-size:16px;
+  background: rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.3);
+  border-radius:8px; color:#fff; cursor:pointer;
+}
+.toggle-content{ display:none; margin-top:10px }
+.toggle-content.open{ display:block }
+
+/* 상단 버튼/바 */
+.btn-sm{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 10px; border-radius:8px;
+  border:1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.12);
+  color:#fff; cursor:pointer; font-size:14px;
+}
+.admin-bar{ display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 0 }
+
+/* 리스트/체크박스/추가폼 */
+.task-list{ list-style:none; padding-left:0; display:grid; gap:10px }
+.task{
+  display:flex; align-items:flex-start; gap:10px;
+  padding:10px 12px; border-radius:10px;
+  background: rgba(0,0,0,0.25);
+}
+.task.done{ opacity:0.6; text-decoration: line-through; }
+.task__main{ display:flex; flex-direction:column; gap:4px; flex:1; }
+.task__line{ display:flex; flex-wrap:wrap; gap:6px; align-items:center }
+.task__meta{ font-size:12px; opacity:0.85 }
+
+.chk-wrap{ position:relative; width:20px; height:20px }
+.chk-wrap input{ position:absolute; inset:0; opacity:0; cursor:pointer }
+.chk-wrap span{
+  position:absolute; inset:0; border-radius:5px;
+  border:1.5px solid rgba(255,255,255,0.6);
+  background:rgba(255,255,255,0.05);
+}
+.chk-wrap input:checked + span{ background: rgba(96,165,250,0.5) }
+
+.add-row{
+  display:grid; grid-template-columns: 1fr 2fr 140px auto;
+  gap:8px; margin-top:10px
+}
+.add-row .in{
+  padding:10px 12px; border-radius:8px;
+  border:1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.08); color:#fff;
+}
+.add-row .in::placeholder{ color: rgba(255,255,255,0.75) }
+.btn-ghost{
+  background: transparent; color:#fff;
+  border:1px solid rgba(255,255,255,0.35);
+  padding:6px 8px; border-radius:8px; cursor:pointer;
+}
+
+@media (max-width:720px){
+  .add-row{ grid-template-columns: 1fr 1fr 1fr auto }
+}
