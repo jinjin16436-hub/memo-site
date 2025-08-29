@@ -121,28 +121,29 @@ const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
     });
 
     // 6) Firestore 경로: users/{uid}/tasks/{cat}/items/{doc}
-    const col = (cat) => db
-      .collection("users").doc(currentUser.uid)
-      .collection("tasks").doc(cat).collection("items");
+    // users/{uid}/tasks/{cat}/items
+const col = (cat) => {
+  const uid = currentUser ? currentUser.uid : OWNER_UID; // 로그아웃이면 OWNER_UID로 읽기
+  return db.collection("users").doc(uid)
+           .collection("tasks").doc(cat).collection("items");
+};
 
     function startListeners(){
-      // 해제
-      unsub.forEach(u => u && u());
-      unsub = [];
+  // 기존 리스너 해제
+  unsubscribers.forEach(u => u && u());
+  unsubscribers = [];
 
-      if(!currentUser){
-        ["perf","exam","home"].forEach(cat => renderList(cat, []));
-        return;
-      }
-      ["perf","exam","home"].forEach(cat => {
-        const u = col(cat).orderBy("due","asc").onSnapshot(s => {
-          const arr = [];
-          s.forEach(d => arr.push({ id:d.id, ...d.data() }));
-          renderList(cat, arr);
-        });
-        unsub.push(u);
-      });
-    }
+  // 로그인 여부와 상관없이 목록을 구독(로그아웃이면 OWNER_UID 기준)
+  ["perf","exam","home"].forEach(cat => {
+    const u = col(cat).orderBy("due","asc").onSnapshot(snap => {
+      const arr = [];
+      snap.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
+      renderList(cat, arr);
+    });
+    unsubscribers.push(u);
+  });
+}
+
 
     // 7) 렌더 + 이벤트
     function renderList(cat, items){
