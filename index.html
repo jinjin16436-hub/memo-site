@@ -205,56 +205,79 @@
       loadOpenState();
     }
 
-    function renderList(cat, items){
-      const ul = el.lists[cat];
-      ul.innerHTML = "";
-      for(const it of items){
-        const li = document.createElement("li");
-        li.className = "task" + (it.done ? " done" : "");
-        li.innerHTML = `
-          <label class="chk-wrap">
-            <input type="checkbox" ${it.done?"checked":""}
-                   data-act="toggle" data-cat="${cat}" data-id="${it.id}">
-            <span></span>
-          </label>
-          <div class="task__main">
-            <div class="task__line">
-              <b>${esc(it.subj||"")}</b><span class="sep">–</span>
-              <span>${esc(it.text||"")}</span>
-            </div>
-            <div class="task__meta">${it.due ? `📅 ${it.due}` : ""}</div>
-          </div>
-          <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}"
-                  style="display:${currentUser?'':'none'}">삭제</button>
-        `;
-        ul.appendChild(li);
-      }
+   function renderList(cat, items){
+  const ul = el.lists[cat];
+  ul.innerHTML = "";
+  for (const it of items) {
+    const li = document.createElement("li");
+    li.className = "task" + (it.done ? " done" : "");
+    li.innerHTML = `
+      <label class="chk-wrap">
+        <input type="checkbox" ${it.done?"checked":""}
+               data-act="toggle" data-cat="${cat}" data-id="${it.id}">
+        <span></span>
+      </label>
+      <div class="task__main">
+        <div class="task__line">
+          <b>${esc(it.subj||"")}</b><span class="sep">–</span>
+          <span>${esc(it.text||"")}</span>
+        </div>
+        <div class="task__meta">${it.due ? `📅 ${it.due}` : ""}</div>
+      </div>
+      <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}"
+              style="display:${currentUser?'':'none'}">삭제</button>
+    `;
+    ul.appendChild(li);
+  }
 
-      ul.onclick = async (e)=>{
-        const t = e.target;
-        const act = t.getAttribute("data-act");
-        if(!act) return;
+  // ✅ 체크박스는 change로 처리 (label/span 클릭도 안정적으로 잡힘)
+  ul.onchange = async (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLInputElement) || t.type !== "checkbox") return;
+    const act  = t.getAttribute("data-act");
+    if (act !== "toggle") return;
 
-        if(!currentUser){
-          alert("수정/삭제는 로그인 후 가능합니다.");
-          if(act === "toggle") t.checked = !t.checked;
-          return;
-        }
+    const cat2 = t.getAttribute("data-cat");
+    const id   = t.getAttribute("data-id");
+    if (!cat2 || !id) return;
 
-        const cat2 = t.getAttribute("data-cat");
-        const id   = t.getAttribute("data-id");
-        try{
-          if(act === "toggle"){
-            await col(cat2).doc(id).update({ done: t.checked });
-          }else if(act === "del"){
-            await col(cat2).doc(id).delete();
-          }
-        }catch(e){
-          alert("변경 실패: " + e.message);
-          console.error(e);
-        }
-      };
+    if (!currentUser) {
+      alert("완료 체크는 로그인 후 가능합니다.");
+      // UI 되돌리기
+      t.checked = !t.checked;
+      return;
     }
+    try {
+      await col(cat2).doc(id).update({ done: t.checked });
+    } catch (e) {
+      console.error(e);
+      alert("변경 실패: " + e.message);
+      // 실패 시 체크 상태 복구
+      t.checked = !t.checked;
+    }
+  };
+
+  // 🗑️ 삭제 버튼만 click으로 처리
+  ul.onclick = async (e) => {
+    const btn = e.target.closest('[data-act="del"]');
+    if (!btn) return;
+
+    if (!currentUser) {
+      alert("삭제는 로그인 후 가능합니다.");
+      return;
+    }
+
+    const cat2 = btn.getAttribute("data-cat");
+    const id   = btn.getAttribute("data-id");
+    try {
+      await col(cat2).doc(id).delete();
+    } catch (e) {
+      console.error(e);
+      alert("삭제 실패: " + e.message);
+    }
+  };
+}
+
 
     function bindAddRows(){
       $$(".add-row").forEach(row=>{
