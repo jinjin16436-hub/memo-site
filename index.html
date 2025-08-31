@@ -286,69 +286,64 @@
 
   <!-- ===== 로그인: 리다이렉트 기본 + 팝업 백업 ===== -->
   <script>
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
 
-    async function ensureLocalPersistence() {
-      try { await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }
-      catch (e) { console.error('setPersistence 실패:', e); }
+  // 한국어 UI (선택)
+  auth.useDeviceLanguage?.();
+
+  // 세션 LOCAL 강제
+  async function ensureLocal() {
+    try {
+      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    } catch (e) {
+      console.error('setPersistence 실패:', e);
+      alert('세션 저장 실패: ' + (e.code || e.message));
     }
+  }
 
-    function showAuthError(e, ctx=''){
-      alert(`로그인 오류(${ctx}): ${e?.code || 'unknown'}\n${e?.message || e}`);
-      console.error(`[AUTH][${ctx}]`, e);
+  // 화면에 모든 에러를 띄우는 헬퍼
+  function showAuthError(e, where) {
+    const code = e?.code || 'unknown';
+    const msg  = e?.message || String(e);
+    console.error(`[AUTH][${where}] ${code} ${msg}`, e);
+    alert(`로그인 오류(${where}): ${code}\n${msg}`);
+  }
+
+  // ✅ 팝업만 강제 (리다이렉트 사용 안 함)
+  el.loginBtn.addEventListener('click', async () => {
+    try {
+      await ensureLocal();
+      const res = await auth.signInWithPopup(provider);
+      console.log('✅ 팝업 로그인 성공:', res.user?.uid);
+      alert('로그인 성공! uid: ' + res.user?.uid);
+    } catch (e) {
+      showAuthError(e, 'popup');
     }
+  });
 
-    el.loginBtn.addEventListener("click", async () => {
-      saveDraft(); saveOpenState();
-      await ensureLocalPersistence();
-      try {
-        sessionStorage.setItem('loginFlow', 'redirect');
-        await auth.signInWithRedirect(provider);
-      } catch (e) {
-        try {
-          sessionStorage.setItem('loginFlow', 'popup');
-          const r = await auth.signInWithPopup(provider);
-          console.log('✅ 팝업 로그인 성공:', r.user?.uid);
-        } catch (e2) {
-          showAuthError(e2, 'popup(fallback)');
-        }
-      }
-    });
+  el.logoutBtn.addEventListener('click', async () => {
+    try {
+      await auth.signOut();
+      alert('로그아웃 완료');
+    } catch (e) {
+      showAuthError(e, 'signOut');
+    }
+  });
 
-    el.logoutBtn.addEventListener("click", () => auth.signOut());
+  // 리다이렉트 결과는 이번 테스트에선 사용 안 함
+  // auth.getRedirectResult() ... <-- 주석 처리하거나 제거
 
-    auth.getRedirectResult()
-      .then((result) => {
-        if (result.user) console.log('✅ 리다이렉트 로그인 성공:', result.user.uid);
-      })
-      .catch(async (e) => {
-        const nonRedirectable =
-          e.code === 'auth/operation-not-supported-in-this-environment' ||
-          e.code === 'auth/cookie-not-supported' ||
-          e.code === 'auth/network-request-failed';
-        if (nonRedirectable) {
-          try {
-            await ensureLocalPersistence();
-            sessionStorage.setItem('loginFlow', 'popup-after-redirect-error');
-            const r = await auth.signInWithPopup(provider);
-            console.log('✅ 리다이렉트 실패 → 팝업 로그인 성공:', r.user?.uid);
-            return;
-          } catch (e2) {
-            showAuthError(e2, 'popup(afterRedirectError)');
-          }
-        }
-        showAuthError(e, 'redirectResult');
-      });
+  // 상태 변화 로그
+  auth.onAuthStateChanged(user => {
+    console.log('[onAuthStateChanged]', user?.uid || null);
+    el.loginBtn.style.display  = user ? 'none' : '';
+    el.logoutBtn.style.display = user ? '' : 'none';
+    setEditVisible(!!user);
+    bindAddRows();
+    startListeners();
+  });
+</script>
 
-    auth.onAuthStateChanged(user => {
-      currentUser = user;
-      el.loginBtn.style.display  = user ? "none" : "";
-      el.logoutBtn.style.display = user ? "" : "none";
-      setEditVisible(!!user);
-      bindAddRows();
-      startListeners();
-    });
-  </script>
 </body>
 </html>
