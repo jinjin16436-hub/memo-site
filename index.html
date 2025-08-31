@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>숙제 & 수행평가 메모</title>
+  <title>숙제 & 수행평가 안내</title>
 
   <!-- 파비콘 -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='48'>📝</text></svg>">
@@ -13,7 +13,7 @@
 <body>
   <!-- 상단 바 -->
   <header class="admin-bar" style="display:flex;gap:12px;align-items:center;justify-content:flex-start;">
-    <h1 style="margin-right:auto">📒 숙제 & 수행평가 메모</h1>
+    <h1 style="margin-right:auto">📒 숙제 & 수행평가 </h1>
     <button id="loginBtn"  class="btn">🔑 Google 로그인</button>
     <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
   </header>
@@ -204,6 +204,7 @@
       loadOpenState();
     }
 
+    /* 목록 렌더링 */
     function renderList(cat, items){
       const ul = el.lists[cat];
       ul.innerHTML = "";
@@ -229,7 +230,7 @@
         ul.appendChild(li);
       }
 
-      // 체크박스는 change 이벤트
+      // 체크박스 change 이벤트
       ul.onchange = async (e) => {
         const t = e.target;
         if (!(t instanceof HTMLInputElement) || t.type !== "checkbox") return;
@@ -270,6 +271,37 @@
       };
     }
 
+    /* + 추가 버튼 바인딩 */
+    function bindAddRows(){
+      $$(".add-row").forEach(row=>{
+        const btn = $(".add", row);
+        const cat = row.dataset.cat;
+        btn.onclick = async ()=>{
+          if(!isLoggedIn()){
+            alert("로그인 후 추가할 수 있어요.");
+            return;
+          }
+          const subj = $(".subj", row).value.trim();
+          const text = $(".text", row).value.trim();
+          const date = $(".date", row).value || "";
+          if(!subj || !text){
+            alert("과목/내용을 입력해 주세요.");
+            return;
+          }
+          try{
+            await col(cat).add({
+              subj, text, due: date || "", done: false,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            afterAdded(row);
+          }catch(e){
+            console.error("ADD ERR:", e.code, e.message, e);
+            alert(`추가 실패: ${e.code}\n${e.message}`);
+          }
+        };
+      });
+    }
+
     function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
 
     /* ===== 팝업 로그인 전용 ===== */
@@ -307,6 +339,7 @@
       el.loginBtn.style.display  = user ? "none" : "";
       el.logoutBtn.style.display = user ? "" : "none";
       setEditVisible(!!user);
+      bindAddRows();
       startListeners();
     });
   </script>
