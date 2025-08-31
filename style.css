@@ -1,183 +1,45 @@
-/* 기본 */
-* { box-sizing: border-box; }
-html, body { height: 100%; }
 body {
   margin: 0;
-  font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
-  background: linear-gradient(to bottom, #0f1b2d, #132238, #0f1b2d);
+  font-family: 'Segoe UI', sans-serif;
+  background: #0d1625;
   color: #fff;
 }
-
-/* 상단바 */
 .admin-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(0,0,0,0.35);
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.12);
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; background: #1c2736;
 }
-.admin-bar h1 { margin: 0; font-size: 1.05rem; }
-.admin-bar .spacer { flex: 1; }
+.container { padding: 20px; max-width: 900px; margin:auto; }
 
-/* 버튼 */
-.btn {
-  background: #1e88e5;
-  color: #fff; border: none;
-  padding: 8px 14px;
-  border-radius: 12px;
-  cursor: pointer; font-size: 0.95rem;
-}
-.btn:hover { background: #1565c0; }
-
-.btn-ghost {
-  background: none; color: #fff;
-  border: 1px solid rgba(255,255,255,0.35);
-  border-radius: 10px; padding: 6px 10px;
-  font-size: 0.88rem; cursor: pointer;
-}
-.btn-ghost:hover { background: rgba(255,255,255,0.15); }
-
-.btn-outline {
-  background: none; color: #fff;
-  border: 1px solid rgba(255,255,255,0.45);
-  border-radius: 10px; padding: 8px 12px; cursor: pointer;
-}
-.btn-outline:hover { background: rgba(255,255,255,0.12); }
-
-/* 컨테이너 */
-.container {
-  max-width: 980px;
-  margin: 18px auto 40px;
-  padding: 0 16px;
-  overflow: visible;        /* 드롭다운 잘림 방지 */
-}
-
-/* 섹션 */
 .section-head {
-  width: 100%; text-align: left;
-  background: rgba(255,255,255,0.08);
-  color: #fff; font-size: 1.05rem; font-weight: 800;
-  padding: 10px 14px; border: none; border-radius: 12px;
-  margin: 8px 0 6px; cursor: pointer;
+  background: #2a3b55; color:#fff; font-weight:600;
+  border:none; padding:10px 14px; width:100%; text-align:left;
+  border-radius:8px; margin-bottom:8px;
 }
-.section-head:hover { background: rgba(255,255,255,0.15); }
+.section-body { margin-bottom:20px; }
 
-.section-body {
-  background: rgba(10,16,26,0.65);
-  border-radius: 14px;
-  padding: 12px; margin-bottom: 16px;
-  display: none;
-  overflow: visible !important;  /* ▼ 핵심: 드롭다운 안 잘리게 */
-  position: relative;
-}
-.section-body.open { display: block; }
-
-/* 목록 카드 */
-.task-list { list-style: none; margin: 0; padding: 0; }
+.task-list { list-style:none; padding:0; margin:0; }
 .task {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr) auto auto;
+  gap:12px; align-items:center;
+  padding:10px; margin-bottom:8px;
+  border-radius:10px;
+  background:#162235;
 }
-.task:last-child { border-bottom: none; }
-.task.done { opacity: 0.6; text-decoration: line-through; }
-.task__main { min-width: 0; }
-.task__line b { font-weight: 900; }
-.task__line span { word-break: break-word; }
-.task__meta { margin-top: 4px; opacity: 0.95; font-size: 0.92rem; }
-
-/* 체크박스 */
-.chk-wrap { display: flex; align-items: center; }
-.chk-wrap input[type="checkbox"] { width: 18px; height: 18px; }
-
-/* D-day 칩 */
-.dday { font-weight: 800; margin-left: 8px; padding: 2px 8px;
-  border-radius: 8px; display: inline-block; color: #fff; }
-.dday.past   { background: #757575; }
-.dday.red    { background: #e53935; }
-.dday.orange { background: #fb8c00; }
-.dday.yellow { background: #fdd835; color: #000; }
-.dday.green  { background: #43a047; }
-
-/* 추가 입력줄 */
-.add-row { overflow: visible !important; position: relative; z-index: 1; }
-.add-row .row-top {
-  display: grid;
-  grid-template-columns: 220px 160px 20px 160px 140px 140px 120px;
-  gap: 10px; align-items: center;
+.task__main { min-width:0; }
+.task__line b { font-size:1.1em; }
+.task__meta { font-size:0.9em; opacity:0.85; margin-top:2px; }
+.btn, .btn-ghost {
+  cursor:pointer; border:none; border-radius:6px;
+  padding:6px 10px; font-weight:600;
 }
-.add-row .tilde { text-align: center; opacity: 0.85; }
-
-.add-row input[type="text"],
-.add-row input[type="date"],
-.add-row select,
-.add-row textarea {
-  width: 100%; font-size: 0.94rem; color: #000; background: #fff;
-  padding: 10px 12px; border: none; border-radius: 12px;
+.btn { background:#2196f3; color:#fff; }
+.btn-ghost { background:#39475c; color:#fff; margin-left:4px; }
+.add-row {
+  display:flex; flex-wrap:wrap; gap:8px;
+  background:#121c2b; padding:12px; border-radius:10px; margin-top:10px;
 }
-
-.add-row .row-top select,
-.add-row .row-top input[type="date"] {
-  position: relative; z-index: 5;   /* ▼ 드롭다운 가림 방지 */
-  min-width: 120px;
+.add-row input,.add-row select,.add-row textarea {
+  padding:6px; border-radius:6px; border:none; flex:1;
 }
-
-.add-row .row-top .subj { min-width: 180px; }
-.add-row .row-top .add  { height: 42px; border-radius: 12px; }
-
-.add-row textarea {
-  margin-top: 10px;
-  min-height: 78px; resize: vertical;
-  grid-column: 1 / -1;    /* 한 줄 전체 */
-}
-
-/* 인라인 수정 패널 */
-.edit-panel {
-  margin: 10px 0 4px 34px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
-  padding: 12px;
-  display: none;
-  overflow: visible;
-  position: relative;
-}
-.edit-panel.open { display: block; }
-
-.edit-grid {
-  display: grid;
-  grid-template-columns: 220px 1fr 160px 20px 160px 140px 140px;
-  gap: 10px;
-  align-items: center;
-}
-.edit-grid .tilde { text-align: center; opacity: .85; }
-
-.edit-panel input[type="text"],
-.edit-panel input[type="date"],
-.edit-panel select,
-.edit-panel textarea {
-  width: 100%; font-size: 0.94rem; color: #000; background: #fff;
-  padding: 10px 12px; border: none; border-radius: 12px;
-}
-
-.edit-actions { display: flex; gap: 8px; margin-top: 10px; }
-
-/* 작은 화면 대응 */
-@media (max-width: 900px) {
-  .add-row .row-top { grid-template-columns: 1fr 1fr 20px 1fr 1fr 1fr 110px; }
-  .edit-grid        { grid-template-columns: 200px 1fr 1fr 1fr; }
-  .add-row .tilde,
-  .edit-grid .tilde { display: none; }
-}
-@media (max-width: 640px) {
-  .add-row .row-top { grid-template-columns: 1fr 1fr; }
-  .add-row .row-top .add { grid-column: 1 / -1; }
-  .edit-grid { grid-template-columns: 1fr 1fr; }
-}
-
-/* 상위 컨테이너도 잘림 금지 */
-main, section { overflow: visible !important; }
+.add-row textarea { flex:100%; min-height:60px; }
