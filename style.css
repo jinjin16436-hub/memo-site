@@ -225,3 +225,32 @@ section{
   border:2px solid transparent; background-clip:padding-box;
 }
 ::-webkit-scrollbar-track{ background:transparent }
+
+/* D-day 칩 스타일 */
+.dday {
+  font-weight: bold;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  display: inline-block;
+  line-height: 1.2;
+}
+
+/* 오늘 */
+.dday.today {
+  background: #e53935; /* 레드 */
+  color: #fff;
+}
+
+/* 미래 (D-n) */
+.dday.future {
+  background: #1e88e5; /* 블루 */
+  color: #fff;
+}
+
+/* 지난 일정 (D+n) */
+.dday.past {
+  background: #757575; /* 그레이 */
+  color: #fff;
+}
+
