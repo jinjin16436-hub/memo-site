@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>부광고 1-1 숙제 & 수행평가</title>
+  <title>숙제 & 수행평가</title>
 
   <!-- 파비콘(404 방지) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='48'>📝</text></svg>">
@@ -91,10 +91,13 @@
 
   <!-- ===== 공용 유틸/상태 ===== -->
   <script>
-    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";   // 로그아웃 상태에서 읽기용
+    // 로그아웃 상태에서 읽기만 할 기본 소유자 UID
+    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
+
     const auth = firebase.auth();
     const db   = firebase.firestore();
 
+    // DOM helpers
     const $  = (q, root=document) => root.querySelector(q);
     const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
     const el = {
@@ -103,9 +106,18 @@
       lists:     { perf: $("#list_perf"), exam: $("#list_exam"), home: $("#list_home") }
     };
 
-    let currentUser = null;
+    // 항상 Firebase 세션에서 직접 확인(전역 currentUser에 의존 X)
+    const isLoggedIn = () => !!auth.currentUser;
+    const getUid     = () => auth.currentUser?.uid || OWNER_UID;
+
+    // Firestore 경로 유틸
+    const col = (cat) =>
+      db.collection("users").doc(getUid())
+        .collection("tasks").doc(cat).collection("items");
+
     let unsubscribers = [];
 
+    // 섹션 토글 + 상태 저장
     function toggleSection(id){
       const box = document.getElementById(id);
       if(!box) return;
@@ -113,11 +125,13 @@
       saveOpenState();
     }
 
+    // 편집 UI(추가/삭제) 표시
     function setEditVisible(v){
       $$(".add-row").forEach(r => r.style.display = v ? "" : "none");
       $$(".btn-ghost").forEach(b => b.style.display = v ? "" : "none");
     }
 
+    /* ---------------- 임시저장: 입력 폼 ---------------- */
     const DRAFT_KEY = "memo:draft-v1";
     const OPEN_KEY  = "memo:open-v1";
 
@@ -159,6 +173,7 @@
       saveDraft();
     }
 
+    /* ---------------- 임시저장: 섹션 펼침 상태 ---------------- */
     function saveOpenState(){
       const state = {
         perf: $("#sec_perf")?.classList.contains("open"),
@@ -176,12 +191,7 @@
       }catch{}
     }
 
-    const col = (cat) => {
-      const uid = (currentUser && currentUser.uid) ? currentUser.uid : OWNER_UID;
-      return db.collection("users").doc(uid)
-               .collection("tasks").doc(cat).collection("items");
-    };
-
+    // 실시간 구독
     function startListeners(){
       unsubscribers.forEach(u => u && u());
       unsubscribers = [];
@@ -201,172 +211,158 @@
         unsubscribers.push(u);
       });
 
+      // 최초 로드 시 임시저장 복원
       loadDraft();
       loadOpenState();
     }
 
-   function renderList(cat, items){
-  const ul = el.lists[cat];
-  ul.innerHTML = "";
-  for (const it of items) {
-    const li = document.createElement("li");
-    li.className = "task" + (it.done ? " done" : "");
-    li.innerHTML = `
-      <label class="chk-wrap">
-        <input type="checkbox" ${it.done?"checked":""}
-               data-act="toggle" data-cat="${cat}" data-id="${it.id}">
-        <span></span>
-      </label>
-      <div class="task__main">
-        <div class="task__line">
-          <b>${esc(it.subj||"")}</b><span class="sep">–</span>
-          <span>${esc(it.text||"")}</span>
-        </div>
-        <div class="task__meta">${it.due ? `📅 ${it.due}` : ""}</div>
-      </div>
-      <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}"
-              style="display:${currentUser?'':'none'}">삭제</button>
-    `;
-    ul.appendChild(li);
-  }
+    // 목록 렌더링
+    function renderList(cat, items){
+      const ul = el.lists[cat];
+      ul.innerHTML = "";
+      for(const it of items){
+        const li = document.createElement("li");
+        li.className = "task" + (it.done ? " done" : "");
+        li.innerHTML = `
+          <label class="chk-wrap">
+            <input type="checkbox" ${it.done?"checked":""}
+                   data-act="toggle" data-cat="${cat}" data-id="${it.id}">
+            <span></span>
+          </label>
+          <div class="task__main">
+            <div class="task__line">
+              <b>${esc(it.subj||"")}</b><span class="sep">–</span>
+              <span>${esc(it.text||"")}</span>
+            </div>
+            <div class="task__meta">${it.due ? `📅 ${it.due}` : ""}</div>
+          </div>
+          <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}"
+                  style="display:${isLoggedIn()?'':'none'}">삭제</button>
+        `;
+        ul.appendChild(li);
+      }
 
-  // ✅ 체크박스는 change로 처리 (label/span 클릭도 안정적으로 잡힘)
-  ul.onchange = async (e) => {
-    const t = e.target;
-    if (!(t instanceof HTMLInputElement) || t.type !== "checkbox") return;
-    const act  = t.getAttribute("data-act");
-    if (act !== "toggle") return;
+      // ✅ 체크박스는 change로 안정 처리
+      ul.onchange = async (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLInputElement) || t.type !== "checkbox") return;
+        if (t.getAttribute("data-act") !== "toggle") return;
 
-    const cat2 = t.getAttribute("data-cat");
-    const id   = t.getAttribute("data-id");
-    if (!cat2 || !id) return;
+        const cat2 = t.getAttribute("data-cat");
+        const id   = t.getAttribute("data-id");
+        if (!cat2 || !id) return;
 
-    if (!currentUser) {
-      alert("완료 체크는 로그인 후 가능합니다.");
-      // UI 되돌리기
-      t.checked = !t.checked;
-      return;
-    }
-    try {
-      await col(cat2).doc(id).update({ done: t.checked });
-    } catch (e) {
-      console.error(e);
-      alert("변경 실패: " + e.message);
-      // 실패 시 체크 상태 복구
-      t.checked = !t.checked;
-    }
-  };
+        if (!isLoggedIn()) {
+          alert("완료 체크는 로그인 후 가능합니다.");
+          t.checked = !t.checked;   // UI 복구
+          return;
+        }
+        try {
+          await col(cat2).doc(id).update({ done: t.checked });
+        } catch (e) {
+          console.error(e);
+          alert("변경 실패: " + e.message);
+          t.checked = !t.checked;
+        }
+      };
 
-  // 🗑️ 삭제 버튼만 click으로 처리
-  ul.onclick = async (e) => {
-    const btn = e.target.closest('[data-act="del"]');
-    if (!btn) return;
+      // 🗑️ 삭제 버튼만 click으로 처리
+      ul.onclick = async (e) => {
+        const btn = e.target.closest('[data-act="del"]');
+        if (!btn) return;
 
-    if (!currentUser) {
-      alert("삭제는 로그인 후 가능합니다.");
-      return;
-    }
+        if (!isLoggedIn()) {
+          alert("삭제는 로그인 후 가능합니다.");
+          return;
+        }
 
-    const cat2 = btn.getAttribute("data-cat");
-    const id   = btn.getAttribute("data-id");
-    try {
-      await col(cat2).doc(id).delete();
-    } catch (e) {
-      console.error(e);
-      alert("삭제 실패: " + e.message);
-    }
-  };
-}
-
-
-    function bindAddRows(){
-      $$(".add-row").forEach(row=>{
-        const btn = $(".add", row);
-        const cat = row.dataset.cat;
-        btn.onclick = async ()=>{
-          if(!currentUser){ alert("로그인 후 추가할 수 있어요."); return; }
-          const subj = $(".subj", row).value.trim();
-          const text = $(".text", row).value.trim();
-          const date = $(".date", row).value || "";
-          if(!subj || !text){ alert("과목/내용을 입력해 주세요."); return; }
-
-          try{
-            await col(cat).add({
-              subj, text, due: date || "", done: false,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            afterAdded(row);
-          }catch(e){
-            alert("저장 실패: " + e.message);
-            console.error(e);
-          }
-        };
-      });
+        const cat2 = btn.getAttribute("data-cat");
+        const id   = btn.getAttribute("data-id");
+        try {
+          await col(cat2).doc(id).delete();
+        } catch (e) {
+          console.error(e);
+          alert("삭제 실패: " + e.message);
+        }
+      };
     }
 
+    // HTML escape
     function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
   </script>
 
   <!-- ===== 로그인: 리다이렉트 기본 + 팝업 백업 ===== -->
   <script>
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    auth.useDeviceLanguage?.();
 
-  // 한국어 UI (선택)
-  auth.useDeviceLanguage?.();
-
-  // 세션 LOCAL 강제
-  async function ensureLocal() {
-    try {
-      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    } catch (e) {
-      console.error('setPersistence 실패:', e);
-      alert('세션 저장 실패: ' + (e.code || e.message));
+    async function ensureLocalPersistence() {
+      try { await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }
+      catch (e) { console.error('setPersistence 실패:', e); }
     }
-  }
 
-  // 화면에 모든 에러를 띄우는 헬퍼
-  function showAuthError(e, where) {
-    const code = e?.code || 'unknown';
-    const msg  = e?.message || String(e);
-    console.error(`[AUTH][${where}] ${code} ${msg}`, e);
-    alert(`로그인 오류(${where}): ${code}\n${msg}`);
-  }
-
-  // ✅ 팝업만 강제 (리다이렉트 사용 안 함)
-  el.loginBtn.addEventListener('click', async () => {
-    try {
-      await ensureLocal();
-      const res = await auth.signInWithPopup(provider);
-      console.log('✅ 팝업 로그인 성공:', res.user?.uid);
-      alert('로그인 성공! uid: ' + res.user?.uid);
-    } catch (e) {
-      showAuthError(e, 'popup');
+    function showAuthError(e, where){
+      const code = e?.code || 'unknown';
+      const msg  = e?.message || String(e);
+      console.error(`[AUTH][${where}]`, code, msg, e);
+      alert(`로그인 오류(${where}): ${code}\n${msg}`);
     }
-  });
 
-  el.logoutBtn.addEventListener('click', async () => {
-    try {
-      await auth.signOut();
-      alert('로그아웃 완료');
-    } catch (e) {
-      showAuthError(e, 'signOut');
-    }
-  });
+    el.loginBtn.addEventListener("click", async () => {
+      saveDraft(); saveOpenState();
+      await ensureLocalPersistence();
+      try {
+        sessionStorage.setItem('loginFlow', 'redirect');
+        await auth.signInWithRedirect(provider);
+      } catch (e) {
+        // 리다이렉트 실패 → 팝업 백업
+        try {
+          sessionStorage.setItem('loginFlow', 'popup');
+          const r = await auth.signInWithPopup(provider);
+          console.log('✅ 팝업 로그인 성공:', r.user?.uid);
+        } catch (e2) {
+          showAuthError(e2, 'popup(fallback)');
+        }
+      }
+    });
 
-  // 리다이렉트 결과는 이번 테스트에선 사용 안 함
-  // auth.getRedirectResult() ... <-- 주석 처리하거나 제거
+    el.logoutBtn.addEventListener("click", async () => {
+      try { await auth.signOut(); }
+      catch(e){ showAuthError(e, 'signOut'); }
+    });
 
-  // 상태 변화 로그
-  auth.onAuthStateChanged(user => {
-    console.log('[onAuthStateChanged]', user?.uid || null);
-    el.loginBtn.style.display  = user ? 'none' : '';
-    el.logoutBtn.style.display = user ? '' : 'none';
-    setEditVisible(!!user);
-    bindAddRows();
-    startListeners();
-  });
-</script>
+    // 리다이렉트 결과(막히면 팝업 재시도)
+    auth.getRedirectResult()
+      .then(r => { if (r.user) console.log('✅ 리다이렉트 로그인 성공:', r.user.uid); })
+      .catch(async (e) => {
+        const nonRedirectable =
+          e.code === 'auth/operation-not-supported-in-this-environment' ||
+          e.code === 'auth/cookie-not-supported' ||
+          e.code === 'auth/network-request-failed';
 
+        if (nonRedirectable) {
+          try {
+            await ensureLocalPersistence();
+            sessionStorage.setItem('loginFlow', 'popup-after-redirect-error');
+            const r = await auth.signInWithPopup(provider);
+            console.log('✅ 리다이렉트 실패 → 팝업 로그인 성공:', r.user?.uid);
+            return;
+          } catch (e2) {
+            showAuthError(e2, 'popup(afterRedirectError)');
+          }
+        }
+        showAuthError(e, 'redirectResult');
+      });
+
+    // 세션 변화에 맞춰 UI/리스너 갱신
+    auth.onAuthStateChanged(user => {
+      console.log('[onAuthStateChanged]', user?.uid || null);
+      el.loginBtn.style.display  = user ? "none" : "";
+      el.logoutBtn.style.display = user ? "" : "none";
+      setEditVisible(!!user);
+      startListeners();
+    });
+  </script>
 </body>
 </html>
