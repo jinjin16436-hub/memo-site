@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>부광고 1-1 숙제 & 수행평가</title>
+  <title>숙제 & 수행평가 메모</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,6 +21,7 @@
       <button class="section-head" onclick="toggleSection('sec_perf')">📄 수행평가 ▾</button>
       <div id="sec_perf" class="section-body open">
         <ul id="list_perf" class="task-list"></ul>
+        <!-- 기본은 숨김: 로그인 시 표시 -->
         <div class="add-row" data-cat="perf" style="display:none">
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
@@ -140,6 +141,13 @@
     };
     function esc(s){return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");}
     function toggleSection(id){ $("#"+id).classList.toggle("open"); }
+
+    // 추가 폼 보이기/숨기기 토글
+    function setAddRowsVisible(isOn) {
+      document.querySelectorAll(".add-row").forEach(r => {
+        r.style.display = isOn ? "" : "none";
+      });
+    }
 
     let currentUser = null;
     let unsub = { perf:null, exam:null, home:null };
@@ -319,7 +327,7 @@
       $(".e-endP",panel).value   = it.endP   || "";
       $(".e-detail",panel).value = it.detail || "";
 
-      // li 아래에 삽입 (본문 정렬선과 맞춤)
+      // li 아래에 삽입
       li.after(panel);
       openEditorEl  = panel;
       openEditorKey = `${cat}:${id}`;
@@ -378,7 +386,6 @@
       }
 
       if(act === "edit"){
-        // 해당 카드 element
         const li = t.closest(".task");
         openEditor(cat, id, li);
         return;
@@ -393,8 +400,10 @@
       currentUser = u;
       $("#loginBtn").style.display  = u ? "none" : "";
       $("#logoutBtn").style.display = u ? "" : "none";
-      // 로그인/로그아웃 시 편집 패널 닫기
       closeEditor();
+
+      // ✅ 로그인 상태에 따라 추가 폼 보이기/숨기기
+      setAddRowsVisible(!!u);
     });
 
     /* ================= Init ================= */
