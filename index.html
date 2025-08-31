@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>부광고 1학년 1반 숙제 & 수행평가</title>
+  <title>부광고 1학년 1반 수행평가 & 숙제</title>
 
   <!-- 파비콘(404 방지) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='48'>📝</text></svg>">
@@ -13,7 +13,7 @@
 <body>
   <!-- 상단 바 -->
   <header class="admin-bar" style="display:flex;gap:12px;align-items:center;justify-content:flex-start;">
-    <h1 style="margin-right:auto">📒 숙제 & 수행평가 안내</h1>
+    <h1 style="margin-right:auto">📒 숙제 & 수행평가 안내 </h1>
     <button id="loginBtn"  class="btn">🔑 Google 로그인</button>
     <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
   </header>
@@ -166,7 +166,7 @@
     }
 
     /* ---------- 임시저장(입력/펼침) ---------- */
-    const DRAFT_KEY = "memo:draft-v2"; // (v2: 교시 포함)
+    const DRAFT_KEY = "memo:draft-v2"; // (교시 포함)
     const OPEN_KEY  = "memo:open-v1";
 
     function gatherDraft(){
@@ -257,13 +257,24 @@
           const wd = ["일","월","화","수","목","금","토"][d.getDay()];
           meta = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")} (${wd})`;
 
-          // D-day
+          // D-day (세분화 색상)
           const today = new Date(); today.setHours(0,0,0,0);
           const dueDay = new Date(d); dueDay.setHours(0,0,0,0);
           const diff = Math.floor((dueDay - today) / (1000*60*60*24));
-          if (diff === 0)       ddayHtml = `<span class="dday today">D-day</span>`;
-          else if (diff > 0)    ddayHtml = `<span class="dday future">D-${diff}</span>`;
-          else                  ddayHtml = `<span class="dday past">D+${Math.abs(diff)}</span>`;
+
+          if (diff === 0) {
+            ddayHtml = `<span class="dday red">D-day</span>`;
+          } else if (diff === 1) {
+            ddayHtml = `<span class="dday red">D-1</span>`;
+          } else if (diff >= 2 && diff <= 3) {
+            ddayHtml = `<span class="dday orange">D-${diff}</span>`;
+          } else if (diff >= 4 && diff <= 5) {
+            ddayHtml = `<span class="dday yellow">D-${diff}</span>`;
+          } else if (diff >= 6) {
+            ddayHtml = `<span class="dday green">D-${diff}</span>`;
+          } else {
+            ddayHtml = `<span class="dday past">D+${Math.abs(diff)}</span>`;
+          }
         } else {
           meta = it.due;
         }
