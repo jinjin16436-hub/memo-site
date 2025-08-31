@@ -3,17 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>1학년 1반 수행평가 & 숙제</title>
-
-  <!-- 파비콘(404 방지) -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='48'>📝</text></svg>">
-
+  <title>숙제 & 수행평가 메모</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!-- 상단 바 -->
   <header class="admin-bar" style="display:flex;gap:12px;align-items:center;justify-content:flex-start;">
-    <h1 style="margin-right:auto">📒 숙제 & 수행평가 </h1>
+    <h1 style="margin-right:auto">📒 숙제 & 수행평가 메모</h1>
     <button id="loginBtn"  class="btn">🔑 Google 로그인</button>
     <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
   </header>
@@ -28,20 +24,26 @@
         <div class="add-row" data-cat="perf" style="display:none">
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
-          <input class="date" type="date" />
-          <!-- 시작/끝 교시 -->
+          <input class="dateStart" type="date" /> ~
+          <input class="dateEnd" type="date" />
           <select class="periodFrom">
-            <option value="">시작교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
+            <option value="">교시 시작</option>
+            <option value="1">1교시</option>
+            <option value="2">2교시</option>
+            <option value="3">3교시</option>
+            <option value="4">4교시</option>
+            <option value="5">5교시</option>
+            <option value="6">6교시</option>
             <option value="7">7교시</option>
           </select>
           <select class="periodTo">
-            <option value="">끝교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
+            <option value="">교시 끝</option>
+            <option value="1">1교시</option>
+            <option value="2">2교시</option>
+            <option value="3">3교시</option>
+            <option value="4">4교시</option>
+            <option value="5">5교시</option>
+            <option value="6">6교시</option>
             <option value="7">7교시</option>
           </select>
           <button class="add btn">+ 추가</button>
@@ -57,21 +59,10 @@
         <div class="add-row" data-cat="exam" style="display:none">
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
-          <input class="date" type="date" />
-          <select class="periodFrom">
-            <option value="">시작교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
-            <option value="7">7교시</option>
-          </select>
-          <select class="periodTo">
-            <option value="">끝교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
-            <option value="7">7교시</option>
-          </select>
+          <input class="dateStart" type="date" /> ~
+          <input class="dateEnd" type="date" />
+          <select class="periodFrom"> ... </select>
+          <select class="periodTo"> ... </select>
           <button class="add btn">+ 추가</button>
         </div>
       </div>
@@ -85,40 +76,15 @@
         <div class="add-row" data-cat="home" style="display:none">
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
-          <input class="date" type="date" />
-          <select class="periodFrom">
-            <option value="">시작교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
-            <option value="7">7교시</option>
-          </select>
-          <select class="periodTo">
-            <option value="">끝교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
-            <option value="7">7교시</option>
-          </select>
+          <input class="dateStart" type="date" /> ~
+          <input class="dateEnd" type="date" />
+          <select class="periodFrom"> ... </select>
+          <select class="periodTo"> ... </select>
           <button class="add btn">+ 추가</button>
         </div>
       </div>
     </section>
   </main>
-
-  <!-- Firebase 기본 설정 -->
-  <script>
-    window.__FIREBASE_DEFAULTS__ = {
-      config: {
-        apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
-        authDomain: "my-memo-site.firebaseapp.com",
-        projectId: "my-memo-site",
-        storageBucket: "my-memo-site.appspot.com",
-        messagingSenderId: "196036694705",
-        appId: "1:196036694705:web:8988d12919420130464890"
-      }
-    };
-  </script>
 
   <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -127,334 +93,101 @@
 
   <!-- Firebase 초기화 -->
   <script>
-    if (!firebase.apps.length) {
-      firebase.initializeApp(window.__FIREBASE_DEFAULTS__.config);
-    }
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
+      authDomain: "my-memo-site.firebaseapp.com",
+      projectId: "my-memo-site",
+      storageBucket: "my-memo-site.appspot.com",
+      messagingSenderId: "196036694705",
+      appId: "1:196036694705:web:8988d12919420130464890"
+    };
+    firebase.initializeApp(firebaseConfig);
   </script>
 
-  <!-- ===== 앱 코드 ===== -->
+  <!-- 앱 코드 -->
   <script>
-    /* ---------- 상수/핸들 ---------- */
-    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";   // 네 UID
+    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
     const auth = firebase.auth();
     const db   = firebase.firestore();
+    const $  = (q, r=document) => r.querySelector(q);
+    const $$ = (q, r=document) => Array.from(r.querySelectorAll(q));
+    const el = { loginBtn: $("#loginBtn"), logoutBtn: $("#logoutBtn"), lists: { perf: $("#list_perf"), exam: $("#list_exam"), home: $("#list_home") } };
+    let currentUser=null, unsubscribers=[];
 
-    const $  = (q, root=document) => root.querySelector(q);
-    const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
-    const el = {
-      loginBtn:  $("#loginBtn"),
-      logoutBtn: $("#logoutBtn"),
-      lists:     { perf: $("#list_perf"), exam: $("#list_exam"), home: $("#list_home") }
-    };
+    function toggleSection(id){ const b=document.getElementById(id); if(!b)return; b.classList.toggle("open"); }
+    function setEditVisible(v){ $$(".add-row").forEach(r=>r.style.display=v?"":"none"); $$(".btn-ghost").forEach(b=>b.style.display=v?"":"none"); }
 
-    /* ---------- 권한/경로 ---------- */
-    const isOwner = () => auth.currentUser?.uid === OWNER_UID;
-    const col = (cat) =>
-      db.collection("users").doc(OWNER_UID)
-        .collection("tasks").doc(cat).collection("items");
+    const col = cat => { const uid=(currentUser?.uid)||OWNER_UID; return db.collection("users").doc(uid).collection("tasks").doc(cat).collection("items"); };
 
-    /* ---------- UI 토글/상태 ---------- */
-    function toggleSection(id){
-      const box = document.getElementById(id);
-      if(!box) return;
-      box.classList.toggle("open");
-      saveOpenState();
-    }
-    function setEditVisible(v){
-      $$(".add-row").forEach(r => r.style.display = v ? "" : "none");
-      $$(".btn-ghost").forEach(b => b.style.display = v ? "" : "none");
-    }
-
-    /* ---------- 임시저장(입력/펼침) ---------- */
-    const DRAFT_KEY = "memo:draft-v2"; // (교시 포함)
-    const OPEN_KEY  = "memo:open-v1";
-
-    function gatherDraft(){
-      const data = {};
-      $$(".add-row").forEach(row=>{
-        const cat = row.dataset.cat;
-        data[cat] = {
-          subj: $(".subj", row).value,
-          text: $(".text", row).value,
-          date: $(".date", row).value,
-          periodFrom: $(".periodFrom", row)?.value || "",
-          periodTo:   $(".periodTo", row)?.value   || ""
-        };
-      });
-      return data;
-    }
-    function loadDraft(){
-      try{
-        const raw = localStorage.getItem(DRAFT_KEY);
-        if(!raw) return;
-        const data = JSON.parse(raw);
-        $$(".add-row").forEach(row=>{
-          const d = data?.[row.dataset.cat];
-          if(!d) return;
-          $(".subj", row).value = d.subj || "";
-          $(".text", row).value = d.text || "";
-          $(".date", row).value = d.date || "";
-          const pf = $(".periodFrom", row); if (pf) pf.value = d.periodFrom || "";
-          const pt = $(".periodTo", row);   if (pt) pt.value = d.periodTo   || "";
-        });
-      }catch{}
-    }
-    function saveDraft(){ localStorage.setItem(DRAFT_KEY, JSON.stringify(gatherDraft())); }
-    function clearDraft(){ localStorage.removeItem(DRAFT_KEY); }
-    document.addEventListener("input",  e => { if(e.target.closest(".add-row")) saveDraft(); });
-    document.addEventListener("change", e => { if(e.target.closest(".add-row")) saveDraft(); });
-
-    function saveOpenState(){
-      const state = {
-        perf: $("#sec_perf")?.classList.contains("open"),
-        exam: $("#sec_exam")?.classList.contains("open"),
-        home: $("#sec_home")?.classList.contains("open"),
-      };
-      localStorage.setItem(OPEN_KEY, JSON.stringify(state));
-    }
-    function loadOpenState(){
-      try{
-        const s = JSON.parse(localStorage.getItem(OPEN_KEY) || "{}");
-        if(s.perf === false) $("#sec_perf")?.classList.remove("open");
-        if(s.exam === false) $("#sec_exam")?.classList.remove("open");
-        if(s.home === false) $("#sec_home")?.classList.remove("open");
-      }catch{}
-    }
-
-    /* ---------- 실시간 구독 ---------- */
-    let unsubscribers = [];
-    function startListeners(){
-      unsubscribers.forEach(u => u && u());
-      unsubscribers = [];
-
-      ["perf","exam","home"].forEach(cat => {
-        const u = col(cat).orderBy("due","asc").onSnapshot(
-          snap => {
-            const arr = [];
-            snap.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
-            renderList(cat, arr);
-          },
-          err => {
-            console.error("listener error:", err);
-            alert("목록을 불러오지 못했습니다: " + err.message);
-          }
-        );
-        unsubscribers.push(u);
-      });
-
-      loadDraft();
-      loadOpenState();
-    }
-
-    /* ---------- 날짜/요일/교시/D-day 포맷 ---------- */
     function formatMeta(it){
-      let meta = "";
-      let ddayHtml = "";
+      let meta="", ddayHtml="";
+      if(it.startDate){
+        const s=new Date(it.startDate); const e=it.endDate?new Date(it.endDate):s; const wd=["일","월","화","수","목","금","토"];
+        if(it.endDate&&it.endDate!==it.startDate){
+          meta=`${s.getFullYear()}/${s.getMonth()+1}/${s.getDate()} (${wd[s.getDay()]}) ~ ${e.getFullYear()}/${e.getMonth()+1}/${e.getDate()} (${wd[e.getDay()]})`;
+        }else meta=`${s.getFullYear()}/${s.getMonth()+1}/${s.getDate()} (${wd[s.getDay()]})`;
 
-      if (it.due) {
-        const d = new Date(it.due);
-        if (!isNaN(d)) {
-          const wd = ["일","월","화","수","목","금","토"][d.getDay()];
-          meta = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")} (${wd})`;
+        if(it.periodFrom){ meta += ` ${it.periodFrom}${it.periodTo?`~${it.periodTo}`:""}교시`; }
 
-          // D-day (세분화 색상)
-          const today = new Date(); today.setHours(0,0,0,0);
-          const dueDay = new Date(d); dueDay.setHours(0,0,0,0);
-          const diff = Math.floor((dueDay - today) / (1000*60*60*24));
-
-          if (diff === 0) {
-            ddayHtml = `<span class="dday red">D-day</span>`;
-          } else if (diff === 1) {
-            ddayHtml = `<span class="dday red">D-1</span>`;
-          } else if (diff >= 2 && diff <= 3) {
-            ddayHtml = `<span class="dday orange">D-${diff}</span>`;
-          } else if (diff >= 4 && diff <= 5) {
-            ddayHtml = `<span class="dday yellow">D-${diff}</span>`;
-          } else if (diff >= 6) {
-            ddayHtml = `<span class="dday green">D-${diff}</span>`;
-          } else {
-            ddayHtml = `<span class="dday past">D+${Math.abs(diff)}</span>`;
-          }
-        } else {
-          meta = it.due;
-        }
+        const today=new Date(); today.setHours(0,0,0,0); const dueDay=new Date(s); dueDay.setHours(0,0,0,0);
+        const diff=Math.floor((dueDay-today)/(1000*60*60*24));
+        if(diff===0) ddayHtml=`<span class="dday red">D-day</span>`;
+        else if(diff===1) ddayHtml=`<span class="dday red">D-1</span>`;
+        else if(diff>=2&&diff<=3) ddayHtml=`<span class="dday orange">D-${diff}</span>`;
+        else if(diff>=4&&diff<=5) ddayHtml=`<span class="dday yellow">D-${diff}</span>`;
+        else if(diff>=6) ddayHtml=`<span class="dday green">D-${diff}</span>`;
+        else ddayHtml=`<span class="dday past">D+${Math.abs(diff)}</span>`;
       }
-
-      const pf = it.periodFrom, pt = it.periodTo;
-      if (Number.isFinite(pf) && Number.isFinite(pt)) {
-        meta += ` ${pf===pt ? `${pf}교시` : `${pf}~${pt}교시`}`;
-      }
-
-      return (meta || ddayHtml) ? `📅 ${meta} ${ddayHtml}`.trim() : "";
+      return (meta||ddayHtml)?`📅 ${meta} ${ddayHtml}`:"";
     }
 
-    /* ---------- 목록 렌더링 ---------- */
     function renderList(cat, items){
-      const ul = el.lists[cat];
-      ul.innerHTML = "";
+      const ul=el.lists[cat]; ul.innerHTML="";
       for(const it of items){
-        const li = document.createElement("li");
-        li.className = "task" + (it.done ? " done" : "");
-        li.innerHTML = `
+        const li=document.createElement("li"); li.className="task"+(it.done?" done":"");
+        li.innerHTML=`
           <label class="chk-wrap">
-            <input type="checkbox" ${it.done?"checked":""}
-                   data-act="toggle" data-cat="${cat}" data-id="${it.id}">
+            <input type="checkbox" ${it.done?"checked":""} data-act="toggle" data-cat="${cat}" data-id="${it.id}">
             <span></span>
           </label>
           <div class="task__main">
             <div class="task__line">
-              <b>${esc(it.subj||"")}</b><span class="sep">–</span>
+              <b>${esc(it.subj||"")}</b><br>
               <span>${esc(it.text||"")}</span>
             </div>
             <div class="task__meta">${formatMeta(it)}</div>
           </div>
-          <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}"
-                  style="display:${isOwner()?'':'none'}">삭제</button>
-        `;
+          <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}" style="display:${currentUser?'':'none'}">삭제</button>`;
         ul.appendChild(li);
       }
-
-      // 체크박스(change)
-      ul.onchange = async (e) => {
-        const t = e.target;
-        if (!(t instanceof HTMLInputElement) || t.type !== "checkbox") return;
-        if (t.getAttribute("data-act") !== "toggle") return;
-        const cat2 = t.getAttribute("data-cat");
-        const id   = t.getAttribute("data-id");
-        if (!isOwner()) {
-          alert("완료 체크는 소유자만 가능합니다.");
-          t.checked = !t.checked;
-          return;
-        }
-        try {
-          await col(cat2).doc(id).update({ done: t.checked });
-        } catch (e) {
-          console.error(e);
-          alert("변경 실패: " + e.message);
-          t.checked = !t.checked;
-        }
-      };
-
-      // 삭제(click)
-      ul.onclick = async (e) => {
-        const btn = e.target.closest('[data-act="del"]');
-        if (!btn) return;
-        if (!isOwner()) {
-          alert("삭제는 소유자만 가능합니다.");
-          return;
-        }
-        const cat2 = btn.getAttribute("data-cat");
-        const id   = btn.getAttribute("data-id");
-        try {
-          await col(cat2).doc(id).delete();
-        } catch (e) {
-          console.error(e);
-          alert("삭제 실패: " + e.message);
-        }
+      ul.onclick=async e=>{const t=e.target,act=t.getAttribute("data-act"); if(!act)return;
+        if(!currentUser){alert("로그인 후 가능합니다."); if(act==="toggle")t.checked=!t.checked; return;}
+        const cat2=t.getAttribute("data-cat"), id=t.getAttribute("data-id");
+        try{ if(act==="toggle") await col(cat2).doc(id).update({done:t.checked});
+             else if(act==="del") await col(cat2).doc(id).delete(); }
+        catch(e){alert("변경 실패:"+e.message); console.error(e);}
       };
     }
 
-    /* ---------- +추가 (전역 위임) ---------- */
     function bindAddRows(){
-      if (bindAddRows._installed) return;
-      bindAddRows._installed = true;
-
-      document.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.add-row .add');
-        if (!btn) return;
-
-        const row = btn.closest('.add-row');
-        const cat = row?.dataset?.cat;
-        if (!cat) return;
-
-        if(!isOwner()){
-          alert("추가는 소유자만 가능합니다.");
-          return;
-        }
-
-        const subj = $(".subj", row).value.trim();
-        const text = $(".text", row).value.trim();
-        const date = $(".date", row).value || "";
-        const pf = parseInt($(".periodFrom", row)?.value || "", 10);
-        const pt = parseInt($(".periodTo", row)?.value   || "", 10);
-
-        const pfOk = Number.isFinite(pf), ptOk = Number.isFinite(pt);
-        if ((pfOk && !ptOk) || (!pfOk && ptOk)) {
-          alert("교시는 시작/끝을 둘 다 선택하거나 둘 다 비워두세요.");
-          return;
-        }
-        if (pfOk && ptOk && pf > pt) {
-          alert("시작 교시가 끝 교시보다 클 수 없어요.");
-          return;
-        }
-        if(!subj || !text){
-          alert("과목/내용을 입력해 주세요.");
-          return;
-        }
-
-        try{
-          await col(cat).add({
-            subj, text, due: date || "",
-            periodFrom: pfOk ? pf : null,
-            periodTo:   ptOk ? pt : null,
-            done: false,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          afterAdded(row);
-          console.log('[ADD ok]');
-        }catch(e){
-          console.error("ADD ERR:", e.code, e.message, e);
-          alert(`추가 실패: ${e.code}\n${e.message}`);
-        }
+      $$(".add-row").forEach(row=>{
+        $(".add",row).onclick=async ()=>{
+          if(!currentUser){alert("로그인 후 추가할 수 있어요.");return;}
+          const subj=$(".subj",row).value.trim(), text=$(".text",row).value.trim();
+          const start=$(".dateStart",row).value||"", end=$(".dateEnd",row).value||start;
+          const pf=$(".periodFrom",row).value, pt=$(".periodTo",row).value;
+          if(!subj||!text){alert("과목/내용 입력");return;}
+          await col(row.dataset.cat).add({subj,text,startDate:start,endDate:end,periodFrom:pf,periodTo:pt,done:false,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        };
       });
     }
 
-    /* ---------- 도우미 ---------- */
-    function afterAdded(row){
-      $(".subj", row).value = "";
-      $(".text", row).value = "";
-      $(".date", row).value = "";
-      const pf = $(".periodFrom", row); if (pf) pf.value = "";
-      const pt = $(".periodTo", row);   if (pt) pt.value = "";
-      saveDraft();
-    }
-    function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
-
-    /* ---------- 로그인: 팝업 전용 ---------- */
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    auth.useDeviceLanguage?.();
-
-    async function ensureLocal() {
-      try { await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }
-      catch (e) { console.error('setPersistence 실패:', e); }
-    }
-
-    el.loginBtn.addEventListener("click", async () => {
-      saveDraft(); saveOpenState();
-      await ensureLocal();
-      try {
-        const r = await auth.signInWithPopup(provider);
-        console.log('✅ 팝업 로그인 성공:', r.user?.uid);
-      } catch (e) {
-        console.error('로그인 오류:', e);
-        alert(`로그인 실패: ${e.code}\n${e.message}`);
-      }
-    });
-
-    el.logoutBtn.addEventListener("click", async () => {
-      try { await auth.signOut(); }
-      catch(e){ console.error('로그아웃 오류:', e); }
-    });
-
-    /* ---------- 세션 변화 ---------- */
-    auth.onAuthStateChanged(user => {
-      console.log('[onAuthStateChanged]', user?.uid || null);
-      el.loginBtn.style.display  = user ? "none" : "";
-      el.logoutBtn.style.display = user ? "" : "none";
-      setEditVisible(isOwner());
-      bindAddRows();
-      startListeners();
+    const esc=s=>(s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    const provider=new firebase.auth.GoogleAuthProvider();
+    el.loginBtn.onclick=()=>auth.signInWithPopup(provider).catch(e=>alert("로그인 실패:"+e.message));
+    el.logoutBtn.onclick=()=>auth.signOut();
+    auth.onAuthStateChanged(u=>{currentUser=u; el.loginBtn.style.display=u?"none":""; el.logoutBtn.style.display=u?"":"none"; setEditVisible(!!u);
+      ["perf","exam","home"].forEach(cat=>col(cat).orderBy("startDate","asc").onSnapshot(s=>{const arr=[];s.forEach(d=>arr.push({id:d.id,...d.data()}));renderList(cat,arr);})); bindAddRows();
     });
   </script>
 </body>
