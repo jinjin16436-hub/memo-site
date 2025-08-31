@@ -3,26 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>숙제 & 수행평가 메모</title>
+  <title>부광고 1학년 1반 숙제</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!-- 상단 바 -->
   <header class="admin-bar" style="display:flex;gap:12px;align-items:center;justify-content:flex-start;">
-    <h1 style="margin-right:auto">📒 숙제 & 수행평가 메모</h1>
+    <h1 style="margin-right:auto">📒 숙제 & 수행평가</h1>
     <button id="loginBtn"  class="btn">🔑 Google 로그인</button>
     <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
   </header>
 
-  <!-- 섹션들 -->
-  <main class="container" style="max-width:980px;margin:24px auto;">
+  <!-- 본문 -->
+  <main class="container">
     <!-- 수행평가 -->
     <section>
       <button class="section-head" onclick="toggleSection('sec_perf')">📄 수행평가 ▾</button>
       <div id="sec_perf" class="section-body open">
         <ul id="list_perf" class="task-list"></ul>
-
-        <!-- 추가 폼 (로그인 시에만 보임) -->
         <div class="add-row" data-cat="perf" style="display:none">
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
@@ -37,7 +35,6 @@
       <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
       <div id="sec_exam" class="section-body open">
         <ul id="list_exam" class="task-list"></ul>
-
         <div class="add-row" data-cat="exam" style="display:none">
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
@@ -52,7 +49,6 @@
       <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
       <div id="sec_home" class="section-body open">
         <ul id="list_home" class="task-list"></ul>
-
         <div class="add-row" data-cat="home" style="display:none">
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
@@ -63,13 +59,14 @@
     </section>
   </main>
 
-  <!-- ========== Firebase SDK (compat 빌드) ========== -->
+  <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- ========== Firebase 초기화 ========== -->
+  <!-- Firebase 초기화 -->
   <script>
+    // 🔧 여기를 네 콘솔의 값으로 바꿔서 넣어줘!
     const firebaseConfig = {
       apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
       authDomain: "my-memo-site.firebaseapp.com",
@@ -81,9 +78,9 @@
     firebase.initializeApp(firebaseConfig);
   </script>
 
-  <!-- ========== 앱 코드 ========== -->
+  <!-- 앱 코드 -->
   <script>
-    // 👤 로그아웃 상태에서 "읽어오기"에 사용할 주인 UID
+    // 👤 로그아웃 상태에서 읽기용으로 사용할 소유자 UID (네 UID)
     const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
 
     // Firebase handles
@@ -93,7 +90,6 @@
     // DOM helpers
     const $  = (q, root=document) => root.querySelector(q);
     const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
-
     const el = {
       loginBtn:  $("#loginBtn"),
       logoutBtn: $("#logoutBtn"),
@@ -103,35 +99,111 @@
     let currentUser = null;
     let unsubscribers = [];
 
-    // 섹션 토글
+    // 섹션 토글 + 상태 저장
     function toggleSection(id){
       const box = document.getElementById(id);
       if(!box) return;
       box.classList.toggle("open");
+      saveOpenState();
     }
 
-    // 편집 UI(추가/삭제) 보이기 제어
     function setEditVisible(v){
       $$(".add-row").forEach(r => r.style.display = v ? "" : "none");
       $$(".btn-ghost").forEach(b => b.style.display = v ? "" : "none");
     }
 
-    // 로그인/로그아웃
-    el.loginBtn.addEventListener("click", () =>
-      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-    );
+    /* ---------------- 임시저장: 입력 폼 ---------------- */
+    const DRAFT_KEY = "memo:draft-v1";
+    const OPEN_KEY  = "memo:open-v1";
+
+    function gatherDraft(){
+      const data = {};
+      $$(".add-row").forEach(row=>{
+        const cat  = row.dataset.cat;
+        data[cat] = {
+          subj: $(".subj", row).value,
+          text: $(".text", row).value,
+          date: $(".date", row).value
+        };
+      });
+      return data;
+    }
+    function loadDraft(){
+      try{
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if(!raw) return;
+        const data = JSON.parse(raw);
+        $$(".add-row").forEach(row=>{
+          const d = data?.[row.dataset.cat];
+          if(!d) return;
+          $(".subj", row).value = d.subj || "";
+          $(".text", row).value = d.text || "";
+          $(".date", row).value = d.date || "";
+        });
+      }catch{}
+    }
+    function saveDraft(){ localStorage.setItem(DRAFT_KEY, JSON.stringify(gatherDraft())); }
+    function clearDraft(){ localStorage.removeItem(DRAFT_KEY); }
+    document.addEventListener("input", e=>{
+      if(e.target.closest(".add-row")) saveDraft();
+    });
+    function afterAdded(row){
+      $(".subj", row).value = "";
+      $(".text", row).value = "";
+      $(".date", row).value = "";
+      saveDraft();
+    }
+
+    /* ---------------- 임시저장: 섹션 펼침 상태 ---------------- */
+    function saveOpenState(){
+      const state = {
+        perf: $("#sec_perf")?.classList.contains("open"),
+        exam: $("#sec_exam")?.classList.contains("open"),
+        home: $("#sec_home")?.classList.contains("open"),
+      };
+      localStorage.setItem(OPEN_KEY, JSON.stringify(state));
+    }
+    function loadOpenState(){
+      try{
+        const s = JSON.parse(localStorage.getItem(OPEN_KEY) || "{}");
+        if(s.perf === false) $("#sec_perf")?.classList.remove("open");
+        if(s.exam === false) $("#sec_exam")?.classList.remove("open");
+        if(s.home === false) $("#sec_home")?.classList.remove("open");
+      }catch{}
+    }
+
+    // 로그인/로그아웃 (Redirect 방식)
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    el.loginBtn.addEventListener("click", async () => {
+      // 리다이렉트 전 임시저장
+      saveDraft();
+      saveOpenState();
+      try {
+        await auth.signInWithRedirect(provider);
+      } catch (e) {
+        alert(`로그인 실패: ${e.message} (${e.code})`);
+        console.error(e);
+      }
+    });
     el.logoutBtn.addEventListener("click", () => auth.signOut());
 
+    // 리다이렉트 결과(에러 잡기용)
+    auth.getRedirectResult().catch(e => {
+      console.error("redirect error:", e);
+    });
+
+    // 로그인 상태 변경
     auth.onAuthStateChanged(user => {
       currentUser = user;
       el.loginBtn.style.display  = user ? "none" : "";
       el.logoutBtn.style.display = user ? "" : "none";
       setEditVisible(!!user);
       bindAddRows();
-      startListeners();  // 로그인 여부와 상관없이 목록 구독
+      startListeners();
     });
 
-    // Firestore 경로 유틸 (로그아웃이면 OWNER_UID 기준으로 읽기)
+    // Firestore 경로 유틸 (로그아웃이면 OWNER_UID 기준)
     const col = (cat) => {
       const uid = (currentUser && currentUser.uid) ? currentUser.uid : OWNER_UID;
       return db.collection("users").doc(uid)
@@ -140,7 +212,6 @@
 
     // 실시간 구독
     function startListeners(){
-      // 기존 리스너 해제
       unsubscribers.forEach(u => u && u());
       unsubscribers = [];
 
@@ -158,9 +229,13 @@
         );
         unsubscribers.push(u);
       });
+
+      // 최초 로드에서 임시저장 복원
+      loadDraft();
+      loadOpenState();
     }
 
-    // 목록 렌더링
+    // 렌더링
     function renderList(cat, items){
       const ul = el.lists[cat];
       ul.innerHTML = "";
@@ -186,7 +261,7 @@
         ul.appendChild(li);
       }
 
-      // 항목 클릭(체크/삭제)
+      // 체크/삭제 동작
       ul.onclick = async (e)=>{
         const t = e.target;
         const act = t.getAttribute("data-act");
@@ -213,7 +288,7 @@
       };
     }
 
-    // 추가 폼 바인딩
+    // 추가 폼
     function bindAddRows(){
       $$(".add-row").forEach(row=>{
         const btn = $(".add", row);
@@ -230,9 +305,7 @@
               subj, text, due: date || "", done: false,
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            $(".subj", row).value = "";
-            $(".text", row).value = "";
-            $(".date", row).value = "";
+            afterAdded(row); // 입력 값 클리어 + 임시저장 갱신
           }catch(e){
             alert("저장 실패: " + e.message);
             console.error(e);
@@ -242,7 +315,7 @@
     }
 
     // HTML escape
-    function esc(s){ return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+    function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
   </script>
 </body>
 </html>
