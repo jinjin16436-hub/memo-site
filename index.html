@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>부광고 1-1 숙제 & 수행평가</title>
+
+  <!-- 파비콘(404 방지) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='48'>📝</text></svg>">
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -66,7 +70,7 @@
         apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
         authDomain: "my-memo-site.firebaseapp.com",
         projectId: "my-memo-site",
-        storageBucket: "my-memo-site.appspot.com",   // ⚠️ appspot.com
+        storageBucket: "my-memo-site.appspot.com",   // 반드시 appspot.com
         messagingSenderId: "196036694705",
         appId: "1:196036694705:web:8988d12919420130464890"
       }
@@ -85,16 +89,12 @@
     }
   </script>
 
-  <!-- 앱 코드 -->
+  <!-- ===== 공용 유틸/상태 ===== -->
   <script>
-    // 👤 로그아웃 상태에서 읽기에 사용할 소유자 UID
-    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
-
-    // Firebase handles
+    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";   // 로그아웃 상태에서 읽기용
     const auth = firebase.auth();
     const db   = firebase.firestore();
 
-    // DOM helpers
     const $  = (q, root=document) => root.querySelector(q);
     const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
     const el = {
@@ -106,7 +106,6 @@
     let currentUser = null;
     let unsubscribers = [];
 
-    // 섹션 토글 + 상태 저장
     function toggleSection(id){
       const box = document.getElementById(id);
       if(!box) return;
@@ -114,13 +113,11 @@
       saveOpenState();
     }
 
-    // 편집 UI(추가/삭제) 표시
     function setEditVisible(v){
       $$(".add-row").forEach(r => r.style.display = v ? "" : "none");
       $$(".btn-ghost").forEach(b => b.style.display = v ? "" : "none");
     }
 
-    /* ---------------- 임시저장: 입력 폼 ---------------- */
     const DRAFT_KEY = "memo:draft-v1";
     const OPEN_KEY  = "memo:open-v1";
 
@@ -162,7 +159,6 @@
       saveDraft();
     }
 
-    /* ---------------- 임시저장: 섹션 펼침 상태 ---------------- */
     function saveOpenState(){
       const state = {
         perf: $("#sec_perf")?.classList.contains("open"),
@@ -180,14 +176,12 @@
       }catch{}
     }
 
-    // Firestore 경로 유틸 (로그아웃이면 OWNER_UID 기준으로 읽기)
     const col = (cat) => {
       const uid = (currentUser && currentUser.uid) ? currentUser.uid : OWNER_UID;
       return db.collection("users").doc(uid)
                .collection("tasks").doc(cat).collection("items");
     };
 
-    // 실시간 구독
     function startListeners(){
       unsubscribers.forEach(u => u && u());
       unsubscribers = [];
@@ -207,12 +201,10 @@
         unsubscribers.push(u);
       });
 
-      // 최초 로드 시 임시저장 복원
       loadDraft();
       loadOpenState();
     }
 
-    // 목록 렌더링
     function renderList(cat, items){
       const ul = el.lists[cat];
       ul.innerHTML = "";
@@ -238,7 +230,6 @@
         ul.appendChild(li);
       }
 
-      // 체크/삭제 동작
       ul.onclick = async (e)=>{
         const t = e.target;
         const act = t.getAttribute("data-act");
@@ -265,7 +256,6 @@
       };
     }
 
-    // 추가 폼
     function bindAddRows(){
       $$(".add-row").forEach(row=>{
         const btn = $(".add", row);
@@ -282,7 +272,7 @@
               subj, text, due: date || "", done: false,
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            afterAdded(row); // 입력값 클리어 + 임시저장 갱신
+            afterAdded(row);
           }catch(e){
             alert("저장 실패: " + e.message);
             console.error(e);
@@ -291,92 +281,74 @@
       });
     }
 
-    // HTML escape
     function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+  </script>
 
-    <script>
-  /* ====== 로그인 (리다이렉트 기본 + 팝업 백업) ====== */
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
+  <!-- ===== 로그인: 리다이렉트 기본 + 팝업 백업 ===== -->
+  <script>
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
 
-  async function ensureLocalPersistence() {
-    try {
-      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    } catch (e) {
-      console.error('setPersistence 실패:', e);
+    async function ensureLocalPersistence() {
+      try { await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }
+      catch (e) { console.error('setPersistence 실패:', e); }
     }
-  }
 
-  // 공통 오류 핸들러 (화면에 보이도록)
-  function showAuthError(e, ctx='') {
-    const code = e?.code || 'unknown';
-    const msg  = e?.message || String(e);
-    console.error(`[AUTH][${ctx}]`, code, msg, e);
-    alert(`로그인 오류(${ctx}): ${code}\n${msg}`);
-  }
+    function showAuthError(e, ctx=''){
+      alert(`로그인 오류(${ctx}): ${e?.code || 'unknown'}\n${e?.message || e}`);
+      console.error(`[AUTH][${ctx}]`, e);
+    }
 
-  // 로그인 버튼: 리다이렉트 시도 → 차단/실패 시 팝업으로 자동 전환
-  el.loginBtn.addEventListener("click", async () => {
-    saveDraft();
-    saveOpenState();
-    await ensureLocalPersistence();
-
-    try {
-      sessionStorage.setItem('loginFlow', 'redirect');
-      await auth.signInWithRedirect(provider);
-    } catch (e) {
-      // 환경상 리다이렉트 불가 → 팝업으로 백업
+    el.loginBtn.addEventListener("click", async () => {
+      saveDraft(); saveOpenState();
+      await ensureLocalPersistence();
       try {
-        sessionStorage.setItem('loginFlow', 'popup');
-        const result = await auth.signInWithPopup(provider);
-        console.log('✅ 팝업 로그인 성공:', result.user?.uid);
-      } catch (e2) {
-        showAuthError(e2, 'popup(fallback)');
-      }
-    }
-  });
-
-  // 로그아웃
-  el.logoutBtn.addEventListener("click", () => auth.signOut());
-
-  // 리다이렉트 결과 처리 (차단되면 팝업으로 재시도)
-  auth.getRedirectResult()
-    .then(async (result) => {
-      if (result.user) {
-        console.log('✅ 리다이렉트 로그인 성공:', result.user.uid);
-      }
-    })
-    .catch(async (e) => {
-      // 리다이렉트가 환경적으로 막힌 경우들
-      const nonRedirectable =
-        e.code === 'auth/operation-not-supported-in-this-environment' ||
-        e.code === 'auth/cookie-not-supported' ||
-        e.code === 'auth/network-request-failed';
-
-      if (nonRedirectable) {
+        sessionStorage.setItem('loginFlow', 'redirect');
+        await auth.signInWithRedirect(provider);
+      } catch (e) {
         try {
-          await ensureLocalPersistence();
-          sessionStorage.setItem('loginFlow', 'popup-after-redirect-error');
-          const res = await auth.signInWithPopup(provider);
-          console.log('✅ 리다이렉트 실패 → 팝업으로 로그인 성공:', res.user?.uid);
-          return;
+          sessionStorage.setItem('loginFlow', 'popup');
+          const r = await auth.signInWithPopup(provider);
+          console.log('✅ 팝업 로그인 성공:', r.user?.uid);
         } catch (e2) {
-          showAuthError(e2, 'popup(afterRedirectError)');
+          showAuthError(e2, 'popup(fallback)');
         }
       }
-
-      // 그 외 에러는 그대로 노출
-      showAuthError(e, 'redirectResult');
     });
 
-  // 로그인 상태 변화
-  auth.onAuthStateChanged(user => {
-    currentUser = user;
-    el.loginBtn.style.display  = user ? "none" : "";
-    el.logoutBtn.style.display = user ? "" : "none";
-    setEditVisible(!!user);
-    bindAddRows();
-    startListeners();
-  });
-</script>
+    el.logoutBtn.addEventListener("click", () => auth.signOut());
 
+    auth.getRedirectResult()
+      .then((result) => {
+        if (result.user) console.log('✅ 리다이렉트 로그인 성공:', result.user.uid);
+      })
+      .catch(async (e) => {
+        const nonRedirectable =
+          e.code === 'auth/operation-not-supported-in-this-environment' ||
+          e.code === 'auth/cookie-not-supported' ||
+          e.code === 'auth/network-request-failed';
+        if (nonRedirectable) {
+          try {
+            await ensureLocalPersistence();
+            sessionStorage.setItem('loginFlow', 'popup-after-redirect-error');
+            const r = await auth.signInWithPopup(provider);
+            console.log('✅ 리다이렉트 실패 → 팝업 로그인 성공:', r.user?.uid);
+            return;
+          } catch (e2) {
+            showAuthError(e2, 'popup(afterRedirectError)');
+          }
+        }
+        showAuthError(e, 'redirectResult');
+      });
+
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      el.loginBtn.style.display  = user ? "none" : "";
+      el.logoutBtn.style.display = user ? "" : "none";
+      setEditVisible(!!user);
+      bindAddRows();
+      startListeners();
+    });
+  </script>
+</body>
+</html>
