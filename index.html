@@ -3,14 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>숙제 & 수행평가 메모</title>
+  <title>부광고 1-1 수행펴가 & 숙제</title>
+
+  <!-- 파비콘(404 방지) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='48'>📝</text></svg>">
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!-- 상단 바 -->
   <header class="admin-bar" style="display:flex;gap:12px;align-items:center;justify-content:flex-start;">
-    <h1 style="margin-right:auto">📒 숙제 & 수행평가 메모</h1>
+    <h1 style="margin-right:auto">📒 숙제 & 수행평가 안내</h1>
     <button id="loginBtn"  class="btn">🔑 Google 로그인</button>
     <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
   </header>
@@ -26,6 +29,21 @@
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
           <input class="date" type="date" />
+          <!-- 시작/끝 교시 선택 -->
+          <select class="periodFrom">
+            <option value="">시작교시</option>
+            <option value="1">1교시</option><option value="2">2교시</option>
+            <option value="3">3교시</option><option value="4">4교시</option>
+            <option value="5">5교시</option><option value="6">6교시</option>
+            <option value="7">7교시</option>
+          </select>
+          <select class="periodTo">
+            <option value="">끝교시</option>
+            <option value="1">1교시</option><option value="2">2교시</option>
+            <option value="3">3교시</option><option value="4">4교시</option>
+            <option value="5">5교시</option><option value="6">6교시</option>
+            <option value="7">7교시</option>
+          </select>
           <button class="add btn">+ 추가</button>
         </div>
       </div>
@@ -40,6 +58,20 @@
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
           <input class="date" type="date" />
+          <select class="periodFrom">
+            <option value="">시작교시</option>
+            <option value="1">1교시</option><option value="2">2교시</option>
+            <option value="3">3교시</option><option value="4">4교시</option>
+            <option value="5">5교시</option><option value="6">6교시</option>
+            <option value="7">7교시</option>
+          </select>
+          <select class="periodTo">
+            <option value="">끝교시</option>
+            <option value="1">1교시</option><option value="2">2교시</option>
+            <option value="3">3교시</option><option value="4">4교시</option>
+            <option value="5">5교시</option><option value="6">6교시</option>
+            <option value="7">7교시</option>
+          </select>
           <button class="add btn">+ 추가</button>
         </div>
       </div>
@@ -54,13 +86,27 @@
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
           <input class="date" type="date" />
+          <select class="periodFrom">
+            <option value="">시작교시</option>
+            <option value="1">1교시</option><option value="2">2교시</option>
+            <option value="3">3교시</option><option value="4">4교시</option>
+            <option value="5">5교시</option><option value="6">6교시</option>
+            <option value="7">7교시</option>
+          </select>
+          <select class="periodTo">
+            <option value="">끝교시</option>
+            <option value="1">1교시</option><option value="2">2교시</option>
+            <option value="3">3교시</option><option value="4">4교시</option>
+            <option value="5">5교시</option><option value="6">6교시</option>
+            <option value="7">7교시</option>
+          </select>
           <button class="add btn">+ 추가</button>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Firebase 기본 설정 -->
+  <!-- Firebase 기본 설정을 SDK에 주입 -->
   <script>
     window.__FIREBASE_DEFAULTS__ = {
       config: {
@@ -74,7 +120,7 @@
     };
   </script>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -88,7 +134,8 @@
 
   <!-- ===== 앱 코드 ===== -->
   <script>
-    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
+    /* ---------- 상수/핸들 ---------- */
+    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";   // 네 UID (항상 이 경로만 사용)
     const auth = firebase.auth();
     const db   = firebase.firestore();
 
@@ -100,39 +147,38 @@
       lists:     { perf: $("#list_perf"), exam: $("#list_exam"), home: $("#list_home") }
     };
 
-    // 소유자 판별
+    /* ---------- 권한/경로 ---------- */
     const isOwner = () => auth.currentUser?.uid === OWNER_UID;
-
-    // 항상 OWNER_UID 경로만 사용
     const col = (cat) =>
       db.collection("users").doc(OWNER_UID)
         .collection("tasks").doc(cat).collection("items");
 
-    let unsubscribers = [];
-
+    /* ---------- UI 토글/상태 ---------- */
     function toggleSection(id){
       const box = document.getElementById(id);
       if(!box) return;
       box.classList.toggle("open");
       saveOpenState();
     }
-
     function setEditVisible(v){
       $$(".add-row").forEach(r => r.style.display = v ? "" : "none");
       $$(".btn-ghost").forEach(b => b.style.display = v ? "" : "none");
     }
 
-    /* 임시저장 */
-    const DRAFT_KEY = "memo:draft-v1";
+    /* ---------- 임시저장(입력/펼침) ---------- */
+    const DRAFT_KEY = "memo:draft-v2"; // (v2: 교시 추가 버전)
     const OPEN_KEY  = "memo:open-v1";
+
     function gatherDraft(){
       const data = {};
       $$(".add-row").forEach(row=>{
-        const cat  = row.dataset.cat;
+        const cat = row.dataset.cat;
         data[cat] = {
           subj: $(".subj", row).value,
           text: $(".text", row).value,
-          date: $(".date", row).value
+          date: $(".date", row).value,
+          periodFrom: $(".periodFrom", row)?.value || "",
+          periodTo:   $(".periodTo", row)?.value   || ""
         };
       });
       return data;
@@ -148,20 +194,16 @@
           $(".subj", row).value = d.subj || "";
           $(".text", row).value = d.text || "";
           $(".date", row).value = d.date || "";
+          const pf = $(".periodFrom", row); if (pf) pf.value = d.periodFrom || "";
+          const pt = $(".periodTo", row);   if (pt) pt.value = d.periodTo   || "";
         });
       }catch{}
     }
     function saveDraft(){ localStorage.setItem(DRAFT_KEY, JSON.stringify(gatherDraft())); }
     function clearDraft(){ localStorage.removeItem(DRAFT_KEY); }
-    document.addEventListener("input", e=>{
-      if(e.target.closest(".add-row")) saveDraft();
-    });
-    function afterAdded(row){
-      $(".subj", row).value = "";
-      $(".text", row).value = "";
-      $(".date", row).value = "";
-      saveDraft();
-    }
+    // input/change 모두 감지(셀렉트 포함)
+    document.addEventListener("input",  e => { if(e.target.closest(".add-row")) saveDraft(); });
+    document.addEventListener("change", e => { if(e.target.closest(".add-row")) saveDraft(); });
 
     function saveOpenState(){
       const state = {
@@ -180,6 +222,8 @@
       }catch{}
     }
 
+    /* ---------- 실시간 구독 ---------- */
+    let unsubscribers = [];
     function startListeners(){
       unsubscribers.forEach(u => u && u());
       unsubscribers = [];
@@ -203,7 +247,26 @@
       loadOpenState();
     }
 
-    /* 목록 렌더링 */
+    /* ---------- 날짜/요일/교시 포맷 ---------- */
+    function formatMeta(it){
+      let meta = "";
+      if (it.due) {
+        const d = new Date(it.due);
+        if (!isNaN(d)) {
+          const wd = ["일","월","화","수","목","금","토"][d.getDay()];
+          meta = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")} (${wd})`;
+        } else {
+          meta = it.due;
+        }
+      }
+      const pf = it.periodFrom, pt = it.periodTo;
+      if (Number.isFinite(pf) && Number.isFinite(pt)) {
+        meta += ` ${pf===pt ? `${pf}교시` : `${pf}~${pt}교시`}`;
+      }
+      return meta ? `📅 ${meta}` : "";
+    }
+
+    /* ---------- 목록 렌더링 ---------- */
     function renderList(cat, items){
       const ul = el.lists[cat];
       ul.innerHTML = "";
@@ -221,7 +284,7 @@
               <b>${esc(it.subj||"")}</b><span class="sep">–</span>
               <span>${esc(it.text||"")}</span>
             </div>
-            <div class="task__meta">${it.due ? `📅 ${it.due}` : ""}</div>
+            <div class="task__meta">${formatMeta(it)}</div>
           </div>
           <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}"
                   style="display:${isOwner()?'':'none'}">삭제</button>
@@ -229,12 +292,11 @@
         ul.appendChild(li);
       }
 
-      // 체크박스 change 이벤트
+      // 체크박스(change)
       ul.onchange = async (e) => {
         const t = e.target;
         if (!(t instanceof HTMLInputElement) || t.type !== "checkbox") return;
         if (t.getAttribute("data-act") !== "toggle") return;
-
         const cat2 = t.getAttribute("data-cat");
         const id   = t.getAttribute("data-id");
         if (!isOwner()) {
@@ -251,7 +313,7 @@
         }
       };
 
-      // 삭제 버튼
+      // 삭제(click)
       ul.onclick = async (e) => {
         const btn = e.target.closest('[data-act="del"]');
         if (!btn) return;
@@ -270,7 +332,7 @@
       };
     }
 
-    /* + 추가 버튼 위임 */
+    /* ---------- +추가 (전역 위임) ---------- */
     function bindAddRows(){
       if (bindAddRows._installed) return;
       bindAddRows._installed = true;
@@ -291,6 +353,21 @@
         const subj = $(".subj", row).value.trim();
         const text = $(".text", row).value.trim();
         const date = $(".date", row).value || "";
+
+        const pf = parseInt($(".periodFrom", row)?.value || "", 10);
+        const pt = parseInt($(".periodTo", row)?.value   || "", 10);
+
+        // 시작/끝 둘 중 하나만 선택 방지
+        const pfOk = Number.isFinite(pf), ptOk = Number.isFinite(pt);
+        if ((pfOk && !ptOk) || (!pfOk && ptOk)) {
+          alert("교시는 시작/끝을 둘 다 선택하거나 둘 다 비워두세요.");
+          return;
+        }
+        if (pfOk && ptOk && pf > pt) {
+          alert("시작 교시가 끝 교시보다 클 수 없어요.");
+          return;
+        }
+
         if(!subj || !text){
           alert("과목/내용을 입력해 주세요.");
           return;
@@ -298,7 +375,10 @@
 
         try{
           await col(cat).add({
-            subj, text, due: date || "", done: false,
+            subj, text, due: date || "",
+            periodFrom: pfOk ? pf : null,
+            periodTo:   ptOk ? pt : null,
+            done: false,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
           afterAdded(row);
@@ -310,9 +390,18 @@
       });
     }
 
+    /* ---------- 도우미 ---------- */
+    function afterAdded(row){
+      $(".subj", row).value = "";
+      $(".text", row).value = "";
+      $(".date", row).value = "";
+      const pf = $(".periodFrom", row); if (pf) pf.value = "";
+      const pt = $(".periodTo", row);   if (pt) pt.value = "";
+      saveDraft();
+    }
     function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
 
-    /* ===== 팝업 로그인 전용 ===== */
+    /* ---------- 로그인: 팝업 전용 ---------- */
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     auth.useDeviceLanguage?.();
@@ -339,6 +428,7 @@
       catch(e){ console.error('로그아웃 오류:', e); }
     });
 
+    /* ---------- 세션 변화 ---------- */
     auth.onAuthStateChanged(user => {
       console.log('[onAuthStateChanged]', user?.uid || null);
       el.loginBtn.style.display  = user ? "none" : "";
