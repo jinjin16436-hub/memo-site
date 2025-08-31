@@ -271,36 +271,50 @@
       };
     }
 
-    /* + 추가 버튼 바인딩 */
-    function bindAddRows(){
-      $$(".add-row").forEach(row=>{
-        const btn = $(".add", row);
-        const cat = row.dataset.cat;
-        btn.onclick = async ()=>{
-          if(!isLoggedIn()){
-            alert("로그인 후 추가할 수 있어요.");
-            return;
-          }
-          const subj = $(".subj", row).value.trim();
-          const text = $(".text", row).value.trim();
-          const date = $(".date", row).value || "";
-          if(!subj || !text){
-            alert("과목/내용을 입력해 주세요.");
-            return;
-          }
-          try{
-            await col(cat).add({
-              subj, text, due: date || "", done: false,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            afterAdded(row);
-          }catch(e){
-            console.error("ADD ERR:", e.code, e.message, e);
-            alert(`추가 실패: ${e.code}\n${e.message}`);
-          }
-        };
-      });
+    /* + 추가 버튼: 전역 위임(바인딩 타이밍 이슈 무력화) */
+function bindAddRows(){
+  // 중복 등록 방지: 한 번만 등록
+  if (bindAddRows._installed) return;
+  bindAddRows._installed = true;
+
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.add-row .add');
+    if (!btn) return; // 다른 클릭은 무시
+
+    const row = btn.closest('.add-row');
+    const cat = row?.dataset?.cat;       // perf | exam | home
+    if (!cat) return;
+
+    // 디버그 로그(콘솔에 꼭 찍힘)
+    console.log('[ADD click]', { cat });
+
+    if(!isLoggedIn()){
+      alert("로그인 후 추가할 수 있어요.");
+      return;
     }
+
+    const subj = $(".subj", row).value.trim();
+    const text = $(".text", row).value.trim();
+    const date = $(".date", row).value || "";
+    if(!subj || !text){
+      alert("과목/내용을 입력해 주세요.");
+      return;
+    }
+
+    try{
+      await col(cat).add({
+        subj, text, due: date || "", done: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      afterAdded(row);
+      console.log('[ADD ok]');
+    }catch(e){
+      console.error("ADD ERR:", e.code, e.message, e);
+      alert(`추가 실패: ${e.code}\n${e.message}`);
+    }
+  }, { capture:false });
+}
+
 
     function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
 
