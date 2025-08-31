@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>부광고 1-1 수행펴가 & 숙제</title>
+  <title>부광고 1학년 1반 숙제 & 수행평가</title>
 
   <!-- 파비콘(404 방지) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='48'>📝</text></svg>">
@@ -29,7 +29,7 @@
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
           <input class="date" type="date" />
-          <!-- 시작/끝 교시 선택 -->
+          <!-- 시작/끝 교시 -->
           <select class="periodFrom">
             <option value="">시작교시</option>
             <option value="1">1교시</option><option value="2">2교시</option>
@@ -106,7 +106,7 @@
     </section>
   </main>
 
-  <!-- Firebase 기본 설정을 SDK에 주입 -->
+  <!-- Firebase 기본 설정 -->
   <script>
     window.__FIREBASE_DEFAULTS__ = {
       config: {
@@ -135,7 +135,7 @@
   <!-- ===== 앱 코드 ===== -->
   <script>
     /* ---------- 상수/핸들 ---------- */
-    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";   // 네 UID (항상 이 경로만 사용)
+    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";   // 네 UID
     const auth = firebase.auth();
     const db   = firebase.firestore();
 
@@ -166,7 +166,7 @@
     }
 
     /* ---------- 임시저장(입력/펼침) ---------- */
-    const DRAFT_KEY = "memo:draft-v2"; // (v2: 교시 추가 버전)
+    const DRAFT_KEY = "memo:draft-v2"; // (v2: 교시 포함)
     const OPEN_KEY  = "memo:open-v1";
 
     function gatherDraft(){
@@ -201,7 +201,6 @@
     }
     function saveDraft(){ localStorage.setItem(DRAFT_KEY, JSON.stringify(gatherDraft())); }
     function clearDraft(){ localStorage.removeItem(DRAFT_KEY); }
-    // input/change 모두 감지(셀렉트 포함)
     document.addEventListener("input",  e => { if(e.target.closest(".add-row")) saveDraft(); });
     document.addEventListener("change", e => { if(e.target.closest(".add-row")) saveDraft(); });
 
@@ -247,23 +246,35 @@
       loadOpenState();
     }
 
-    /* ---------- 날짜/요일/교시 포맷 ---------- */
+    /* ---------- 날짜/요일/교시/D-day 포맷 ---------- */
     function formatMeta(it){
       let meta = "";
+      let ddayHtml = "";
+
       if (it.due) {
         const d = new Date(it.due);
         if (!isNaN(d)) {
           const wd = ["일","월","화","수","목","금","토"][d.getDay()];
           meta = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")} (${wd})`;
+
+          // D-day
+          const today = new Date(); today.setHours(0,0,0,0);
+          const dueDay = new Date(d); dueDay.setHours(0,0,0,0);
+          const diff = Math.floor((dueDay - today) / (1000*60*60*24));
+          if (diff === 0)       ddayHtml = `<span class="dday today">D-day</span>`;
+          else if (diff > 0)    ddayHtml = `<span class="dday future">D-${diff}</span>`;
+          else                  ddayHtml = `<span class="dday past">D+${Math.abs(diff)}</span>`;
         } else {
           meta = it.due;
         }
       }
+
       const pf = it.periodFrom, pt = it.periodTo;
       if (Number.isFinite(pf) && Number.isFinite(pt)) {
         meta += ` ${pf===pt ? `${pf}교시` : `${pf}~${pt}교시`}`;
       }
-      return meta ? `📅 ${meta}` : "";
+
+      return (meta || ddayHtml) ? `📅 ${meta} ${ddayHtml}`.trim() : "";
     }
 
     /* ---------- 목록 렌더링 ---------- */
@@ -353,11 +364,9 @@
         const subj = $(".subj", row).value.trim();
         const text = $(".text", row).value.trim();
         const date = $(".date", row).value || "";
-
         const pf = parseInt($(".periodFrom", row)?.value || "", 10);
         const pt = parseInt($(".periodTo", row)?.value   || "", 10);
 
-        // 시작/끝 둘 중 하나만 선택 방지
         const pfOk = Number.isFinite(pf), ptOk = Number.isFinite(pt);
         if ((pfOk && !ptOk) || (!pfOk && ptOk)) {
           alert("교시는 시작/끝을 둘 다 선택하거나 둘 다 비워두세요.");
@@ -367,7 +376,6 @@
           alert("시작 교시가 끝 교시보다 클 수 없어요.");
           return;
         }
-
         if(!subj || !text){
           alert("과목/내용을 입력해 주세요.");
           return;
