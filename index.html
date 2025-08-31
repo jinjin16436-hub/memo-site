@@ -124,7 +124,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase 초기화 -->
+  <!-- Firebase 초기화: 네 프로젝트 값 -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
@@ -162,6 +162,7 @@
     function setEditVisible(v){
       $$(".add-row").forEach(r => r.style.display = v ? "" : "none");
       $$(".btn-ghost").forEach(b => b.style.display = v ? "" : "none");
+      $$(".task__actions").forEach(a => a.style.display = v ? "flex" : "none");
     }
 
     const col = (cat) => {
@@ -212,7 +213,7 @@
       return (meta || ddayHtml) ? `📅 ${meta} ${ddayHtml}`.trim() : "";
     }
 
-    // 렌더링
+    // 렌더링 (+수정 패널 포함)
     function renderList(cat, items){
       const ul = el.lists[cat];
       ul.innerHTML = "";
@@ -225,6 +226,7 @@
                    data-act="toggle" data-cat="${cat}" data-id="${it.id}">
             <span></span>
           </label>
+
           <div class="task__main">
             <div class="task__line">
               <b>${esc(it.subj||"")}</b><br>
@@ -232,36 +234,104 @@
             </div>
             <div class="task__meta">${formatMeta(it)}</div>
           </div>
-          <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}"
-                  style="display:${currentUser?'inline-flex':'none'}">삭제</button>
+
+          <div class="task__actions" style="display:${currentUser?'flex':'none'}; gap:6px;">
+            <button class="btn-ghost" data-act="edit" data-cat="${cat}" data-id="${it.id}">수정</button>
+            <button class="btn-ghost" data-act="del"  data-cat="${cat}" data-id="${it.id}">삭제</button>
+          </div>
+
+          <div class="edit-panel" data-panel="${it.id}">
+            <div class="edit-grid">
+              <input  class="e-subj" type="text" placeholder="과목" value="${esc(it.subj||"")}" />
+              <textarea class="e-text" rows="1" placeholder="상세 내용(선택)">${esc(it.text||"")}</textarea>
+
+              <input class="e-start" type="date" value="${getStartISO(it) ? new Date(getStartISO(it)).toISOString().slice(0,10) : ""}" />
+              <span class="tilde">~</span>
+              <input class="e-end"   type="date" value="${getEndISO(it) ? new Date(getEndISO(it)).toISOString().slice(0,10) : ""}" />
+
+              <select class="e-pf">
+                <option value="">시작 교시</option>
+                ${[1,2,3,4,5,6,7].map(n=>`<option value="${n}" ${Number(it.periodFrom)===n?'selected':''}>${n}교시</option>`).join("")}
+              </select>
+
+              <select class="e-pt">
+                <option value="">끝 교시</option>
+                ${[1,2,3,4,5,6,7].map(n=>`<option value="${n}" ${Number(it.periodTo)===n?'selected':''}>${n}교시</option>`).join("")}
+              </select>
+            </div>
+
+            <div class="edit-actions">
+              <button class="btn"         data-act="save"   data-cat="${cat}" data-id="${it.id}">저장</button>
+              <button class="btn-outline" data-act="cancel" data-cat="${cat}" data-id="${it.id}">취소</button>
+            </div>
+          </div>
         `;
         ul.appendChild(li);
       }
 
+      // 델리게이트 핸들러 (체크/삭제/수정/저장/취소)
       ul.onclick = async (e)=>{
         const t = e.target;
         const act = t.getAttribute("data-act");
         if(!act) return;
 
-        if(!currentUser){
-          alert("수정/삭제는 로그인 후 가능합니다.");
+        const cat2 = t.getAttribute("data-cat");
+        const id   = t.getAttribute("data-id");
+
+        if(["toggle","del","edit","save","cancel"].includes(act) && !currentUser){
+          alert("로그인 후 이용할 수 있어요.");
           if(act === "toggle") t.checked = !t.checked;
           return;
         }
 
-        const cat2 = t.getAttribute("data-cat");
-        const id   = t.getAttribute("data-id");
         try{
-          if(act === "toggle")      await col(cat2).doc(id).update({ done: t.checked });
-          else if(act === "del")    await col(cat2).doc(id).delete();
-        }catch(e){
-          alert("변경 실패: " + e.message);
-          console.error(e);
+          if(act === "toggle"){
+            await col(cat2).doc(id).update({ done: t.checked });
+
+          }else if(act === "del"){
+            await col(cat2).doc(id).delete();
+
+          }else if(act === "edit"){
+            const panel = ul.querySelector(`.edit-panel[data-panel="${id}"]`);
+            if(panel) panel.classList.toggle("open");
+
+          }else if(act === "cancel"){
+            const panel = ul.querySelector(`.edit-panel[data-panel="${id}"]`);
+            if(panel) panel.classList.remove("open");
+
+          }else if(act === "save"){
+            const panel = ul.querySelector(`.edit-panel[data-panel="${id}"]`);
+            if(!panel) return;
+
+            const subj = panel.querySelector(".e-subj").value.trim();
+            const text = panel.querySelector(".e-text").value.trim();
+            const start = panel.querySelector(".e-start").value || "";
+            const end   = panel.querySelector(".e-end").value   || start;
+            const pfVal = panel.querySelector(".e-pf").value;
+            const ptVal = panel.querySelector(".e-pt").value;
+
+            if(!subj){ alert("과목을 입력해 주세요."); return; }
+
+            const payload = {
+              subj, text,
+              startDate: start || "",
+              endDate: end || start || "",
+              due: start || "", // 레거시 호환
+              periodFrom: pfVal ? Number(pfVal) : null,
+              periodTo:   ptVal ? Number(ptVal) : null,
+            };
+
+            await col(cat2).doc(id).update(payload);
+            panel.classList.remove("open");
+          }
+        }catch(err){
+          console.error(err);
+          alert("처리 중 오류: " + err.message);
         }
       };
     }
 
-    // 추가
+    // 추가 바인딩
     function bindAddRows(){
       $$(".add-row").forEach(row=>{
         $(".add", row).onclick = async ()=>{
@@ -287,7 +357,6 @@
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // 초기화
             $(".subj", row).value = "";
             $(".text", row).value = "";
             $(".dateStart", row).value = "";
@@ -302,7 +371,7 @@
       });
     }
 
-    // 실시간 구독(레거시 포함 정렬)
+    // 실시간 구독(정렬: 시작일/레거시)
     function startListeners(){
       unsubscribers.forEach(u => u && u());
       unsubscribers = [];
@@ -326,6 +395,7 @@
 
     const esc = s => (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
 
+    // 로그인/로그아웃
     const provider = new firebase.auth.GoogleAuthProvider();
     $("#loginBtn").onclick  = () => auth.signInWithPopup(provider).catch(e=>alert("로그인 실패: "+e.message));
     $("#logoutBtn").onclick = () => auth.signOut();
