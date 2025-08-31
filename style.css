@@ -226,7 +226,7 @@ section{
 }
 ::-webkit-scrollbar-track{ background:transparent }
 
-/* D-day 칩 스타일 */
+/* D-day 칩 공통 */
 .dday {
   font-weight: bold;
   margin-left: 6px;
@@ -234,23 +234,22 @@ section{
   border-radius: 6px;
   display: inline-block;
   line-height: 1.2;
-}
-
-/* 오늘 */
-.dday.today {
-  background: #e53935; /* 레드 */
   color: #fff;
 }
 
-/* 미래 (D-n) */
-.dday.future {
-  background: #1e88e5; /* 블루 */
-  color: #fff;
-}
+/* 지난 일정: 회색 */
+.dday.past { background: #757575; }
 
-/* 지난 일정 (D+n) */
-.dday.past {
-  background: #757575; /* 그레이 */
-  color: #fff;
-}
+/* D-day, D-1: 빨강 */
+.dday.red { background: #e53935; }
+
+/* D-2 ~ D-3: 주황 */
+.dday.orange { background: #fb8c00; }
+
+/* D-4 ~ D-5: 노랑 (가독성 위해 검은 글씨) */
+.dday.yellow { background: #fdd835; color: #000; }
+
+/* D-6 이상: 연두/초록 */
+.dday.green { background: #43a047; }
+
 
