@@ -3,17 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>숙제 & 수행평가 안내</title>
-
-  <!-- 파비콘 -->
+  <title>숙제 & 수행평가 메모</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='48'>📝</text></svg>">
-
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!-- 상단 바 -->
   <header class="admin-bar" style="display:flex;gap:12px;align-items:center;justify-content:flex-start;">
-    <h1 style="margin-right:auto">📒 숙제 & 수행평가 </h1>
+    <h1 style="margin-right:auto">📒 숙제 & 수행평가 메모</h1>
     <button id="loginBtn"  class="btn">🔑 Google 로그인</button>
     <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
   </header>
@@ -103,10 +100,12 @@
       lists:     { perf: $("#list_perf"), exam: $("#list_exam"), home: $("#list_home") }
     };
 
-    const isLoggedIn = () => !!auth.currentUser;
-    const getUid     = () => auth.currentUser?.uid || OWNER_UID;
+    // 소유자 판별
+    const isOwner = () => auth.currentUser?.uid === OWNER_UID;
+
+    // 항상 OWNER_UID 경로만 사용
     const col = (cat) =>
-      db.collection("users").doc(getUid())
+      db.collection("users").doc(OWNER_UID)
         .collection("tasks").doc(cat).collection("items");
 
     let unsubscribers = [];
@@ -225,7 +224,7 @@
             <div class="task__meta">${it.due ? `📅 ${it.due}` : ""}</div>
           </div>
           <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}"
-                  style="display:${isLoggedIn()?'':'none'}">삭제</button>
+                  style="display:${isOwner()?'':'none'}">삭제</button>
         `;
         ul.appendChild(li);
       }
@@ -238,8 +237,8 @@
 
         const cat2 = t.getAttribute("data-cat");
         const id   = t.getAttribute("data-id");
-        if (!isLoggedIn()) {
-          alert("완료 체크는 로그인 후 가능합니다.");
+        if (!isOwner()) {
+          alert("완료 체크는 소유자만 가능합니다.");
           t.checked = !t.checked;
           return;
         }
@@ -256,8 +255,8 @@
       ul.onclick = async (e) => {
         const btn = e.target.closest('[data-act="del"]');
         if (!btn) return;
-        if (!isLoggedIn()) {
-          alert("삭제는 로그인 후 가능합니다.");
+        if (!isOwner()) {
+          alert("삭제는 소유자만 가능합니다.");
           return;
         }
         const cat2 = btn.getAttribute("data-cat");
@@ -271,50 +270,45 @@
       };
     }
 
-    /* + 추가 버튼: 전역 위임(바인딩 타이밍 이슈 무력화) */
-function bindAddRows(){
-  // 중복 등록 방지: 한 번만 등록
-  if (bindAddRows._installed) return;
-  bindAddRows._installed = true;
+    /* + 추가 버튼 위임 */
+    function bindAddRows(){
+      if (bindAddRows._installed) return;
+      bindAddRows._installed = true;
 
-  document.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.add-row .add');
-    if (!btn) return; // 다른 클릭은 무시
+      document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.add-row .add');
+        if (!btn) return;
 
-    const row = btn.closest('.add-row');
-    const cat = row?.dataset?.cat;       // perf | exam | home
-    if (!cat) return;
+        const row = btn.closest('.add-row');
+        const cat = row?.dataset?.cat;
+        if (!cat) return;
 
-    // 디버그 로그(콘솔에 꼭 찍힘)
-    console.log('[ADD click]', { cat });
+        if(!isOwner()){
+          alert("추가는 소유자만 가능합니다.");
+          return;
+        }
 
-    if(!isLoggedIn()){
-      alert("로그인 후 추가할 수 있어요.");
-      return;
-    }
+        const subj = $(".subj", row).value.trim();
+        const text = $(".text", row).value.trim();
+        const date = $(".date", row).value || "";
+        if(!subj || !text){
+          alert("과목/내용을 입력해 주세요.");
+          return;
+        }
 
-    const subj = $(".subj", row).value.trim();
-    const text = $(".text", row).value.trim();
-    const date = $(".date", row).value || "";
-    if(!subj || !text){
-      alert("과목/내용을 입력해 주세요.");
-      return;
-    }
-
-    try{
-      await col(cat).add({
-        subj, text, due: date || "", done: false,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        try{
+          await col(cat).add({
+            subj, text, due: date || "", done: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          afterAdded(row);
+          console.log('[ADD ok]');
+        }catch(e){
+          console.error("ADD ERR:", e.code, e.message, e);
+          alert(`추가 실패: ${e.code}\n${e.message}`);
+        }
       });
-      afterAdded(row);
-      console.log('[ADD ok]');
-    }catch(e){
-      console.error("ADD ERR:", e.code, e.message, e);
-      alert(`추가 실패: ${e.code}\n${e.message}`);
     }
-  }, { capture:false });
-}
-
 
     function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
 
@@ -324,11 +318,8 @@ function bindAddRows(){
     auth.useDeviceLanguage?.();
 
     async function ensureLocal() {
-      try {
-        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-      } catch (e) {
-        console.error('setPersistence 실패:', e);
-      }
+      try { await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }
+      catch (e) { console.error('setPersistence 실패:', e); }
     }
 
     el.loginBtn.addEventListener("click", async () => {
@@ -352,7 +343,7 @@ function bindAddRows(){
       console.log('[onAuthStateChanged]', user?.uid || null);
       el.loginBtn.style.display  = user ? "none" : "";
       el.logoutBtn.style.display = user ? "" : "none";
-      setEditVisible(!!user);
+      setEditVisible(isOwner());
       bindAddRows();
       startListeners();
     });
