@@ -9,13 +9,12 @@
 <body>
   <!-- 상단 바 -->
   <header class="admin-bar">
-    <h1>📒 숙제 & 수행평가 </h1>
+    <h1>📒 숙제 & 수행평가</h1>
     <div class="spacer"></div>
     <button id="loginBtn"  class="btn">🔑 Google 로그인</button>
     <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
   </header>
 
-  <!-- 본문 -->
   <main class="container">
     <!-- 수행평가 -->
     <section>
@@ -24,31 +23,28 @@
         <ul id="list_perf" class="task-list"></ul>
 
         <div class="add-row" data-cat="perf" style="display:none">
-          <input class="subj" type="text" placeholder="과목" />
-          <input class="title" type="text" placeholder="짧은 제목(선택)" />
-          <input class="dateStart" type="date" />
-          <span class="tilde">~</span>
-          <input class="dateEnd" type="date" />
+          <div class="row-top">
+            <input class="subj" type="text" placeholder="과목" />
+            <input class="dateStart" type="date" />
+            <span class="tilde">~</span>
+            <input class="dateEnd" type="date" />
+            <select class="periodFrom">
+              <option value="">시작 교시</option>
+              <option value="1">1교시</option><option value="2">2교시</option>
+              <option value="3">3교시</option><option value="4">4교시</option>
+              <option value="5">5교시</option><option value="6">6교시</option>
+              <option value="7">7교시</option>
+            </select>
+            <select class="periodTo">
+              <option value="">끝 교시</option>
+              <option value="1">1교시</option><option value="2">2교시</option>
+              <option value="3">3교시</option><option value="4">4교시</option>
+              <option value="5">5교시</option><option value="6">6교시</option>
+              <option value="7">7교시</option>
+            </select>
+            <button class="add btn">+ 추가</button>
+          </div>
 
-          <select class="periodFrom">
-            <option value="">시작 교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
-            <option value="7">7교시</option>
-          </select>
-
-          <select class="periodTo">
-            <option value="">끝 교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
-            <option value="7">7교시</option>
-          </select>
-
-          <button class="add btn">+ 추가</button>
-
-          <!-- 긴 내용 -->
           <textarea class="text" rows="3" placeholder="상세 내용(선택)"></textarea>
         </div>
       </div>
@@ -61,29 +57,27 @@
         <ul id="list_exam" class="task-list"></ul>
 
         <div class="add-row" data-cat="exam" style="display:none">
-          <input class="subj" type="text" placeholder="과목" />
-          <input class="title" type="text" placeholder="짧은 제목(선택)" />
-          <input class="dateStart" type="date" />
-          <span class="tilde">~</span>
-          <input class="dateEnd" type="date" />
-
-          <select class="periodFrom">
-            <option value="">시작 교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
-            <option value="7">7교시</option>
-          </select>
-
-          <select class="periodTo">
-            <option value="">끝 교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
-            <option value="7">7교시</option>
-          </select>
-
-          <button class="add btn">+ 추가</button>
+          <div class="row-top">
+            <input class="subj" type="text" placeholder="과목" />
+            <input class="dateStart" type="date" />
+            <span class="tilde">~</span>
+            <input class="dateEnd" type="date" />
+            <select class="periodFrom">
+              <option value="">시작 교시</option>
+              <option value="1">1교시</option><option value="2">2교시</option>
+              <option value="3">3교시</option><option value="4">4교시</option>
+              <option value="5">5교시</option><option value="6">6교시</option>
+              <option value="7">7교시</option>
+            </select>
+            <select class="periodTo">
+              <option value="">끝 교시</option>
+              <option value="1">1교시</option><option value="2">2교시</option>
+              <option value="3">3교시</option><option value="4">4교시</option>
+              <option value="5">5교시</option><option value="6">6교시</option>
+              <option value="7">7교시</option>
+            </select>
+            <button class="add btn">+ 추가</button>
+          </div>
 
           <textarea class="text" rows="3" placeholder="상세 내용(선택)"></textarea>
         </div>
@@ -97,29 +91,27 @@
         <ul id="list_home" class="task-list"></ul>
 
         <div class="add-row" data-cat="home" style="display:none">
-          <input class="subj" type="text" placeholder="과목" />
-          <input class="title" type="text" placeholder="짧은 제목(선택)" />
-          <input class="dateStart" type="date" />
-          <span class="tilde">~</span>
-          <input class="dateEnd" type="date" />
-
-          <select class="periodFrom">
-            <option value="">시작 교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
-            <option value="7">7교시</option>
-          </select>
-
-          <select class="periodTo">
-            <option value="">끝 교시</option>
-            <option value="1">1교시</option><option value="2">2교시</option>
-            <option value="3">3교시</option><option value="4">4교시</option>
-            <option value="5">5교시</option><option value="6">6교시</option>
-            <option value="7">7교시</option>
-          </select>
-
-          <button class="add btn">+ 추가</button>
+          <div class="row-top">
+            <input class="subj" type="text" placeholder="과목" />
+            <input class="dateStart" type="date" />
+            <span class="tilde">~</span>
+            <input class="dateEnd" type="date" />
+            <select class="periodFrom">
+              <option value="">시작 교시</option>
+              <option value="1">1교시</option><option value="2">2교시</option>
+              <option value="3">3교시</option><option value="4">4교시</option>
+              <option value="5">5교시</option><option value="6">6교시</option>
+              <option value="7">7교시</option>
+            </select>
+            <select class="periodTo">
+              <option value="">끝 교시</option>
+              <option value="1">1교시</option><option value="2">2교시</option>
+              <option value="3">3교시</option><option value="4">4교시</option>
+              <option value="5">5교시</option><option value="6">6교시</option>
+              <option value="7">7교시</option>
+            </select>
+            <button class="add btn">+ 추가</button>
+          </div>
 
           <textarea class="text" rows="3" placeholder="상세 내용(선택)"></textarea>
         </div>
@@ -132,7 +124,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase 초기화 (네 프로젝트 값) -->
+  <!-- Firebase 초기화 -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
@@ -178,31 +170,33 @@
                .collection("tasks").doc(cat).collection("items");
     };
 
-    /* ---------- 레거시(due) 호환 헬퍼 ---------- */
-    function getStartISO(it){ return it.startDate || it.due || ""; }
-    function getEndISO(it){ return it.endDate || it.startDate || it.due || ""; }
+    // 레거시(due) 호환
+    const getStartISO = it => it.startDate || it.due || "";
+    const getEndISO   = it => it.endDate   || it.startDate || it.due || "";
 
-    /* ---------- 날짜/요일/교시 + D-day 출력 ---------- */
+    // 날짜/요일/교시 + D-day
     function formatMeta(it){
       let meta = "", ddayHtml = "";
-      const startISO = getStartISO(it);
-      if(startISO){
-        const s = new Date(startISO);
+      const sISO = getStartISO(it);
+      if(sISO){
+        const s = new Date(sISO);
         const eISO = getEndISO(it);
         const e = new Date(eISO);
         const wd = ["일","월","화","수","목","금","토"];
 
         const sStr = `${s.getFullYear()}/${String(s.getMonth()+1).padStart(2,"0")}/${String(s.getDate()).padStart(2,"0")} (${wd[s.getDay()]})`;
-        if(eISO && eISO !== startISO){
+        if(eISO && eISO !== sISO){
           const eStr = `${e.getFullYear()}/${String(e.getMonth()+1).padStart(2,"0")}/${String(e.getDate()).padStart(2,"0")} (${wd[e.getDay()]})`;
           meta = `${sStr} ~ ${eStr}`;
-        }else{
+        } else {
           meta = sStr;
         }
 
         const pf = Number(it.periodFrom), pt = Number(it.periodTo);
         if(Number.isFinite(pf) && Number.isFinite(pt)){
           meta += ` ${pf===pt ? `${pf}교시` : `${pf}~${pt}교시`}`;
+        } else if (Number.isFinite(pf)) {
+          meta += ` ${pf}교시`;
         }
 
         const today = new Date(); today.setHours(0,0,0,0);
@@ -218,7 +212,7 @@
       return (meta || ddayHtml) ? `📅 ${meta} ${ddayHtml}`.trim() : "";
     }
 
-    /* ---------- 렌더링 ---------- */
+    // 렌더링
     function renderList(cat, items){
       const ul = el.lists[cat];
       ul.innerHTML = "";
@@ -234,12 +228,12 @@
           <div class="task__main">
             <div class="task__line">
               <b>${esc(it.subj||"")}</b><br>
-              <span>${esc((it.title? it.title+" – " : "") + (it.text||""))}</span>
+              <span>${esc(it.text||"")}</span>
             </div>
             <div class="task__meta">${formatMeta(it)}</div>
           </div>
           <button class="btn-ghost" data-act="del" data-cat="${cat}" data-id="${it.id}"
-                  style="display:${currentUser?'':'none'}">삭제</button>
+                  style="display:${currentUser?'inline-flex':'none'}">삭제</button>
         `;
         ul.appendChild(li);
       }
@@ -267,13 +261,12 @@
       };
     }
 
-    /* ---------- 추가 ---------- */
+    // 추가
     function bindAddRows(){
       $$(".add-row").forEach(row=>{
         $(".add", row).onclick = async ()=>{
           if(!currentUser){ alert("로그인 후 추가할 수 있어요."); return; }
           const subj = $(".subj", row).value.trim();
-          const title= $(".title", row).value.trim();
           const text = $(".text", row).value.trim();
           const start= $(".dateStart", row).value || "";
           const end  = $(".dateEnd", row).value || start;
@@ -284,19 +277,18 @@
 
           try{
             await col(row.dataset.cat).add({
-              subj, title, text,
+              subj, text,
               startDate: start || "",
               endDate: end || start || "",
-              due: start || "",                           // 레거시 호환
+              due: start || "",  // 레거시 호환
               periodFrom: pf ? Number(pf) : null,
               periodTo:   pt ? Number(pt) : null,
               done: false,
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // 입력 초기화
+            // 초기화
             $(".subj", row).value = "";
-            $(".title", row).value = "";
             $(".text", row).value = "";
             $(".dateStart", row).value = "";
             $(".dateEnd", row).value = "";
@@ -310,7 +302,7 @@
       });
     }
 
-    /* ---------- 실시간 구독 (클라이언트 정렬: 레거시 포함) ---------- */
+    // 실시간 구독(레거시 포함 정렬)
     function startListeners(){
       unsubscribers.forEach(u => u && u());
       unsubscribers = [];
@@ -320,7 +312,7 @@
           snap => {
             const arr = [];
             snap.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
-            arr.sort((a,b) => (getStartISO(a)||"").localeCompare(getStartISO(b)||""));
+            arr.sort((a,b) => (getStartISO(a)||"").localeCompare((getStartISO(b)||"")));
             renderList(cat, arr);
           },
           err => {
@@ -332,7 +324,6 @@
       });
     }
 
-    /* ---------- 공통 ---------- */
     const esc = s => (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
 
     const provider = new firebase.auth.GoogleAuthProvider();
