@@ -294,56 +294,89 @@
     // HTML escape
     function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
 
-    /* ============== 리다이렉트 로그인 ============== */
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
+    <script>
+  /* ====== 로그인 (리다이렉트 기본 + 팝업 백업) ====== */
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
 
-    // 세션 지속성을 LOCAL로 고정 (중요)
-    async function ensureLocalPersistence() {
+  async function ensureLocalPersistence() {
+    try {
+      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    } catch (e) {
+      console.error('setPersistence 실패:', e);
+    }
+  }
+
+  // 공통 오류 핸들러 (화면에 보이도록)
+  function showAuthError(e, ctx='') {
+    const code = e?.code || 'unknown';
+    const msg  = e?.message || String(e);
+    console.error(`[AUTH][${ctx}]`, code, msg, e);
+    alert(`로그인 오류(${ctx}): ${code}\n${msg}`);
+  }
+
+  // 로그인 버튼: 리다이렉트 시도 → 차단/실패 시 팝업으로 자동 전환
+  el.loginBtn.addEventListener("click", async () => {
+    saveDraft();
+    saveOpenState();
+    await ensureLocalPersistence();
+
+    try {
+      sessionStorage.setItem('loginFlow', 'redirect');
+      await auth.signInWithRedirect(provider);
+    } catch (e) {
+      // 환경상 리다이렉트 불가 → 팝업으로 백업
       try {
-        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-      } catch (e) {
-        console.error("setPersistence 실패:", e);
+        sessionStorage.setItem('loginFlow', 'popup');
+        const result = await auth.signInWithPopup(provider);
+        console.log('✅ 팝업 로그인 성공:', result.user?.uid);
+      } catch (e2) {
+        showAuthError(e2, 'popup(fallback)');
       }
     }
+  });
 
-    // 로그인(리다이렉트)
-    el.loginBtn.addEventListener("click", async () => {
-      saveDraft();
-      saveOpenState();
-      await ensureLocalPersistence();
-      try {
-        await auth.signInWithRedirect(provider);
-      } catch (e) {
-        alert(`로그인 실패: ${e.code}\n${e.message}`);
-        console.error(e);
+  // 로그아웃
+  el.logoutBtn.addEventListener("click", () => auth.signOut());
+
+  // 리다이렉트 결과 처리 (차단되면 팝업으로 재시도)
+  auth.getRedirectResult()
+    .then(async (result) => {
+      if (result.user) {
+        console.log('✅ 리다이렉트 로그인 성공:', result.user.uid);
       }
-    });
+    })
+    .catch(async (e) => {
+      // 리다이렉트가 환경적으로 막힌 경우들
+      const nonRedirectable =
+        e.code === 'auth/operation-not-supported-in-this-environment' ||
+        e.code === 'auth/cookie-not-supported' ||
+        e.code === 'auth/network-request-failed';
 
-    // 로그아웃
-    el.logoutBtn.addEventListener("click", () => auth.signOut());
-
-    // 리다이렉트 결과(에러 표시)
-    auth.getRedirectResult()
-      .then((result) => {
-        if (result.user) {
-          console.log("✅ 리다이렉트 로그인 성공:", result.user.uid);
+      if (nonRedirectable) {
+        try {
+          await ensureLocalPersistence();
+          sessionStorage.setItem('loginFlow', 'popup-after-redirect-error');
+          const res = await auth.signInWithPopup(provider);
+          console.log('✅ 리다이렉트 실패 → 팝업으로 로그인 성공:', res.user?.uid);
+          return;
+        } catch (e2) {
+          showAuthError(e2, 'popup(afterRedirectError)');
         }
-      })
-      .catch((e) => {
-        alert(`리다이렉트 오류: ${e.code}\n${e.message}`);
-        console.error("redirect error:", e);
-      });
+      }
 
-    // 로그인 상태 변화
-    auth.onAuthStateChanged(user => {
-      currentUser = user;
-      el.loginBtn.style.display  = user ? "none" : "";
-      el.logoutBtn.style.display = user ? "" : "none";
-      setEditVisible(!!user);
-      bindAddRows();
-      startListeners();
+      // 그 외 에러는 그대로 노출
+      showAuthError(e, 'redirectResult');
     });
-  </script>
-</body>
-</html>
+
+  // 로그인 상태 변화
+  auth.onAuthStateChanged(user => {
+    currentUser = user;
+    el.loginBtn.style.display  = user ? "none" : "";
+    el.logoutBtn.style.display = user ? "" : "none";
+    setEditVisible(!!user);
+    bindAddRows();
+    startListeners();
+  });
+</script>
+
