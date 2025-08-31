@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>숙제 & 수행평가</title>
+  <title>숙제 & 수행평가 메모</title>
 
-  <!-- 파비콘(404 방지) -->
+  <!-- 파비콘 -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='48'>📝</text></svg>">
 
   <link rel="stylesheet" href="style.css" />
@@ -13,7 +13,7 @@
 <body>
   <!-- 상단 바 -->
   <header class="admin-bar" style="display:flex;gap:12px;align-items:center;justify-content:flex-start;">
-    <h1 style="margin-right:auto">📒 숙제 & 수행평가 </h1>
+    <h1 style="margin-right:auto">📒 숙제 & 수행평가 메모</h1>
     <button id="loginBtn"  class="btn">🔑 Google 로그인</button>
     <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
   </header>
@@ -63,41 +63,38 @@
     </section>
   </main>
 
-  <!-- 🔧 Firebase 기본 설정을 SDK에 미리 주입( init.json 요청 방지 ) -->
+  <!-- Firebase 기본 설정 -->
   <script>
     window.__FIREBASE_DEFAULTS__ = {
       config: {
         apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
         authDomain: "my-memo-site.firebaseapp.com",
         projectId: "my-memo-site",
-        storageBucket: "my-memo-site.appspot.com",   // 반드시 appspot.com
+        storageBucket: "my-memo-site.appspot.com",
         messagingSenderId: "196036694705",
         appId: "1:196036694705:web:8988d12919420130464890"
       }
     };
   </script>
 
-  <!-- Firebase SDK (compat) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase 초기화 (가드) -->
+  <!-- Firebase 초기화 -->
   <script>
     if (!firebase.apps.length) {
       firebase.initializeApp(window.__FIREBASE_DEFAULTS__.config);
     }
   </script>
 
-  <!-- ===== 공용 유틸/상태 ===== -->
+  <!-- ===== 앱 코드 ===== -->
   <script>
-    // 로그아웃 상태에서 읽기만 할 기본 소유자 UID
     const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
-
     const auth = firebase.auth();
     const db   = firebase.firestore();
 
-    // DOM helpers
     const $  = (q, root=document) => root.querySelector(q);
     const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
     const el = {
@@ -106,18 +103,14 @@
       lists:     { perf: $("#list_perf"), exam: $("#list_exam"), home: $("#list_home") }
     };
 
-    // 항상 Firebase 세션에서 직접 확인(전역 currentUser에 의존 X)
     const isLoggedIn = () => !!auth.currentUser;
     const getUid     = () => auth.currentUser?.uid || OWNER_UID;
-
-    // Firestore 경로 유틸
     const col = (cat) =>
       db.collection("users").doc(getUid())
         .collection("tasks").doc(cat).collection("items");
 
     let unsubscribers = [];
 
-    // 섹션 토글 + 상태 저장
     function toggleSection(id){
       const box = document.getElementById(id);
       if(!box) return;
@@ -125,16 +118,14 @@
       saveOpenState();
     }
 
-    // 편집 UI(추가/삭제) 표시
     function setEditVisible(v){
       $$(".add-row").forEach(r => r.style.display = v ? "" : "none");
       $$(".btn-ghost").forEach(b => b.style.display = v ? "" : "none");
     }
 
-    /* ---------------- 임시저장: 입력 폼 ---------------- */
+    /* 임시저장 */
     const DRAFT_KEY = "memo:draft-v1";
     const OPEN_KEY  = "memo:open-v1";
-
     function gatherDraft(){
       const data = {};
       $$(".add-row").forEach(row=>{
@@ -173,7 +164,6 @@
       saveDraft();
     }
 
-    /* ---------------- 임시저장: 섹션 펼침 상태 ---------------- */
     function saveOpenState(){
       const state = {
         perf: $("#sec_perf")?.classList.contains("open"),
@@ -191,7 +181,6 @@
       }catch{}
     }
 
-    // 실시간 구독
     function startListeners(){
       unsubscribers.forEach(u => u && u());
       unsubscribers = [];
@@ -211,12 +200,10 @@
         unsubscribers.push(u);
       });
 
-      // 최초 로드 시 임시저장 복원
       loadDraft();
       loadOpenState();
     }
 
-    // 목록 렌더링
     function renderList(cat, items){
       const ul = el.lists[cat];
       ul.innerHTML = "";
@@ -242,7 +229,7 @@
         ul.appendChild(li);
       }
 
-      // ✅ 체크박스는 change로 안정 처리
+      // 체크박스는 change 이벤트
       ul.onchange = async (e) => {
         const t = e.target;
         if (!(t instanceof HTMLInputElement) || t.type !== "checkbox") return;
@@ -250,11 +237,9 @@
 
         const cat2 = t.getAttribute("data-cat");
         const id   = t.getAttribute("data-id");
-        if (!cat2 || !id) return;
-
         if (!isLoggedIn()) {
           alert("완료 체크는 로그인 후 가능합니다.");
-          t.checked = !t.checked;   // UI 복구
+          t.checked = !t.checked;
           return;
         }
         try {
@@ -266,16 +251,14 @@
         }
       };
 
-      // 🗑️ 삭제 버튼만 click으로 처리
+      // 삭제 버튼
       ul.onclick = async (e) => {
         const btn = e.target.closest('[data-act="del"]');
         if (!btn) return;
-
         if (!isLoggedIn()) {
           alert("삭제는 로그인 후 가능합니다.");
           return;
         }
-
         const cat2 = btn.getAttribute("data-cat");
         const id   = btn.getAttribute("data-id");
         try {
@@ -287,75 +270,38 @@
       };
     }
 
-    // HTML escape
     function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
-  </script>
 
-  <!-- ===== 로그인: 리다이렉트 기본 + 팝업 백업 ===== -->
-  <script>
+    /* ===== 팝업 로그인 전용 ===== */
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     auth.useDeviceLanguage?.();
 
-    async function ensureLocalPersistence() {
-      try { await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }
-      catch (e) { console.error('setPersistence 실패:', e); }
-    }
-
-    function showAuthError(e, where){
-      const code = e?.code || 'unknown';
-      const msg  = e?.message || String(e);
-      console.error(`[AUTH][${where}]`, code, msg, e);
-      alert(`로그인 오류(${where}): ${code}\n${msg}`);
+    async function ensureLocal() {
+      try {
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      } catch (e) {
+        console.error('setPersistence 실패:', e);
+      }
     }
 
     el.loginBtn.addEventListener("click", async () => {
       saveDraft(); saveOpenState();
-      await ensureLocalPersistence();
+      await ensureLocal();
       try {
-        sessionStorage.setItem('loginFlow', 'redirect');
-        await auth.signInWithRedirect(provider);
+        const r = await auth.signInWithPopup(provider);
+        console.log('✅ 팝업 로그인 성공:', r.user?.uid);
       } catch (e) {
-        // 리다이렉트 실패 → 팝업 백업
-        try {
-          sessionStorage.setItem('loginFlow', 'popup');
-          const r = await auth.signInWithPopup(provider);
-          console.log('✅ 팝업 로그인 성공:', r.user?.uid);
-        } catch (e2) {
-          showAuthError(e2, 'popup(fallback)');
-        }
+        console.error('로그인 오류:', e);
+        alert(`로그인 실패: ${e.code}\n${e.message}`);
       }
     });
 
     el.logoutBtn.addEventListener("click", async () => {
       try { await auth.signOut(); }
-      catch(e){ showAuthError(e, 'signOut'); }
+      catch(e){ console.error('로그아웃 오류:', e); }
     });
 
-    // 리다이렉트 결과(막히면 팝업 재시도)
-    auth.getRedirectResult()
-      .then(r => { if (r.user) console.log('✅ 리다이렉트 로그인 성공:', r.user.uid); })
-      .catch(async (e) => {
-        const nonRedirectable =
-          e.code === 'auth/operation-not-supported-in-this-environment' ||
-          e.code === 'auth/cookie-not-supported' ||
-          e.code === 'auth/network-request-failed';
-
-        if (nonRedirectable) {
-          try {
-            await ensureLocalPersistence();
-            sessionStorage.setItem('loginFlow', 'popup-after-redirect-error');
-            const r = await auth.signInWithPopup(provider);
-            console.log('✅ 리다이렉트 실패 → 팝업 로그인 성공:', r.user?.uid);
-            return;
-          } catch (e2) {
-            showAuthError(e2, 'popup(afterRedirectError)');
-          }
-        }
-        showAuthError(e, 'redirectResult');
-      });
-
-    // 세션 변화에 맞춰 UI/리스너 갱신
     auth.onAuthStateChanged(user => {
       console.log('[onAuthStateChanged]', user?.uid || null);
       el.loginBtn.style.display  = user ? "none" : "";
