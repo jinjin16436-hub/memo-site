@@ -1,201 +1,115 @@
-/* === 기본 레이아웃 === */
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: #0f172a; /* 어두운 블루 계열 배경 */
-  color: #e2e8f0;
+:root{
+  --bg:#0f172a;          /* 전체 배경 */
+  --panel:#111827;       /* 카드/패널 */
+  --text:#e5e7eb;        /* 본문 텍스트 */
+  --sub:#cbd5e1;         /* 보조 텍스트 */
+  --accent:#3b82f6;      /* 포커스/버튼 */
+  --ghost:#475569;       /* 버튼 라인 */
+  --chip:#1f2937;        /* 뱃지 배경 */
+
+  --red:#ef4444;
+  --orange:#f59e0b;
+  --yellow:#eab308;
+  --green:#22c55e;
+  --past:#94a3b8;
 }
 
-/* === 상단 헤더 === */
-header.admin-bar {
-  background: #1e293b;
-  color: #f8fafc;
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:linear-gradient(180deg,#1e3a8a 0%, #0f172a 380px);
+  color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
 }
 
-header h1 {
-  font-size: 1.4rem;
-  margin: 0;
-  font-weight: 700;
+/* 상단바 */
+.admin-bar{
+  position:sticky; top:0; z-index:30;
+  display:flex; align-items:center; gap:12px;
+  background:rgba(15,23,42,.7); backdrop-filter:saturate(120%) blur(8px);
+  padding:14px 18px; border-bottom:1px solid rgba(255,255,255,.06);
+}
+.admin-bar h1{font-size:20px; margin:0}
+.admin-bar .spacer{flex:1}
+
+.btn, .btn-ghost, .btn-primary{
+  border:1px solid var(--ghost);
+  background:transparent; color:var(--text);
+  padding:8px 12px; border-radius:10px; cursor:pointer;
+}
+.btn-ghost{opacity:.85}
+.btn-ghost:hover{background:rgba(255,255,255,.06)}
+.btn-primary{
+  border-color:transparent; background:var(--accent);
+  color:white; font-weight:600;
+}
+.btn-primary:hover{filter:brightness(1.05)}
+
+/* 본문 레이아웃 */
+.container{max-width:1024px; margin:30px auto; padding:0 16px}
+.section{margin-bottom:28px}
+.section-head{
+  width:100%; text-align:left;
+  background:var(--panel); color:var(--text);
+  border:1px solid rgba(255,255,255,.06);
+  padding:14px 16px; border-radius:14px; cursor:pointer;
+}
+.section-body{margin-top:10px}
+.section-body:not(.open){display:none}
+
+/* 카드/항목 */
+.task-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
+.task{
+  display:flex; gap:12px; align-items:flex-start;
+  background:var(--panel);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:16px; padding:16px;
+}
+.task.done{opacity:.6}
+
+/* 체크박스 (커스텀) */
+.chk-wrap{display:flex; align-items:flex-start}
+.chk-wrap input{display:none}
+.chk-wrap span{
+  width:20px; height:20px; border:2px solid #64748b; border-radius:6px; display:inline-block;
+}
+.chk-wrap input:checked + span{
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 3px #0f172a;
 }
 
-/* 버튼 기본 */
-.btn {
-  background: #2563eb;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.2s;
-}
-.btn:hover { background: #1d4ed8; }
+.task__main{flex:1}
+.task__line{display:flex; align-items:center; gap:8px}
+.task__line b{font-size:18px}
+.task__text{margin-top:6px}
+.task__meta{color:var(--sub); margin-top:4px; font-size:14px}
+.task__ops{display:flex; gap:8px}
 
-.btn-ghost {
-  background: #334155;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background 0.2s;
+/* D-Day 칩 */
+.dday{
+  display:inline-block; padding:3px 9px; border-radius:999px;
+  font-size:13px; font-weight:700; background:var(--chip);
+  border:1px solid rgba(255,255,255,.08);
 }
-.btn-ghost:hover { background: #475569; }
+.dday.red{color:var(--red); border-color:var(--red)}
+.dday.orange{color:var(--orange); border-color:var(--orange)}
+.dday.yellow{color:var(--yellow); border-color:var(--yellow)}
+.dday.green{color:var(--green); border-color:var(--green)}
+.dday.past{color:var(--past); border-color:var(--past)}
 
-/* === 섹션 컨테이너 === */
-.container {
-  max-width: 900px;
-  margin: 20px auto;
-  padding: 0 16px;
+/* 추가 폼 */
+.add-row{
+  display:grid; gap:8px; grid-template-columns: 1fr 2fr repeat(2,150px) repeat(2,120px) 1fr 120px;
+  align-items:center; background:rgba(17,24,39,.75);
+  border:1px dashed rgba(255,255,255,.15); padding:14px; border-radius:14px; margin-top:14px;
 }
-
-section {
-  margin-bottom: 20px;
-  background: #1e293b;
-  border-radius: 10px;
-  overflow: hidden;
+.add-row .til{color:var(--sub); text-align:center}
+.add-row input[type="text"], .add-row input[type="date"], .add-row select, .add-row textarea{
+  width:100%; background:#0b1220; color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:10px 12px;
 }
-
-.section-head {
-  width: 100%;
-  text-align: left;
-  background: #334155;
-  color: #f1f5f9;
-  border: none;
-  padding: 12px 16px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.section-body {
-  padding: 12px;
-  display: none;
-}
-.section-body.open {
-  display: block;
-}
-
-/* === 리스트 항목 === */
-.task-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.task {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background: #0f172a;
-  padding: 14px 16px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-}
-
-.task.done {
-  opacity: 0.6;
-  text-decoration: line-through;
-}
-
-.task__main {
-  flex: 1;
-}
-
-.task__line {
-  font-size: 1rem;
-  margin-bottom: 6px;
-}
-.task__line b {
-  font-size: 1.05rem;
-  color: #f8fafc;
-}
-.task__line span {
-  margin-left: 6px;
-  color: #cbd5e1;
-}
-
-.task__meta {
-  font-size: 0.85rem;
-  color: #94a3b8;
-  margin-top: 4px;
-}
-
-/* === 체크박스 커스텀 === */
-.chk-wrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-.chk-wrap input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-}
-
-/* === 추가 입력 폼 === */
-.add-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-  background: #0f172a;
-  padding: 12px;
-  border-radius: 8px;
-}
-
-.add-row input,
-.add-row select,
-.add-row textarea {
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid #334155;
-  background: #1e293b;
-  color: #f1f5f9;
-  font-size: 0.95rem;
-}
-.add-row input:focus,
-.add-row select:focus,
-.add-row textarea:focus {
-  border-color: #2563eb;
-  outline: none;
-}
-
-/* === 수정/삭제 버튼 === */
-.task button {
-  margin-left: 8px;
-}
-
-/* === D-Day 뱃지 === */
-.dday {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: 0.8rem;
-  color: white;
-}
-
-.dday.red { background: #dc2626; }      /* D-day, D-1 */
-.dday.orange { background: #ea580c; }   /* D-2 ~ D-3 */
-.dday.yellow { background: #eab308; color: black; } /* D-4 ~ D-5 */
-.dday.green { background: #22c55e; }    /* D-6 이상 */
-.dday.past { background: transparent; color: #94a3b8; border: 1px solid #94a3b8; }
-
-/* === 반응형 === */
-@media (max-width: 600px) {
-  .add-row {
-    flex-direction: column;
-  }
-  .task {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.add-row textarea{grid-column:1/-2; min-height:80px; resize:vertical}
+.add-row .btn-primary{grid-column:-2/-1}
+@media (max-width: 860px){
+  .add-row{grid-template-columns:1fr; }
+  .add-row .btn-primary{grid-column:auto}
 }
