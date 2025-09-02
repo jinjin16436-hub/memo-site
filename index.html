@@ -200,7 +200,7 @@
         else cls = "green";
       } else {
         // 지난 일정 → A+N (대문자 보장)
-        label = `A+${Math.abs(diff)}`.toUpperCase();
+        label = `D+${Math.abs(diff)}`.toUpperCase();
         cls = "past";
       }
       return `<span class="dday ${cls}">${label}</span>`;
