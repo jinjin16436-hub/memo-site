@@ -142,26 +142,31 @@
     return sp || ep;
   }
   // D-Day 라벨 (지났으면 A+N)
-  function renderDdayLabel(endDate, dueDate, startDate){
-    const target = toDate(endDate) || toDate(dueDate) || toDate(startDate);
-    if(!target) return "";
-    const today = new Date(); today.setHours(0,0,0,0);
-    target.setHours(0,0,0,0);
-    const diff = Math.floor((target - today)/(1000*60*60*24));
-    let label="", cls="";
-    if(diff===0){ label="D-Day"; cls="red"; }
-    else if(diff>0){
-      label=`D-${diff}`;
-      if(diff===1) cls="red";
-      else if(diff<=3) cls="orange";
-      else if(diff<=5) cls="yellow";
-      else cls="green";
-    }else{
-      label=`A+${Math.abs(diff)}`;
-      cls="past";
-    }
-    return `<span class="dday ${cls}">${label}</span>`;
+  // 기존 renderDdayLabel 완전히 교체
+function renderDdayLabel(endDate, dueDate, startDate){
+  const target = toDate(endDate) || toDate(dueDate) || toDate(startDate);
+  if(!target) return "";
+  const today = new Date(); today.setHours(0,0,0,0);
+  target.setHours(0,0,0,0);
+  const diff = Math.floor((target - today) / (1000*60*60*24));
+
+  let label = "", cls = "";
+  if (diff === 0) {
+    label = "D-Day"; cls = "red";
+  } else if (diff > 0) {
+    // 다가오는 일정 → D-n
+    label = `D-${diff}`;
+    if (diff === 1) cls = "red";
+    else if (diff <= 3) cls = "orange";
+    else if (diff <= 5) cls = "yellow";
+    else cls = "green";
+  } else {
+    // 지난 일정 → A+N (무조건 대문자 보장)
+    label = `A+${Math.abs(diff)}`.toUpperCase();
+    cls = "past";
   }
+  return `<span class="dday ${cls}">${label}</span>`;
+}
 
   // Firestore 경로: 로그인 시 내 문서, 비로그인 시 OWNER_UID
   const col = (cat)=>{
