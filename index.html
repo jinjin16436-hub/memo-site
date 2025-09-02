@@ -161,18 +161,30 @@
 
     /* ================= D-day ================= */
     function getDdayBadge(dateStr){
-      if(!dateStr) return "";
-      const today = new Date(); today.setHours(0,0,0,0);
-      const target = new Date(dateStr); target.setHours(0,0,0,0);
-      const diff = Math.round((target - today)/86400000); // d
-      const t = diff >= 0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
-      let color = "var(--green)";
-      if(diff <= 1) color = "var(--red)";
-      else if(diff <= 3) color = "var(--orange)";
-      else if(diff <= 5) color = "var(--yellow)";
-      else color = "var(--green)";
-      return `<span class="dday" style="background:${color}">${t}</span>`;
-    }
+  if(!dateStr) return "";
+  const MS_DAY = 24 * 60 * 60 * 1000;
+
+  const today = new Date();  today.setHours(0,0,0,0);
+  const target = new Date(dateStr); target.setHours(0,0,0,0);
+
+  const diff = Math.floor((target - today) / MS_DAY);
+
+  let label;
+  if (diff === 0) label = "D-DAY";     // 오늘
+  else if (diff > 0) label = `D-${diff}`;  // 미래
+  else label = `D+${Math.abs(diff)}`;      // 이미 지난 날
+
+  // 색상 규칙
+  let color = "var(--green)";
+  if (diff === 0 || diff === 1) color = "var(--red)";     // 오늘, 내일 전날
+  else if (diff === 2 || diff === 3) color = "var(--orange)";
+  else if (diff === 4 || diff === 5) color = "var(--yellow)";
+  else if (diff > 5) color = "var(--green)";
+  else if (diff < 0) color = "var(--gray)"; // 지난 일정은 회색
+
+  return `<span class="dday" style="background:${color}">${label}</span>`;
+}
+
 
     /* ================= Render ================= */
     function renderList(cat, items){
