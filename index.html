@@ -164,26 +164,33 @@
   if(!dateStr) return "";
   const MS_DAY = 24 * 60 * 60 * 1000;
 
-  const today = new Date();  today.setHours(0,0,0,0);
-  const target = new Date(dateStr); target.setHours(0,0,0,0);
+  const today = new Date();  
+  today.setHours(0,0,0,0);
+
+  const target = new Date(dateStr); 
+  target.setHours(0,0,0,0);
 
   const diff = Math.floor((target - today) / MS_DAY);
 
   let label;
-  if (diff === 0) label = "D-DAY";     // 오늘
-  else if (diff > 0) label = `D-${diff}`;  // 미래
-  else label = `D+${Math.abs(diff)}`;      // 이미 지난 날
+  if (diff === 0) label = "D-DAY";
+  else if (diff > 0) label = `D-${diff}`;
+  else label = `D+${Math.abs(diff)}`;
 
-  // 색상 규칙
+  // 미래 날짜 색상
   let color = "var(--green)";
-  if (diff === 0 || diff === 1) color = "var(--red)";     // 오늘, 내일 전날
+  if (diff === 0 || diff === 1) color = "var(--red)";
   else if (diff === 2 || diff === 3) color = "var(--orange)";
   else if (diff === 4 || diff === 5) color = "var(--yellow)";
-  else if (diff > 5) color = "var(--green)";
-  else if (diff < 0) color = "var(--gray)"; // 지난 일정은 회색
+  else if (diff >= 6) color = "var(--green)";
 
-  return `<span class="dday" style="background:${color}">${label}</span>`;
+  // 지난 일정은 별도 클래스
+  const pastClass = diff < 0 ? " past" : "";
+  const styleAttr = diff >= 0 ? ` style="background:${color}"` : "";
+
+  return `<span class="dday${pastClass}"${styleAttr}>${label}</span>`;
 }
+
 
 
     /* ================= Render ================= */
