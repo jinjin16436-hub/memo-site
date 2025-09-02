@@ -1,18 +1,12 @@
 :root{
-  --bg: #0f1722;
+  --bg: #0b1422;          /* ★ 단색 배경 */
   --panel: #121c2a;
   --panel-2: #0e1826;
   --text: #e7eef8;
   --muted: #a9b6c7;
-  --accent: #3b82f6;
   --line: rgba(255,255,255,.06);
 
-  /* D-day 색상 */
-  --red:    #ef4444;
-  --orange: #f59e0b;
-  --yellow: #fbbf24;
-  --green:  #22c55e;
-  --past:   #94a3b8;
+  --red:#ef4444; --orange:#f59e0b; --yellow:#fbbf24; --green:#22c55e; --past:#94a3b8;
 }
 
 *{ box-sizing: border-box; }
@@ -21,10 +15,7 @@ body{
   margin:0;
   font-family: ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Malgun Gothic";
   color:var(--text);
-  background:
-    radial-gradient(60% 60% at 10% 0%, #13233a 0%, rgba(19,35,58,0) 60%),
-    radial-gradient(90% 80% at 90% 10%, #0e1d33 0%, rgba(14,29,51,0) 70%),
-    linear-gradient(180deg, #0a1220 0%, #0b1422 100%);
+  background: var(--bg); /* ★ 단색 */
 }
 
 /* 상단바 */
@@ -32,9 +23,8 @@ body{
   position: sticky; top:0; z-index:20;
   display:flex; align-items:center; gap:12px;
   padding:14px 18px;
-  background:linear-gradient(180deg, rgba(10,18,32,.9), rgba(10,18,32,.6));
-  border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(6px);
+  background:#0d1727;      /* 단색 느낌 유지 */
+  border-bottom:1px solid var(--line);
 }
 .topbar h1{ font-size:18px; margin:0; }
 .spacer{ flex:1 1 auto; }
@@ -52,7 +42,7 @@ body{
 
 /* 컨테이너 */
 .container{
-  max-width: 960px;
+  max-width: 1000px;
   margin: 24px auto;
   padding: 0 16px 80px;
 }
@@ -67,7 +57,7 @@ body{
 }
 .sec__head h2{ margin:0; font-size:18px; color:var(--text); }
 
-/* 목록 아이템 */
+/* 목록 */
 .task-list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; }
 .task{
   display:grid; grid-template-columns: 30px 1fr auto;
@@ -84,10 +74,7 @@ body{
 
 .task__main{ display:flex; }
 .task__line{ display:flex; flex-direction:column; gap:6px; }
-
-.task__title{
-  display:flex; align-items:center; gap:10px; min-height:24px;
-}
+.task__title{ display:flex; align-items:center; gap:10px; min-height:24px; }
 .task__title b{ font-size:18px; }
 .title-side{ margin-left:4px; }
 
@@ -97,32 +84,39 @@ body{
 
 .task__actions{ display:flex; align-items:center; gap:8px; }
 
-/* 관리자 전용 요소 기본 숨김, body.admin일 때만 노출 */
+/* 관리자 전용 */
 .owner-only{ display:none; }
-.admin .owner-only{ display:inline-flex; }
+.admin .owner-only{ display:flex; }
 
 /* 추가 입력줄 */
 .add-row{
-  display:flex; gap:8px; margin-top:12px;
+  display:grid;
+  grid-template-columns: 160px 1fr 160px 120px 120px 1fr 100px;
+  gap:8px; margin-top:12px;
   background:rgba(255,255,255,.02);
   border:1px dashed var(--line); border-radius:12px;
   padding:10px;
 }
-.add-row input{
+.add-row input,
+.add-row select,
+.add-row textarea{
   background:#0f1928; color:var(--text); border:1px solid var(--line);
   border-radius:10px; padding:8px 10px;
 }
-.add-row .subj{ width:160px; }
-.add-row .text{ flex:1 1 320px; }
-.add-row .date{ width:160px; }
+.add-row .subj{ width:100%; }
+.add-row .text{ width:100%; }
+.add-row .date{ width:100%; }
+.add-row .detail{
+  width:100%; min-height:40px; resize:vertical;
+}
 
-/* D-day 배지 */
+/* D-day */
 .dday{
   display:inline-flex; align-items:center; gap:4px;
   font-weight:700; font-size:14px;
   color:white;
   padding:3px 8px; border-radius:999px;
-  background:#334155; /* 기본 */
+  background:#334155;
 }
 .dday.red{    background: var(--red); }
 .dday.orange{ background: var(--orange); color:#111; }
