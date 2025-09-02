@@ -101,6 +101,9 @@ body{
 .dday.yellow{color:var(--yellow); border-color:var(--yellow)}
 .dday.green{color:var(--green); border-color:var(--green)}
 .dday.past{color:var(--past); border-color:var(--past)}
+/* D-Day 뱃지에 소문자/대문자 강제 변환 금지 */
+.dday{ text-transform:none; }
+
 
 /* 추가 폼 */
 .add-row{
