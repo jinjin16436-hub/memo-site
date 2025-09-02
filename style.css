@@ -16,10 +16,15 @@
 
 *{box-sizing:border-box}
 html,body{height:100%}
+/* 기존 body 스타일 바꿔치기 */
 body{
-  margin:0; background:linear-gradient(180deg,#1e3a8a 0%, #0f172a 380px);
-  color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  margin:0;
+  min-height:100vh;
+  background:#0b1220;            /* 단색 */
+  color:var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
 }
+
 
 /* 상단바 */
 .admin-bar{
