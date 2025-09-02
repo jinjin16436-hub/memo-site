@@ -28,7 +28,7 @@
       <div id="sec_exam" class="section-body open">
         <ul id="list_exam" class="task-list"></ul>
 
-        <!-- 추가 입력: 관리자 전용 -->
+        <!-- 관리자 전용 추가 입력 -->
         <div class="add-row owner-only" data-cat="exam" style="display:none;">
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
@@ -123,7 +123,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase 초기화 : 너의 콘솔 값 그대로 넣기 -->
+  <!-- Firebase 초기화 : 네 콘솔 값으로 유지 -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
@@ -136,17 +136,17 @@
     firebase.initializeApp(firebaseConfig);
   </script>
 
-  <!-- 앱 코드 -->
+  <!-- 앱 코드 (모든 로직 포함) -->
   <script>
-    // 👑 관리자 UID (오너 UID)
+    // 👑 관리자 UID
     const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
 
     const auth = firebase.auth();
     const db   = firebase.firestore();
 
-    // UI helpers
-    const $  = (q, root=document) => root.querySelector(q);
-    const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
+    // 간단 헬퍼
+    const $  = (q, r=document) => r.querySelector(q);
+    const $$ = (q, r=document) => Array.from(r.querySelectorAll(q));
     const lists = { exam: $("#list_exam"), perf: $("#list_perf"), home: $("#list_home") };
 
     let currentUser = null;
@@ -156,50 +156,54 @@
 
     // 로그인/로그아웃
     const provider = new firebase.auth.GoogleAuthProvider();
-    $("#loginBtn").onclick  = () => auth.signInWithPopup(provider);
+    $("#loginBtn").onclick  = async () => {
+      try{
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        await auth.signInWithPopup(provider);
+      }catch(e){ alert("로그인 실패: " + e.message); }
+    };
     $("#logoutBtn").onclick = () => auth.signOut();
 
     auth.onAuthStateChanged(u => {
       currentUser = u;
       $("#loginBtn").style.display  = u ? "none" : "";
       $("#logoutBtn").style.display = u ? "" : "none";
+
       // 관리자 전용 요소 표시/숨김
       $$(".owner-only").forEach(el => el.style.display = isOwner() ? "" : "none");
-      // 카드 내 수정/삭제 버튼
       $$(".owner-only-inline").forEach(el => el.style.display = isOwner() ? "" : "none");
 
       startListeners();
       bindAddRows();
     });
 
-    // 경로 유틸 (읽기는 고정 OWNER, 쓰기는 현재 사용자(=OWNER)만)
+    // 읽기 경로(항상 OWNER 기준), 쓰기 경로(현재 사용자) – 단, 관리자인 경우 둘이 같아짐
     const colRO = (cat) => db.collection("users").doc(OWNER_UID).collection("tasks").doc(cat).collection("items");
     const colRW = (cat) => db.collection("users").doc(currentUser.uid).collection("tasks").doc(cat).collection("items");
 
-    // 리스너 재시작
+    // 구독 시작
     function startListeners(){
-      unsubscribers.forEach(u => u && u());
-      unsubscribers = [];
+      unsubscribers.forEach(u => u && u()); unsubscribers = [];
       ["exam","perf","home"].forEach(cat => {
         const u = colRO(cat).orderBy("dateFrom","asc").onSnapshot(snap =>{
           const arr = [];
           snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
           renderList(cat, arr);
-        });
+        }, err => console.error(err));
         unsubscribers.push(u);
       });
     }
 
-    // 요일
+    // 날짜/요일/포맷
     const WEEKS = ["일","월","화","수","목","금","토"];
     const z2 = n => String(n).padStart(2,"0");
-    function fmtDay(dateStr){
-      if(!dateStr) return "";
-      const d = new Date(dateStr + "T00:00:00");
+    function fmtDay(s){
+      if(!s) return "";
+      const d = new Date(s + "T00:00:00");
+      if(isNaN(+d)) return "";
       return `${d.getFullYear()}-${z2(d.getMonth()+1)}-${z2(d.getDate())} (${WEEKS[d.getDay()]})`;
     }
 
-    // 교시 텍스트
     function lessonText(start, end){
       if(!start && !end) return "";
       if(start && end){
@@ -209,13 +213,12 @@
       return (start || end) || "";
     }
 
-    // D-day 표시
+    // D-Day (미래 D-n / 오늘 D-DAY / 과거 D+n)
     function ddayBadge(dateStr){
       if(!dateStr) return "";
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      const d = new Date(dateStr + "T00:00:00");
-      const diff = Math.floor((d - today)/(1000*60*60*24));
+      const today = new Date(); today.setHours(0,0,0,0);
+      const d = new Date(dateStr + "T00:00:00"); d.setHours(0,0,0,0);
+      const diff = Math.floor((d - today)/86400000);
 
       let label="", cls="";
       if(diff > 0){
@@ -228,45 +231,48 @@
         label = "D-DAY";
         cls = "urgent";
       }else{
-        // 지난 일정 → A+N
-        label = `A+${Math.abs(diff)}`;
+        label = `D+${Math.abs(diff)}`;  // 과거도 D+N
         cls = "past";
       }
       return `<span class="dday ${cls}">${label}</span>`;
     }
 
-    // 카드 렌더
+    function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+
+    // 렌더
     function renderList(cat, items){
       const ul = lists[cat];
       ul.innerHTML = "";
-      items.forEach(it => {
-        const li = document.createElement("li");
-        li.className = "task";
 
-        const rangeText = (it.dateTo && it.dateTo!==it.dateFrom)
-          ? `${fmtDay(it.dateFrom)} ~ ${fmtDay(it.dateTo)}`
-          : fmtDay(it.dateFrom);
+      items.forEach(it => {
+        // 과거 문서 호환(due 사용하던 시절)
+        const dateFrom = it.dateFrom || it.due || "";
+        const dateTo   = it.dateTo   || dateFrom;
+
+        const rangeText = (dateTo && dateTo!==dateFrom)
+          ? `${fmtDay(dateFrom)} ~ ${fmtDay(dateTo)}`
+          : fmtDay(dateFrom);
 
         const period = lessonText(it.start, it.end);
         const periodLine = period ? ` ${period}` : "";
 
+        const li = document.createElement("li");
+        li.className = "task";
+
         li.innerHTML = `
           <label class="chk-wrap">
-            <input type="checkbox" ${it.done?"checked":""} data-act="toggle" data-cat="${cat}" data-id="${it.id}">
+            <input type="checkbox" ${it.done?"checked":""} ${isOwner()?"":"disabled"}
+                   data-act="toggle" data-cat="${cat}" data-id="${it.id}">
             <span></span>
           </label>
 
           <div class="task__body">
-            <!-- 과목 + D-day -->
             <div class="task__title">
               <b>${esc(it.subj || "")}</b>
-              ${ddayBadge(it.dateFrom)}
+              ${ddayBadge(dateFrom)}
             </div>
-            <!-- 내용 (줄바꿈) -->
             <div class="task__content">${esc(it.text || "")}</div>
-            <!-- 상세내용 (더 작게) -->
             ${it.detail ? `<div class="task__detail">${esc(it.detail)}</div>` : ""}
-            <!-- 날짜 라인 -->
             <div class="task__date">📅 ${rangeText}${periodLine ? ` ${periodLine}` : ""}</div>
           </div>
 
@@ -277,35 +283,26 @@
         `;
         ul.appendChild(li);
 
-        // 이벤트 바인딩
+        // 액션
         li.addEventListener("click", async (e)=>{
           const t = e.target;
           const act = t.getAttribute("data-act");
           if(!act) return;
 
-          if(act === "toggle"){
-            // 누구나 체크 가능? → 요구: 관리자만 수정/삭제, 체크는 그대로 두고 싶으면 아래 조건 제거
-            if(!isOwner()){
-              e.preventDefault();
-              t.checked = !t.checked;
-              return;
-            }
-            try{
-              await colRW(cat).doc(t.getAttribute("data-id"))
-                .set({ done:t.checked }, { merge:true });
-            }catch(err){ alert(err.message); }
-          }
-
+          // 관리자만 수정/삭제/체크 허용
           if(!isOwner()){
+            if(act === "toggle" && t.tagName === "INPUT"){
+              t.checked = !t.checked; // 원복
+            }
             alert("관리자만 가능합니다.");
             return;
           }
 
           const id = t.getAttribute("data-id");
-          if(act === "del"){
-            if(confirm("삭제할까요?")){
-              await colRW(cat).doc(id).delete();
-            }
+          if(act === "toggle"){
+            await colRW(cat).doc(id).set({ done: t.checked }, { merge: true });
+          }else if(act === "del"){
+            if(confirm("삭제할까요?")) await colRW(cat).doc(id).delete();
           }else if(act === "edit"){
             openEditDialog(cat, id, it);
           }
@@ -318,6 +315,7 @@
       $$(".add-row").forEach(row=>{
         const btn = $(".add", row);
         const cat = row.dataset.cat;
+
         btn.onclick = async ()=>{
           if(!isOwner()){ alert("관리자만 추가할 수 있어요."); return; }
 
@@ -329,7 +327,10 @@
           const end   = $(".end", row).value;
           const detail= $(".detail", row).value.trim();
 
-          if(!subj || !text || !dateFrom){ alert("과목/내용/시작일을 입력해 주세요."); return; }
+          if(!subj || !text || !dateFrom){
+            alert("과목 / 내용 / 시작일을 입력해 주세요.");
+            return;
+          }
 
           await colRW(cat).add({
             subj, text, detail,
@@ -339,7 +340,7 @@
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
 
-          // clear
+          // 초기화
           $(".subj", row).value = "";
           $(".text", row).value = "";
           $(".date-from", row).value = "";
@@ -373,11 +374,8 @@
         subj, text, detail,
         dateFrom: from, dateTo: to || from,
         start, end
-      }, { merge:true });
+      }, { merge: true });
     }
-
-    // escape
-    function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
   </script>
 </body>
 </html>
