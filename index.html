@@ -19,8 +19,18 @@
   <main class="container">
 
     <!-- 📢 중요 전달 사항 (맨 위) -->
-    <section class="important-section">
-      <h2 class="important-head">📢 중요 전달 사항</h2>
+    <section class="important-section" id="importantSection">
+      <div class="important-head-row">
+        <h2 class="important-head">📢 중요 전달 사항</h2>
+
+        <!-- 관리자만 보이는 ON/OFF 스위치 -->
+        <label class="switch owner-only" id="impSwitchWrap" style="display:none">
+          <input type="checkbox" id="toggleImportant">
+          <span class="slider"></span>
+          <span class="switch-label">표시</span>
+        </label>
+      </div>
+
       <ul id="list_important" class="task-list important-list"></ul>
 
       <!-- 관리자 전용 추가 -->
@@ -171,6 +181,9 @@
     let unsubscribers = [];
     const isOwner = () => currentUser && currentUser.uid === OWNER_UID;
 
+    // 🔄 1분마다 자동 새로고침 (요청 기능)
+    setInterval(() => { window.location.reload(); }, 60_000);
+
     // 로그인/로그아웃
     const provider = new firebase.auth.GoogleAuthProvider();
     $("#loginBtn").onclick  = async () => {
@@ -190,6 +203,10 @@
       $$(".owner-only").forEach(el => el.style.display = isOwner() ? "" : "none");
       $$(".owner-only-inline").forEach(el => el.style.display = isOwner() ? "" : "none");
 
+      // 설정 감시 시작
+      watchSettings();
+
+      // 리스트 구독/추가 폼 바인딩
       startListeners();
       bindAddRows();
     });
@@ -197,6 +214,48 @@
     // 읽기(항상 OWNER), 쓰기(현재 사용자=관리자만 의미 있음)
     const colRO = (cat) => db.collection("users").doc(OWNER_UID).collection("tasks").doc(cat).collection("items");
     const colRW = (cat) => db.collection("users").doc(currentUser.uid).collection("tasks").doc(cat).collection("items");
+
+    // ====== 설정(중요 섹션 ON/OFF) ======
+    const settingsDoc = db.collection("users").doc(OWNER_UID).collection("config").doc("ui");
+
+    function applyImportantVisibility(show){
+      const sec = $("#importantSection");
+      if(!sec) return;
+      sec.style.display = show ? "" : "none";
+      // 관리자 스위치의 체크 상태도 동기화
+      const sw = $("#toggleImportant");
+      if(sw) sw.checked = !!show;
+    }
+
+    function watchSettings(){
+      // 실시간으로 설정 반영 (모두에게 공통)
+      settingsDoc.onSnapshot(snap=>{
+        const data = snap.exists ? snap.data() : {};
+        const show = (data.showImportant !== false); // 기본 true
+        applyImportantVisibility(show);
+
+        // 관리자에게만 스위치 보여줌
+        $("#impSwitchWrap").style.display = isOwner() ? "" : "none";
+      });
+
+      // 관리자 토글 동작
+      const sw = $("#toggleImportant");
+      if(sw){
+        sw.onchange = async (e)=>{
+          if(!isOwner()){
+            // 비관리자는 조작 불가
+            applyImportantVisibility(sw.checked); // UI 원복
+            alert("관리자만 변경할 수 있습니다.");
+            return;
+          }
+          try{
+            await settingsDoc.set({ showImportant: e.target.checked }, { merge:true });
+          }catch(err){
+            alert("설정 저장 실패: " + err.message);
+          }
+        };
+      }
+    }
 
     function startListeners(){
       unsubscribers.forEach(u=>u&&u()); unsubscribers = [];
@@ -342,7 +401,7 @@
 
           const id = t.getAttribute("data-id");
           if(act === "toggle"){
-            await colRW(cat).doc(id).set({ done: t.checked }, { merge:true });
+            await colRW(cat).doc(id).set({ done: t.checked }, { merge: true });
           }else if(act === "del"){
             if(confirm("삭제할까요?")) await colRW(cat).doc(id).delete();
           }else if(act === "edit"){
@@ -358,7 +417,7 @@
               subj, text, detail,
               dateFrom: from, dateTo: to || from,
               start, end
-            }, { merge:true });
+            }, { merge: true });
           }
         });
       });
