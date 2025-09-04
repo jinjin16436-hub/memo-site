@@ -8,137 +8,141 @@
 </head>
 <body>
   <!-- 상단 바 -->
-  <header class="admin-bar">
+  <header class="topbar">
     <h1>📒 숙제 & 수행평가</h1>
-    <div class="auth-area">
+    <div class="right">
+      <!-- 관리자 전용: 중요 전달사항 ON/OFF -->
+      <div id="impSwitchWrap" class="imp-switch" style="display:none">
+        <label>
+          <input id="toggleImportant" type="checkbox">
+          중요 전달사항 표시
+        </label>
+      </div>
       <button id="loginBtn"  class="btn">🔑 Google 로그인</button>
       <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
     </div>
   </header>
 
   <main class="container">
-
-    <!-- 📢 중요 전달 사항 (맨 위) -->
-    <section class="important-section" id="importantSection">
-      <div class="important-head-row">
-        <h2 class="important-head">📢 중요 전달 사항</h2>
-
-        <!-- 관리자만 보이는 ON/OFF 스위치 -->
-        <label class="switch owner-only" id="impSwitchWrap" style="display:none">
-          <input type="checkbox" id="toggleImportant">
-          <span class="slider"></span>
-          <span class="switch-label">표시</span>
-        </label>
+    <!-- 중요 전달 사항 (관리자가 ON일 때만 보임) -->
+    <section id="sec_important" class="board">
+      <div class="board__head">
+        <h2>📢 중요 전달 사항</h2>
       </div>
+      <ul id="list_important" class="task-list"></ul>
 
-      <ul id="list_important" class="task-list important-list"></ul>
-
-      <!-- 관리자 전용 추가 -->
-      <div class="add-row owner-only add-important" data-cat="important" style="display:none;">
-        <input class="subj" type="text" placeholder="제목" />
-        <button class="add btn">+ 추가</button>
-        <textarea class="text" placeholder="중요 내용"></textarea>
+      <!-- 관리자 전용 입력 -->
+      <div class="add-row" data-cat="important" style="display:none">
+        <div class="row-1">
+          <input class="subj" type="text" placeholder="제목" />
+          <input class="text" type="text" placeholder="내용" />
+          <input class="date from" type="date" />
+          <input class="date to"   type="date" />
+          <select class="startp">
+            <option value="0">시작 교시</option>
+            <option>1교시</option><option>2교시</option><option>3교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
+          </select>
+          <select class="endp">
+            <option value="0">끝 교시</option>
+            <option>1교시</option><option>2교시</option><option>3교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
+          </select>
+          <button class="add btn">+ 추가</button>
+        </div>
+        <textarea class="detail" rows="3" placeholder="상세 내용 (선택)"></textarea>
       </div>
     </section>
 
-    <!-- ⚠️ 섹션 순서: 시험 → 수행평가 → 숙제 -->
-
     <!-- 시험 -->
-    <section>
-      <div class="section-head-row">
-        <h2 class="section-head">🧪 시험</h2>
+    <section class="board">
+      <div class="board__head">
+        <h2>🧪 시험</h2>
       </div>
-      <div id="sec_exam" class="section-body open">
-        <ul id="list_exam" class="task-list"></ul>
+      <ul id="list_exam" class="task-list"></ul>
 
-        <!-- 관리자 전용 추가 -->
-        <div class="add-row owner-only" data-cat="exam" style="display:none;">
+      <!-- 관리자 전용 입력 -->
+      <div class="add-row" data-cat="exam" style="display:none">
+        <div class="row-1">
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
-          <input class="date-from" type="date" />
-          <input class="date-to"   type="date" />
-          <select class="start">
-            <option value="">시작 교시</option>
+          <input class="date from" type="date" />
+          <input class="date to"   type="date" />
+          <select class="startp">
+            <option value="0">시작 교시</option>
             <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
           </select>
-          <select class="end">
-            <option value="">끝 교시</option>
+          <select class="endp">
+            <option value="0">끝 교시</option>
             <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
           </select>
           <button class="add btn">+ 추가</button>
-
-          <!-- 2줄: 상세내용 크게 -->
-          <textarea class="detail" placeholder="상세 내용 (선택)"></textarea>
         </div>
+        <textarea class="detail" rows="3" placeholder="상세 내용 (선택)"></textarea>
       </div>
     </section>
 
     <!-- 수행평가 -->
-    <section>
-      <div class="section-head-row">
-        <h2 class="section-head">📄 수행평가</h2>
+    <section class="board">
+      <div class="board__head">
+        <h2>📄 수행평가</h2>
       </div>
-      <div id="sec_perf" class="section-body open">
-        <ul id="list_perf" class="task-list"></ul>
+      <ul id="list_perf" class="task-list"></ul>
 
-        <div class="add-row owner-only" data-cat="perf" style="display:none;">
+      <!-- 관리자 전용 입력 -->
+      <div class="add-row" data-cat="perf" style="display:none">
+        <div class="row-1">
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
-          <input class="date-from" type="date" />
-          <input class="date-to"   type="date" />
-          <select class="start">
-            <option value="">시작 교시</option>
+          <input class="date from" type="date" />
+          <input class="date to"   type="date" />
+          <select class="startp">
+            <option value="0">시작 교시</option>
             <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
           </select>
-          <select class="end">
-            <option value="">끝 교시</option>
+          <select class="endp">
+            <option value="0">끝 교시</option>
             <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
           </select>
           <button class="add btn">+ 추가</button>
-          <textarea class="detail" placeholder="상세 내용 (선택)"></textarea>
         </div>
+        <textarea class="detail" rows="3" placeholder="상세 내용 (선택)"></textarea>
       </div>
     </section>
 
     <!-- 숙제 -->
-    <section>
-      <div class="section-head-row">
-        <h2 class="section-head">📌 숙제</h2>
+    <section class="board">
+      <div class="board__head">
+        <h2>📌 숙제</h2>
       </div>
-      <div id="sec_home" class="section-body open">
-        <ul id="list_home" class="task-list"></ul>
+      <ul id="list_home" class="task-list"></ul>
 
-        <div class="add-row owner-only" data-cat="home" style="display:none;">
+      <!-- 관리자 전용 입력 -->
+      <div class="add-row" data-cat="home" style="display:none">
+        <div class="row-1">
           <input class="subj" type="text" placeholder="과목" />
           <input class="text" type="text" placeholder="내용" />
-          <input class="date-from" type="date" />
-          <input class="date-to"   type="date" />
-          <select class="start">
-            <option value="">시작 교시</option>
+          <input class="date from" type="date" />
+          <input class="date to"   type="date" />
+          <select class="startp">
+            <option value="0">시작 교시</option>
             <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
           </select>
-          <select class="end">
-            <option value="">끝 교시</option>
+          <select class="endp">
+            <option value="0">끝 교시</option>
             <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
           </select>
           <button class="add btn">+ 추가</button>
-          <textarea class="detail" placeholder="상세 내용 (선택)"></textarea>
         </div>
+        <textarea class="detail" rows="3" placeholder="상세 내용 (선택)"></textarea>
       </div>
     </section>
-
   </main>
 
   <!-- Firebase SDK (compat) -->
@@ -146,7 +150,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase 초기화 : 네 콘솔 값으로 유지 -->
+  <!-- Firebase 초기화 (네 값으로 교체) -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
@@ -161,320 +165,341 @@
 
   <!-- 앱 코드 -->
   <script>
-    // 👑 관리자 UID
-    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
-
+    /* ---------- 기본 핸들 ---------- */
     const auth = firebase.auth();
     const db   = firebase.firestore();
 
-    const $  = (q, r=document) => r.querySelector(q);
-    const $$ = (q, r=document) => Array.from(r.querySelectorAll(q));
+    // 🔐 소유자 UID (관리자 계정)
+    const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
+
+    const $  = (q,root=document)=>root.querySelector(q);
+    const $$ = (q,root=document)=>Array.from(root.querySelectorAll(q));
 
     const lists = {
       important: $("#list_important"),
-      exam: $("#list_exam"),
-      perf: $("#list_perf"),
-      home: $("#list_home")
+      exam:      $("#list_exam"),
+      perf:      $("#list_perf"),
+      home:      $("#list_home"),
     };
+    const addRows = $$(".add-row");
+
+    // 마지막 스냅샷 캐시 → 1분마다 “조용히” 재렌더
+    const lastData = { important:[], exam:[], perf:[], home:[] };
 
     let currentUser = null;
-    let unsubscribers = [];
-    const isOwner = () => currentUser && currentUser.uid === OWNER_UID;
 
-    // 🔄 1분마다 자동 새로고침 (요청 기능)
-    setInterval(() => { window.location.reload(); }, 60_000);
+    function isOwner() {
+      return currentUser && currentUser.uid === OWNER_UID;
+    }
 
-    // 로그인/로그아웃
-    const provider = new firebase.auth.GoogleAuthProvider();
-    $("#loginBtn").onclick  = async () => {
-      try{
-        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-        await auth.signInWithPopup(provider);
-      }catch(e){ alert("로그인 실패: " + e.message); }
-    };
-    $("#logoutBtn").onclick = () => auth.signOut();
+    /* ---------- Firestore 참조 ---------- */
+    // 읽기: 항상 OWNER의 데이터 (공개용)
+    function colRO(cat) {
+      return db.collection("users").doc(OWNER_UID).collection("tasks").doc(cat).collection("items");
+    }
+    // 쓰기: 반드시 관리자만 (보안규칙+클라이언트 이중차단)
+    function colRW(cat) {
+      if (!isOwner()) throw new Error("관리자만 작성할 수 있습니다.");
+      return colRO(cat);
+    }
 
-    auth.onAuthStateChanged(u => {
-      currentUser = u;
-      $("#loginBtn").style.display  = u ? "none" : "";
-      $("#logoutBtn").style.display = u ? "" : "none";
+    /* ---------- 날짜/요일/교시 ---------- */
+    const wd = ["일","월","화","수","목","금","토"];
+    function fmtDate(dStr){
+      if(!dStr) return "";
+      const d = new Date(dStr+"T00:00:00");
+      return `${dStr} (${wd[d.getDay()]})`;
+    }
+    function periods(s,e){
+      s = (s||"").replace("교시","");
+      e = (e||"").replace("교시","");
+      if(!s || s==='0' || !e || e==='0') return "";
+      if(s===e) return `${s}교시`;
+      return `${s}~${e}교시`;
+    }
+    function formatRange(a,b){
+      if(!a && !b) return "";
+      if(!a && b) return fmtDate(b);
+      if(a && !b) return fmtDate(a);
+      return `${fmtDate(a)} ~ ${fmtDate(b)}`;
+    }
 
-      // 관리자 전용 요소 표시/숨김
-      $$(".owner-only").forEach(el => el.style.display = isOwner() ? "" : "none");
-      $$(".owner-only-inline").forEach(el => el.style.display = isOwner() ? "" : "none");
+    /* ---------- D-Day 배지 ---------- */
+    function dayDiff(dStr){
+      if(!dStr) return null;
+      const tz = new Date().toISOString().slice(0,10);
+      const a = new Date(tz+"T00:00:00");
+      const b = new Date(dStr+"T00:00:00");
+      return Math.round((b - a) / 86400000);
+    }
+    function ddayBadge(dStr){
+      const diff = dayDiff(dStr);
+      if(diff===null) return "";
+      let label, cls;
+      if(diff > 0){
+        label = `D-${diff}`;
+        if(diff===1) cls="dd-red";
+        else if(diff<=3) cls="dd-orange";
+        else if(diff<=5) cls="dd-yellow";
+        else cls="dd-green";
+      }else if(diff === 0){
+        label = "D-DAY"; cls="dd-red";
+      }else{
+        label = `D+${Math.abs(diff)}`;
+        cls="dd-gray";
+      }
+      return `<span class="dd-badge ${cls}">${label}</span>`;
+    }
 
-      // 설정 감시 시작
-      watchSettings();
+    /* ---------- 로그인/로그아웃 ---------- */
+    $("#loginBtn").onclick  = ()=> auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    $("#logoutBtn").onclick = ()=> auth.signOut();
 
-      // 리스트 구독/추가 폼 바인딩
+    auth.onAuthStateChanged(u=>{
+      currentUser = u || null;
+      $("#loginBtn").style.display  = currentUser ? "none" : "";
+      $("#logoutBtn").style.display = currentUser ? "" : "none";
+
+      // 관리자만 입력/편집 UI 노출
+      setEditVisible(isOwner());
+      // 관리자만 중요 전달 스위치 보이기
+      $("#impSwitchWrap").style.display = isOwner() ? "" : "none";
+
       startListeners();
-      bindAddRows();
+      watchSettings();
     });
 
-    // 읽기(항상 OWNER), 쓰기(현재 사용자=관리자만 의미 있음)
-    const colRO = (cat) => db.collection("users").doc(OWNER_UID).collection("tasks").doc(cat).collection("items");
-    const colRW = (cat) => db.collection("users").doc(currentUser.uid).collection("tasks").doc(cat).collection("items");
+    function setEditVisible(v){
+      addRows.forEach(r => r.style.display = v ? "" : "none");
+    }
 
-    // ====== 설정(중요 섹션 ON/OFF) ======
+    /* ---------- 중요 전달사항 ON/OFF (설정 저장) ---------- */
     const settingsDoc = db.collection("users").doc(OWNER_UID).collection("config").doc("ui");
 
     function applyImportantVisibility(show){
-      const sec = $("#importantSection");
-      if(!sec) return;
-      sec.style.display = show ? "" : "none";
-      // 관리자 스위치의 체크 상태도 동기화
+      $("#sec_important").style.display = show ? "" : "none";
       const sw = $("#toggleImportant");
       if(sw) sw.checked = !!show;
     }
 
     function watchSettings(){
-      // 실시간으로 설정 반영 (모두에게 공통)
+      // 항상 OWNER 설정 읽기
       settingsDoc.onSnapshot(snap=>{
         const data = snap.exists ? snap.data() : {};
-        const show = (data.showImportant !== false); // 기본 true
+        const show = (data.showImportant !== false);
         applyImportantVisibility(show);
-
-        // 관리자에게만 스위치 보여줌
-        $("#impSwitchWrap").style.display = isOwner() ? "" : "none";
       });
 
-      // 관리자 토글 동작
       const sw = $("#toggleImportant");
       if(sw){
         sw.onchange = async (e)=>{
-          if(!isOwner()){
-            // 비관리자는 조작 불가
-            applyImportantVisibility(sw.checked); // UI 원복
+          if(!isOwner()){       // 비관리자 차단 + 즉시 복원
+            sw.checked = !sw.checked;
             alert("관리자만 변경할 수 있습니다.");
             return;
           }
           try{
             await settingsDoc.set({ showImportant: e.target.checked }, { merge:true });
           }catch(err){
-            alert("설정 저장 실패: " + err.message);
+            sw.checked = !sw.checked;
+            alert("설정 저장 실패: " + (err?.message || err));
           }
         };
       }
     }
 
+    /* ---------- 실시간 구독 ---------- */
+    let unsubscribers = [];
     function startListeners(){
-      unsubscribers.forEach(u=>u&&u()); unsubscribers = [];
-      ["important","exam","perf","home"].forEach(cat => {
+      unsubscribers.forEach(u=>u&&u()); unsubscribers=[];
+      ["important","exam","perf","home"].forEach(cat=>{
         const ref = colRO(cat);
         const q = (cat === "important")
           ? ref.orderBy("createdAt","desc")
           : ref.orderBy("dateFrom","asc");
         const un = q.onSnapshot(snap=>{
           const arr=[]; snap.forEach(d=>arr.push({ id:d.id, ...d.data() }));
+          lastData[cat] = arr;           // ✅ 캐시
           renderList(cat, arr);
-        }, err=>console.error(err));
+        },err=>console.error(err));
         unsubscribers.push(un);
       });
     }
 
-    // 유틸
-    const WEEKS = ["일","월","화","수","목","금","토"];
-    const z2 = n => String(n).padStart(2,"0");
-    function fmtDay(s){
-      if(!s) return "";
-      const d = new Date(s + "T00:00:00");
-      if(isNaN(+d)) return "";
-      return `${d.getFullYear()}-${z2(d.getMonth()+1)}-${z2(d.getDate())} (${WEEKS[d.getDay()]})`;
-    }
-    function lessonText(start, end){
-      if(!start && !end) return "";
-      if(start && end){
-        if(start === end) return `${start}`;
-        return `${start}~${end}`;
-      }
-      return (start || end) || "";
-    }
-    function ddayBadge(dateStr){
-      if(!dateStr) return "";
-      const today = new Date(); today.setHours(0,0,0,0);
-      const d = new Date(dateStr + "T00:00:00"); d.setHours(0,0,0,0);
-      const diff = Math.floor((d - today)/86400000);
+    // 🔄 1분마다 “조용한 갱신” (서버호출 없이 다시 그리기)
+    setInterval(()=>{
+      ["important","exam","perf","home"].forEach(cat=>{
+        if(lastData[cat]) renderList(cat, lastData[cat]);
+      });
+    }, 60_000);
 
-      let label="", cls="";
-      if(diff > 0){
-        label = `D-${diff}`;
-        if(diff <= 1) cls = "urgent";
-        else if(diff <= 3) cls = "soon";
-        else if(diff <= 5) cls = "mid";
-        else cls = "safe";
-      }else if(diff === 0){
-        label = "D-DAY"; cls = "urgent";
-      }else{
-        label = `D+${Math.abs(diff)}`; cls = "past";
-      }
-      return `<span class="dday ${cls}">${label}</span>`;
-    }
+    /* ---------- 렌더 ---------- */
     function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
 
-    // 렌더
     function renderList(cat, items){
       const ul = lists[cat];
       ul.innerHTML = "";
-
       items.forEach(it=>{
-        // 중요 전달 사항은 간단 렌더
-        if(cat === "important"){
-          const li = document.createElement("li");
-          li.className = "task task--important";
-          li.innerHTML = `
-            <div class="task__body">
-              <div class="task__title task__title--important">
-                <b>${esc(it.subj || "")}</b>
-              </div>
-              <div class="task__content">${esc(it.text || "")}</div>
-            </div>
-            <div class="task__actions owner-only-inline" style="display:${isOwner()?"":"none"}">
-              <button class="btn ghost" data-act="edit" data-cat="${cat}" data-id="${it.id}">수정</button>
-              <button class="btn ghost" data-act="del"  data-cat="${cat}" data-id="${it.id}">삭제</button>
-            </div>
-          `;
-          ul.appendChild(li);
-
-          li.addEventListener("click", async (e)=>{
-            const t = e.target, act = t.getAttribute("data-act");
-            if(!act) return;
-            if(!isOwner()){ alert("관리자만 가능합니다."); return; }
-            const id = t.getAttribute("data-id");
-            if(act === "del"){
-              if(confirm("삭제할까요?")) await colRW(cat).doc(id).delete();
-            }else if(act === "edit"){
-              const subj = prompt("제목", it.subj || ""); if(subj===null) return;
-              const text = prompt("내용", it.text || ""); if(text===null) return;
-              await colRW(cat).doc(id).set({ subj, text }, { merge:true });
-            }
-          });
-
-          return;
-        }
-
-        // 일반(시험/수행/숙제)
-        const dateFrom = it.dateFrom || it.due || "";
-        const dateTo   = it.dateTo   || dateFrom;
-        const rangeText = (dateTo && dateTo!==dateFrom)
-          ? `${fmtDay(dateFrom)} ~ ${fmtDay(dateTo)}`
-          : fmtDay(dateFrom);
-        const period = lessonText(it.start, it.end);
-        const periodLine = period ? ` ${period}` : "";
-
         const li = document.createElement("li");
         li.className = "task";
+
+        // 날짜/교시
+        const range = formatRange(it.dateFrom, it.dateTo);
+        const pr = periods(it.startP || "", it.endP || "");
+
+        // D-day는 시작일 기준으로 계산
+        const badge = ddayBadge(it.dateFrom || it.dateTo);
+
+        // 편집/삭제 버튼은 관리자만
+        const ownerBtns = isOwner() ? `
+          <div class="owner-btns">
+            <button class="btn btn-ghost" data-act="edit" data-id="${it.id}" data-cat="${cat}">수정</button>
+            <button class="btn btn-ghost" data-act="del"  data-id="${it.id}" data-cat="${cat}">삭제</button>
+          </div>` : "";
+
         li.innerHTML = `
           <label class="chk-wrap">
-            <input type="checkbox" ${it.done?"checked":""} ${isOwner()?"":"disabled"}
-                   data-act="toggle" data-cat="${cat}" data-id="${it.id}">
+            <input type="checkbox" disabled ${it.done?"checked":""}>
             <span></span>
           </label>
 
-          <div class="task__body">
-            <div class="task__title">
-              <b>${esc(it.subj || "")}</b>
-              ${ddayBadge(dateFrom)}
+          <div class="task__content">
+            <div class="line-1">
+              <div class="subject">
+                <b>${esc(it.subj||"")}</b>
+                ${badge}
+              </div>
+              <div class="text">${esc(it.text||"")}</div>
+              ${it.detail ? `<div class="detail">${esc(it.detail)}</div>` : ``}
             </div>
-            <div class="task__content">${esc(it.text || "")}</div>
-            ${it.detail ? `<div class="task__detail">${esc(it.detail)}</div>` : ""}
-            <div class="task__date">📅 ${rangeText}${periodLine ? ` ${periodLine}` : ""}</div>
+
+            <div class="meta">
+              ${range ? `📅 ${range}` : ``}
+              ${pr ? ` &nbsp;•&nbsp; ${pr}` : ``}
+            </div>
           </div>
 
-          <div class="task__actions owner-only-inline" style="display:${isOwner()?"":"none"}">
-            <button class="btn ghost" data-act="edit" data-cat="${cat}" data-id="${it.id}">수정</button>
-            <button class="btn ghost" data-act="del"  data-cat="${cat}" data-id="${it.id}">삭제</button>
-          </div>
+          ${ownerBtns}
         `;
+
         ul.appendChild(li);
-
-        li.addEventListener("click", async (e)=>{
-          const t = e.target, act = t.getAttribute("data-act");
-          if(!act) return;
-
-          if(!isOwner()){
-            if(act === "toggle" && t.tagName === "INPUT"){
-              t.checked = !t.checked;
-            }
-            alert("관리자만 가능합니다.");
-            return;
-          }
-
-          const id = t.getAttribute("data-id");
-          if(act === "toggle"){
-            await colRW(cat).doc(id).set({ done: t.checked }, { merge: true });
-          }else if(act === "del"){
-            if(confirm("삭제할까요?")) await colRW(cat).doc(id).delete();
-          }else if(act === "edit"){
-            const subj = prompt("과목", it.subj || ""); if(subj===null) return;
-            const text = prompt("내용", it.text || ""); if(text===null) return;
-            const detail = prompt("상세 내용(선택)", it.detail || ""); if(detail===null) return;
-            const from = prompt("시작일(YYYY-MM-DD)", it.dateFrom || ""); if(from===null) return;
-            const to   = prompt("종료일(YYYY-MM-DD, 비우면 시작일과 동일)", it.dateTo || it.dateFrom || ""); if(to===null) return;
-            const start= prompt("시작 교시(예: 1교시, 비우기 가능)", it.start || ""); if(start===null) return;
-            const end  = prompt("끝 교시(예: 3교시, 비우기 가능)", it.end || ""); if(end===null) return;
-
-            await colRW(cat).doc(id).set({
-              subj, text, detail,
-              dateFrom: from, dateTo: to || from,
-              start, end
-            }, { merge: true });
-          }
-        });
       });
+
+      // 관리자만 편집/삭제 동작
+      if(isOwner()){
+        ul.onclick = async (e)=>{
+          const t = e.target.closest("button[data-act]");
+          if(!t) return;
+          const act = t.dataset.act;
+          const id  = t.dataset.id;
+          const c   = t.dataset.cat;
+          if(act === "del"){
+            if(confirm("삭제할까요?")){
+              try{ await colRW(c).doc(id).delete(); }catch(err){ alert(err.message); }
+            }
+          }else if(act === "edit"){
+            openEditModal(c, id, items.find(x=>x.id===id));
+          }
+        };
+      }
     }
 
-    // 추가 폼
+    /* ---------- 추가 ---------- */
     function bindAddRows(){
-      $$(".add-row").forEach(row=>{
-        const btn = $(".add", row);
+      addRows.forEach(row=>{
+        const btn = $(".add",row);
         const cat = row.dataset.cat;
         btn.onclick = async ()=>{
-          if(!isOwner()){ alert("관리자만 추가할 수 있어요."); return; }
+          if(!isOwner()){ alert("관리자만 추가할 수 있습니다."); return; }
+          const subj = $(".subj",row).value.trim();
+          const text = $(".text",row).value.trim();
+          const dateFrom = $(".date.from",row).value;
+          const dateTo   = $(".date.to",row).value;
+          const startp   = $(".startp",row).value;
+          const endp     = $(".endp",row).value;
+          const detail   = $(".detail",row).value.trim();
 
-          if(cat === "important"){
-            const subj = $(".subj", row).value.trim();
-            const text = $(".text", row).value.trim();
-            if(!subj || !text){ alert("제목과 내용을 입력해 주세요."); return; }
+          if(!subj || !text){ alert("과목/내용을 입력해 주세요."); return; }
+
+          try{
             await colRW(cat).add({
-              subj, text,
+              subj, text, detail,
+              dateFrom: dateFrom || "",
+              dateTo:   dateTo   || "",
+              startP: startp || "0",
+              endP:   endp   || "0",
+              done:false,
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            $(".subj", row).value = "";
-            $(".text", row).value = "";
-            return;
+            // 입력값 초기화
+            $(".subj",row).value="";
+            $(".text",row).value="";
+            $(".date.from",row).value="";
+            $(".date.to",row).value="";
+            $(".startp",row).value="0";
+            $(".endp",row).value="0";
+            $(".detail",row).value="";
+          }catch(err){
+            alert("저장 실패: " + (err?.message || err));
           }
-
-          // 일반 카테고리(시험/수행/숙제)
-          const subj = $(".subj", row).value.trim();
-          const text = $(".text", row).value.trim();
-          const dateFrom = $(".date-from", row).value;
-          const dateTo   = $(".date-to", row).value || dateFrom;
-          const start = $(".start", row).value;
-          const end   = $(".end", row).value;
-          const detail= $(".detail", row).value.trim();
-
-          if(!subj || !text || !dateFrom){
-            alert("과목 / 내용 / 시작일을 입력해 주세요.");
-            return;
-          }
-
-          await colRW(cat).add({
-            subj, text, detail,
-            dateFrom, dateTo,
-            start, end,
-            done:false,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-
-          $(".subj", row).value = "";
-          $(".text", row).value = "";
-          $(".date-from", row).value = "";
-          $(".date-to", row).value = "";
-          $(".start", row).value = "";
-          $(".end", row).value = "";
-          $(".detail", row).value = "";
         };
       });
+    }
+    bindAddRows();
+
+    /* ---------- 간단 수정 모달 ---------- */
+    function openEditModal(cat, id, item){
+      const html = `
+        <div class="modal__inner">
+          <h3>항목 수정</h3>
+          <div class="grid">
+            <input id="e_subj"  type="text" value="${esc(item.subj||"")}" />
+            <input id="e_text"  type="text" value="${esc(item.text||"")}" />
+            <input id="e_from"  type="date" value="${item.dateFrom || ""}" />
+            <input id="e_to"    type="date" value="${item.dateTo || ""}" />
+            <select id="e_sp">
+              <option value="0">시작 교시</option>
+              <option>1교시</option><option>2교시</option><option>3교시</option>
+              <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
+            </select>
+            <select id="e_ep">
+              <option value="0">끝 교시</option>
+              <option>1교시</option><option>2교시</option><option>3교시</option>
+              <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
+            </select>
+          </div>
+          <textarea id="e_detail" rows="4" placeholder="상세 내용">${esc(item.detail||"")}</textarea>
+          <div class="modal__actions">
+            <button id="e_ok" class="btn">저장</button>
+            <button id="e_cancel" class="btn btn-ghost">취소</button>
+          </div>
+        </div>
+      `;
+      const wrap = document.createElement("div");
+      wrap.className = "modal";
+      wrap.innerHTML = html;
+      document.body.appendChild(wrap);
+
+      $("#e_sp",wrap).value = item.startP||"0";
+      $("#e_ep",wrap).value = item.endP||"0";
+
+      $("#e_cancel",wrap).onclick = ()=> wrap.remove();
+      $("#e_ok",wrap).onclick = async ()=>{
+        try{
+          await colRW(cat).doc(id).set({
+            subj:   $("#e_subj",wrap).value.trim(),
+            text:   $("#e_text",wrap).value.trim(),
+            detail: $("#e_detail",wrap).value.trim(),
+            dateFrom: $("#e_from",wrap).value || "",
+            dateTo:   $("#e_to",wrap).value   || "",
+            startP:   $("#e_sp",wrap).value   || "0",
+            endP:     $("#e_ep",wrap).value   || "0",
+          }, { merge:true });
+          wrap.remove();
+        }catch(err){
+          alert(err.message||err);
+        }
+      };
     }
   </script>
 </body>
