@@ -24,29 +24,22 @@
   </header>
 
   <main class="container">
-    <!-- 중요 전달 사항 (관리자가 ON일 때만 보임) -->
-    <section id="sec_important" class="board">
+    <!-- 📢 중요 전달 사항 (관리자가 ON일 때만 보임) -->
+    <section id="sec_important" class="board board--notice">
       <div class="board__head">
         <h2>📢 중요 전달 사항</h2>
       </div>
       <ul id="list_important" class="task-list"></ul>
 
       <!-- 관리자 전용 입력 -->
-      <div class="add-row" data-cat="important" style="display:none">
+      <div class="add-row add-row--notice" data-cat="important" style="display:none">
         <div class="row-1">
           <input class="subj" type="text" placeholder="제목" />
           <input class="text" type="text" placeholder="내용" />
-          <input class="date from" type="date" />
-          <input class="date to"   type="date" />
-          <select class="startp">
-            <option value="0">시작 교시</option>
-            <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
-          </select>
-          <select class="endp">
-            <option value="0">끝 교시</option>
-            <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
+          <select class="color" title="표시 색상">
+            <option value="notice-yellow" selected>노랑(알림)</option>
+            <option value="notice-red">빨강(긴급)</option>
+            <option value="notice-blue">파랑(공지)</option>
           </select>
           <button class="add btn">+ 추가</button>
         </div>
@@ -54,14 +47,13 @@
       </div>
     </section>
 
-    <!-- 시험 -->
+    <!-- 🧪 시험 -->
     <section class="board">
       <div class="board__head">
         <h2>🧪 시험</h2>
       </div>
       <ul id="list_exam" class="task-list"></ul>
 
-      <!-- 관리자 전용 입력 -->
       <div class="add-row" data-cat="exam" style="display:none">
         <div class="row-1">
           <input class="subj" type="text" placeholder="과목" />
@@ -84,14 +76,13 @@
       </div>
     </section>
 
-    <!-- 수행평가 -->
+    <!-- 📄 수행평가 -->
     <section class="board">
       <div class="board__head">
         <h2>📄 수행평가</h2>
       </div>
       <ul id="list_perf" class="task-list"></ul>
 
-      <!-- 관리자 전용 입력 -->
       <div class="add-row" data-cat="perf" style="display:none">
         <div class="row-1">
           <input class="subj" type="text" placeholder="과목" />
@@ -114,14 +105,13 @@
       </div>
     </section>
 
-    <!-- 숙제 -->
+    <!-- 📌 숙제 -->
     <section class="board">
       <div class="board__head">
         <h2>📌 숙제</h2>
       </div>
       <ul id="list_home" class="task-list"></ul>
 
-      <!-- 관리자 전용 입력 -->
       <div class="add-row" data-cat="home" style="display:none">
         <div class="row-1">
           <input class="subj" type="text" placeholder="과목" />
@@ -150,7 +140,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase 초기화 (네 값으로 교체) -->
+  <!-- Firebase 초기화 (네 값으로 교체 X – 이미 사용중) -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
@@ -165,11 +155,11 @@
 
   <!-- 앱 코드 -->
   <script>
-    /* ---------- 기본 핸들 ---------- */
+    /* ---------- 기본 설정 ---------- */
     const auth = firebase.auth();
     const db   = firebase.firestore();
 
-    // 🔐 소유자 UID (관리자 계정)
+    // 🔐 관리자 UID (Rules도 ②번으로 적용한 상태)
     const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
 
     const $  = (q,root=document)=>root.querySelector(q);
@@ -177,81 +167,73 @@
 
     const lists = {
       important: $("#list_important"),
-      exam:      $("#list_exam"),
-      perf:      $("#list_perf"),
-      home:      $("#list_home"),
+      exam: $("#list_exam"),
+      perf: $("#list_perf"),
+      home: $("#list_home"),
     };
     const addRows = $$(".add-row");
 
-    // 마지막 스냅샷 캐시 → 1분마다 “조용히” 재렌더
+    // 마지막 스냅샷 캐시 → 조용한 재렌더
     const lastData = { important:[], exam:[], perf:[], home:[] };
 
     let currentUser = null;
-
-    function isOwner() {
-      return currentUser && currentUser.uid === OWNER_UID;
-    }
+    const isOwner = () => currentUser && currentUser.uid === OWNER_UID;
 
     /* ---------- Firestore 참조 ---------- */
-    // 읽기: 항상 OWNER의 데이터 (공개용)
-    function colRO(cat) {
-      return db.collection("users").doc(OWNER_UID).collection("tasks").doc(cat).collection("items");
-    }
-    // 쓰기: 반드시 관리자만 (보안규칙+클라이언트 이중차단)
-    function colRW(cat) {
-      if (!isOwner()) throw new Error("관리자만 작성할 수 있습니다.");
+    // 공개 읽기(OWNER 데이터만 보여줌)
+    const colRO = (cat) => db.collection("users").doc(OWNER_UID)
+                             .collection("tasks").doc(cat).collection("items");
+    // 관리자만 쓰기
+    const colRW = (cat) => {
+      if(!isOwner()) throw new Error("관리자만 작성할 수 있습니다.");
       return colRO(cat);
-    }
+    };
 
     /* ---------- 날짜/요일/교시 ---------- */
     const wd = ["일","월","화","수","목","금","토"];
-    function fmtDate(dStr){
+    const fmtDate = (dStr)=>{
       if(!dStr) return "";
-      const d = new Date(dStr+"T00:00:00");
+      const d = new Date(dStr + "T00:00:00");
       return `${dStr} (${wd[d.getDay()]})`;
-    }
-    function periods(s,e){
+    };
+    const periods = (s,e)=>{
       s = (s||"").replace("교시","");
       e = (e||"").replace("교시","");
       if(!s || s==='0' || !e || e==='0') return "";
       if(s===e) return `${s}교시`;
       return `${s}~${e}교시`;
-    }
-    function formatRange(a,b){
+    };
+    const formatRange = (a,b)=>{
       if(!a && !b) return "";
       if(!a && b) return fmtDate(b);
       if(a && !b) return fmtDate(a);
       return `${fmtDate(a)} ~ ${fmtDate(b)}`;
-    }
+    };
 
-    /* ---------- D-Day 배지 ---------- */
-    function dayDiff(dStr){
+    /* ---------- D-Day ---------- */
+    const dayDiff = (dStr)=>{
       if(!dStr) return null;
-      const tz = new Date().toISOString().slice(0,10);
-      const a = new Date(tz+"T00:00:00");
-      const b = new Date(dStr+"T00:00:00");
-      return Math.round((b - a) / 86400000);
-    }
-    function ddayBadge(dStr){
+      const today = new Date(); today.setHours(0,0,0,0);
+      const d = new Date(dStr + "T00:00:00"); d.setHours(0,0,0,0);
+      return Math.round((d - today)/86400000);
+    };
+    const ddayBadge = (dStr)=>{
       const diff = dayDiff(dStr);
       if(diff===null) return "";
-      let label, cls;
       if(diff > 0){
-        label = `D-${diff}`;
-        if(diff===1) cls="dd-red";
-        else if(diff<=3) cls="dd-orange";
-        else if(diff<=5) cls="dd-yellow";
-        else cls="dd-green";
-      }else if(diff === 0){
-        label = "D-DAY"; cls="dd-red";
+        if(diff===1) return `<span class="dd-badge dd-red">D-${diff}</span>`;
+        if(diff<=3)  return `<span class="dd-badge dd-orange">D-${diff}</span>`;
+        if(diff<=5)  return `<span class="dd-badge dd-yellow">D-${diff}</span>`;
+        return `<span class="dd-badge dd-green">D-${diff}</span>`;
+      }else if(diff===0){
+        return `<span class="dd-badge dd-red">D-DAY</span>`;
       }else{
-        label = `D+${Math.abs(diff)}`;
-        cls="dd-gray";
+        return `<span class="dd-badge dd-gray">D+${Math.abs(diff)}</span>`;
       }
-      return `<span class="dd-badge ${cls}">${label}</span>`;
-    }
+    };
+    const esc = (s)=> (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
 
-    /* ---------- 로그인/로그아웃 ---------- */
+    /* ---------- 로그인 ---------- */
     $("#loginBtn").onclick  = ()=> auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
     $("#logoutBtn").onclick = ()=> auth.signOut();
 
@@ -259,21 +241,16 @@
       currentUser = u || null;
       $("#loginBtn").style.display  = currentUser ? "none" : "";
       $("#logoutBtn").style.display = currentUser ? "" : "none";
-
-      // 관리자만 입력/편집 UI 노출
       setEditVisible(isOwner());
-      // 관리자만 중요 전달 스위치 보이기
       $("#impSwitchWrap").style.display = isOwner() ? "" : "none";
 
       startListeners();
       watchSettings();
     });
 
-    function setEditVisible(v){
-      addRows.forEach(r => r.style.display = v ? "" : "none");
-    }
+    const setEditVisible = (v)=> addRows.forEach(r=> r.style.display = v ? "" : "none");
 
-    /* ---------- 중요 전달사항 ON/OFF (설정 저장) ---------- */
+    /* ---------- 중요 전달사항 ON/OFF 설정 ---------- */
     const settingsDoc = db.collection("users").doc(OWNER_UID).collection("config").doc("ui");
 
     function applyImportantVisibility(show){
@@ -283,17 +260,16 @@
     }
 
     function watchSettings(){
-      // 항상 OWNER 설정 읽기
       settingsDoc.onSnapshot(snap=>{
         const data = snap.exists ? snap.data() : {};
-        const show = (data.showImportant !== false);
+        const show = (data.showImportant !== false); // 기본 true
         applyImportantVisibility(show);
       });
 
       const sw = $("#toggleImportant");
       if(sw){
         sw.onchange = async (e)=>{
-          if(!isOwner()){       // 비관리자 차단 + 즉시 복원
+          if(!isOwner()){
             sw.checked = !sw.checked;
             alert("관리자만 변경할 수 있습니다.");
             return;
@@ -308,25 +284,24 @@
       }
     }
 
-    /* ---------- 실시간 구독 ---------- */
+    /* ---------- 실시간 구독 + 캐시 ---------- */
     let unsubscribers = [];
     function startListeners(){
-      unsubscribers.forEach(u=>u&&u()); unsubscribers=[];
+      unsubscribers.forEach(u=>u&&u()); unsubscribers = [];
       ["important","exam","perf","home"].forEach(cat=>{
         const ref = colRO(cat);
-        const q = (cat === "important")
-          ? ref.orderBy("createdAt","desc")
-          : ref.orderBy("dateFrom","asc");
+        const q = (cat==="important") ? ref.orderBy("createdAt","desc")
+                                      : ref.orderBy("dateFrom","asc");
         const un = q.onSnapshot(snap=>{
           const arr=[]; snap.forEach(d=>arr.push({ id:d.id, ...d.data() }));
-          lastData[cat] = arr;           // ✅ 캐시
+          lastData[cat] = arr;
           renderList(cat, arr);
         },err=>console.error(err));
         unsubscribers.push(un);
       });
     }
 
-    // 🔄 1분마다 “조용한 갱신” (서버호출 없이 다시 그리기)
+    // 🔄 1분마다 “조용한 갱신”: 캐시로만 다시 렌더 (서버호출 없음)
     setInterval(()=>{
       ["important","exam","perf","home"].forEach(cat=>{
         if(lastData[cat]) renderList(cat, lastData[cat]);
@@ -334,58 +309,62 @@
     }, 60_000);
 
     /* ---------- 렌더 ---------- */
-    function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
-
     function renderList(cat, items){
       const ul = lists[cat];
       ul.innerHTML = "";
+
       items.forEach(it=>{
-        const li = document.createElement("li");
-        li.className = "task";
-
-        // 날짜/교시
-        const range = formatRange(it.dateFrom, it.dateTo);
-        const pr = periods(it.startP || "", it.endP || "");
-
-        // D-day는 시작일 기준으로 계산
-        const badge = ddayBadge(it.dateFrom || it.dateTo);
-
-        // 편집/삭제 버튼은 관리자만
-        const ownerBtns = isOwner() ? `
-          <div class="owner-btns">
-            <button class="btn btn-ghost" data-act="edit" data-id="${it.id}" data-cat="${cat}">수정</button>
-            <button class="btn btn-ghost" data-act="del"  data-id="${it.id}" data-cat="${cat}">삭제</button>
-          </div>` : "";
-
-        li.innerHTML = `
-          <label class="chk-wrap">
-            <input type="checkbox" disabled ${it.done?"checked":""}>
-            <span></span>
-          </label>
-
-          <div class="task__content">
-            <div class="line-1">
-              <div class="subject">
-                <b>${esc(it.subj||"")}</b>
-                ${badge}
-              </div>
+        // 중요 전달사항: 색상 클래스 적용
+        if(cat==="important"){
+          const li = document.createElement("li");
+          const colorCls = it.color || "notice-yellow";
+          li.className = `task task--notice ${colorCls}`;
+          li.innerHTML = `
+            <div class="task__content">
+              <div class="subject"><b>${esc(it.subj||"")}</b></div>
               <div class="text">${esc(it.text||"")}</div>
               ${it.detail ? `<div class="detail">${esc(it.detail)}</div>` : ``}
             </div>
+            ${isOwner() ? `
+              <div class="owner-btns">
+                <button class="btn-ghost" data-act="edit" data-id="${it.id}" data-cat="${cat}">수정</button>
+                <button class="btn-ghost" data-act="del"  data-id="${it.id}" data-cat="${cat}">삭제</button>
+              </div>` : ``}
+          `;
+          ul.appendChild(li);
+          return;
+        }
 
+        // 일반 항목(시험/수행/숙제)
+        const range = formatRange(it.dateFrom, it.dateTo);
+        const pr    = periods(it.startP || "", it.endP || "");
+        const badge = ddayBadge(it.dateFrom || it.dateTo);
+
+        const li = document.createElement("li");
+        li.className = "task";
+        li.innerHTML = `
+          <label class="chk-wrap">
+            <input type="checkbox" disabled ${it.done?"checked":""}>
+          </label>
+          <div class="task__content">
+            <div class="subject"><b>${esc(it.subj||"")}</b> ${badge}</div>
+            <div class="text">${esc(it.text||"")}</div>
+            ${it.detail ? `<div class="detail">${esc(it.detail)}</div>` : ``}
             <div class="meta">
               ${range ? `📅 ${range}` : ``}
               ${pr ? ` &nbsp;•&nbsp; ${pr}` : ``}
             </div>
           </div>
-
-          ${ownerBtns}
+          ${isOwner() ? `
+            <div class="owner-btns">
+              <button class="btn-ghost" data-act="edit" data-id="${it.id}" data-cat="${cat}">수정</button>
+              <button class="btn-ghost" data-act="del"  data-id="${it.id}" data-cat="${cat}">삭제</button>
+            </div>` : ``}
         `;
-
         ul.appendChild(li);
       });
 
-      // 관리자만 편집/삭제 동작
+      // 관리자만 편집/삭제
       if(isOwner()){
         ul.onclick = async (e)=>{
           const t = e.target.closest("button[data-act]");
@@ -393,12 +372,16 @@
           const act = t.dataset.act;
           const id  = t.dataset.id;
           const c   = t.dataset.cat;
-          if(act === "del"){
+          const arr = lastData[c] || [];
+          const item = arr.find(x=>x.id===id);
+          if(!item) return;
+
+          if(act==="del"){
             if(confirm("삭제할까요?")){
               try{ await colRW(c).doc(id).delete(); }catch(err){ alert(err.message); }
             }
-          }else if(act === "edit"){
-            openEditModal(c, id, items.find(x=>x.id===id));
+          }else if(act==="edit"){
+            openEditModal(c, id, item);
           }
         };
       }
@@ -411,6 +394,28 @@
         const cat = row.dataset.cat;
         btn.onclick = async ()=>{
           if(!isOwner()){ alert("관리자만 추가할 수 있습니다."); return; }
+
+          if(cat==="important"){
+            const subj = $(".subj",row).value.trim();
+            const text = $(".text",row).value.trim();
+            const color= $(".color",row).value || "notice-yellow";
+            const detail = $(".detail",row).value.trim();
+            if(!subj || !text){ alert("제목/내용을 입력해 주세요."); return; }
+            try{
+              await colRW(cat).add({
+                subj, text, detail, color,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+              });
+              // 초기화
+              $(".subj",row).value="";
+              $(".text",row).value="";
+              $(".color",row).value="notice-yellow";
+              $(".detail",row).value="";
+            }catch(err){ alert("저장 실패: " + (err?.message||err)); }
+            return;
+          }
+
+          // 일반 카테고리
           const subj = $(".subj",row).value.trim();
           const text = $(".text",row).value.trim();
           const dateFrom = $(".date.from",row).value;
@@ -431,7 +436,6 @@
               done:false,
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            // 입력값 초기화
             $(".subj",row).value="";
             $(".text",row).value="";
             $(".date.from",row).value="";
@@ -447,28 +451,37 @@
     }
     bindAddRows();
 
-    /* ---------- 간단 수정 모달 ---------- */
+    /* ---------- 수정 모달 ---------- */
     function openEditModal(cat, id, item){
+      const isNotice = (cat==="important");
       const html = `
         <div class="modal__inner">
-          <h3>항목 수정</h3>
-          <div class="grid">
-            <input id="e_subj"  type="text" value="${esc(item.subj||"")}" />
-            <input id="e_text"  type="text" value="${esc(item.text||"")}" />
-            <input id="e_from"  type="date" value="${item.dateFrom || ""}" />
-            <input id="e_to"    type="date" value="${item.dateTo || ""}" />
-            <select id="e_sp">
-              <option value="0">시작 교시</option>
-              <option>1교시</option><option>2교시</option><option>3교시</option>
-              <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
-            </select>
-            <select id="e_ep">
-              <option value="0">끝 교시</option>
-              <option>1교시</option><option>2교시</option><option>3교시</option>
-              <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
-            </select>
+          <h3>${isNotice ? "중요 전달사항 수정" : "항목 수정"}</h3>
+          <div class="grid ${isNotice ? "grid--notice" : ""}">
+            <input id="e_subj"  type="text" value="${esc(item.subj||"")}" placeholder="${isNotice?"제목":"과목"}" />
+            <input id="e_text"  type="text" value="${esc(item.text||"")}" placeholder="내용" />
+            ${isNotice ? `
+              <select id="e_color">
+                <option value="notice-yellow">노랑(알림)</option>
+                <option value="notice-red">빨강(긴급)</option>
+                <option value="notice-blue">파랑(공지)</option>
+              </select>
+            ` : `
+              <input id="e_from"  type="date" value="${item.dateFrom || ""}" />
+              <input id="e_to"    type="date" value="${item.dateTo || ""}" />
+              <select id="e_sp">
+                <option value="0">시작 교시</option>
+                <option>1교시</option><option>2교시</option><option>3교시</option>
+                <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
+              </select>
+              <select id="e_ep">
+                <option value="0">끝 교시</option>
+                <option>1교시</option><option>2교시</option><option>3교시</option>
+                <option>4교시</option><option>5교시</option><option>6교시</option><option>7교시</option>
+              </select>
+            `}
           </div>
-          <textarea id="e_detail" rows="4" placeholder="상세 내용">${esc(item.detail||"")}</textarea>
+          <textarea id="e_detail" rows="4" placeholder="상세 내용(선택)">${esc(item.detail||"")}</textarea>
           <div class="modal__actions">
             <button id="e_ok" class="btn">저장</button>
             <button id="e_cancel" class="btn btn-ghost">취소</button>
@@ -480,21 +493,34 @@
       wrap.innerHTML = html;
       document.body.appendChild(wrap);
 
-      $("#e_sp",wrap).value = item.startP||"0";
-      $("#e_ep",wrap).value = item.endP||"0";
+      if(!isNotice){
+        $("#e_sp",wrap).value = item.startP||"0";
+        $("#e_ep",wrap).value = item.endP||"0";
+      }else{
+        $("#e_color",wrap).value = item.color || "notice-yellow";
+      }
 
       $("#e_cancel",wrap).onclick = ()=> wrap.remove();
       $("#e_ok",wrap).onclick = async ()=>{
         try{
-          await colRW(cat).doc(id).set({
-            subj:   $("#e_subj",wrap).value.trim(),
-            text:   $("#e_text",wrap).value.trim(),
-            detail: $("#e_detail",wrap).value.trim(),
-            dateFrom: $("#e_from",wrap).value || "",
-            dateTo:   $("#e_to",wrap).value   || "",
-            startP:   $("#e_sp",wrap).value   || "0",
-            endP:     $("#e_ep",wrap).value   || "0",
-          }, { merge:true });
+          if(isNotice){
+            await colRW(cat).doc(id).set({
+              subj: $("#e_subj",wrap).value.trim(),
+              text: $("#e_text",wrap).value.trim(),
+              detail: $("#e_detail",wrap).value.trim(),
+              color: $("#e_color",wrap).value || "notice-yellow"
+            }, { merge:true });
+          }else{
+            await colRW(cat).doc(id).set({
+              subj:   $("#e_subj",wrap).value.trim(),
+              text:   $("#e_text",wrap).value.trim(),
+              detail: $("#e_detail",wrap).value.trim(),
+              dateFrom: $("#e_from",wrap).value || "",
+              dateTo:   $("#e_to",wrap).value   || "",
+              startP:   $("#e_sp",wrap).value   || "0",
+              endP:     $("#e_ep",wrap).value   || "0",
+            }, { merge:true });
+          }
           wrap.remove();
         }catch(err){
           alert(err.message||err);
