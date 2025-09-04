@@ -1,4 +1,4 @@
-/* 단색 배경 + 깔끔 레이아웃 */
+/* 색 변수 */
 :root{
   --bg:#0f1722;
   --panel:#121c28;
@@ -7,7 +7,6 @@
   --sub:#a3b2cc;
   --line:#243244;
 
-  --blue:#2f7df4;
   --btn:#2d6df6;
 
   --dd-red:#ef4444;
@@ -15,8 +14,14 @@
   --dd-yellow:#facc15;
   --dd-green:#16a34a;
   --dd-gray:#64748b;
+
+  /* 중요 전달사항 색 계열 */
+  --n-red-bg:#ffefef;   --n-red-line:#ff4d4d;  --n-red-text:#8a0000;
+  --n-blue-bg:#e3f2fd;  --n-blue-line:#2196f3; --n-blue-text:#0d47a1;
+  --n-yellow-bg:#fff8e1;--n-yellow-line:#ffc107;--n-yellow-text:#5d3b00;
 }
 
+/* 리셋 & 기본 */
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -45,18 +50,30 @@ body{
   padding:8px 14px; border-radius:10px; cursor:pointer;
 }
 
-/* 보드(섹션) */
+/* 섹션 보드 */
 .container{max-width:1080px; margin:0 auto; padding:20px}
 .board{background:var(--panel); border:1px solid var(--line); border-radius:14px; margin-bottom:24px;}
 .board__head{padding:14px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between}
 .board__head h2{margin:0; font-size:18px}
 
-/* 목록 */
+/* 중요 전달사항 전체 박스는 밝은 톤 */
+.board--notice{
+  background: var(--n-yellow-bg);
+  border: 2px solid var(--n-yellow-line);
+  color: var(--n-yellow-text);
+}
+.board--notice .board__head{
+  border-bottom:1px solid var(--n-yellow-line);
+}
+.board--notice .board__head h2{color:var(--n-yellow-text)}
+
+/* 목록 & 카드 */
 .task-list{list-style:none; margin:0; padding:0}
 .task{
   display:flex; gap:14px; align-items:flex-start;
   padding:16px; border-bottom:1px solid var(--line);
 }
+.board--notice .task{ border-bottom:1px solid var(--n-yellow-line); }
 .task:last-child{border-bottom:0}
 .chk-wrap{position:relative; top:3px;}
 .chk-wrap input{width:16px; height:16px}
@@ -65,6 +82,7 @@ body{
 .subject{display:flex; align-items:center; gap:8px; font-size:18px}
 .text{margin-top:4px; font-size:15px}
 .detail{margin-top:6px; color:var(--sub); font-size:14px}
+.board--notice .detail{ color: var(--n-yellow-text); opacity:.85; }
 .meta{margin-top:8px; color:var(--sub); font-size:14px}
 
 .owner-btns{display:flex; gap:8px; margin-left:auto}
@@ -73,22 +91,49 @@ body{
 .dd-badge{
   display:inline-block; padding:2px 8px; border-radius:999px; font-weight:700; font-size:12px;
 }
-.dd-red{background:var(--dd-red); color:#000; mix-blend:screen}
-.dd-orange{background:var(--dd-orange); color:#000; mix-blend:screen}
-.dd-yellow{background:var(--dd-yellow); color:#000; mix-blend:screen}
-.dd-green{background:var(--dd-green); color:#000; mix-blend:screen}
+.dd-red{background:var(--dd-red); color:#fff;}
+.dd-orange{background:var(--dd-orange); color:#000;}
+.dd-yellow{background:var(--dd-yellow); color:#000;}
+.dd-green{background:var(--dd-green); color:#000;}
 .dd-gray{background:var(--dd-gray); color:#fff}
 
 /* 입력 행 */
 .add-row{border-top:1px dashed var(--line); padding:14px; display:grid; gap:10px;}
 .add-row .row-1{
   display:grid; gap:10px;
-  grid-template-columns: 1.2fr 2fr 1fr 1fr 1fr 1fr auto;
+  grid-template-columns: 1.2fr 2fr 1fr auto; /* subj, text, date/date or color, add */
 }
 .add-row input, .add-row select, .add-row textarea{
   background:var(--panel-2); border:1px solid var(--line); color:var(--text); padding:10px 12px; border-radius:10px;
 }
 .add-row textarea{width:100%; resize:vertical}
+
+/* 중요 전달사항의 입력은 노랑 박스 색에 맞춤 */
+.board--notice .add-row{
+  border-top:1px dashed var(--n-yellow-line);
+}
+.board--notice .add-row input,
+.board--notice .add-row select,
+.board--notice .add-row textarea{
+  background:#fff; color:var(--n-yellow-text); border-color:var(--n-yellow-line);
+}
+
+/* 중요 전달사항 항목 색상(개별 카드) */
+.task--notice.notice-red{
+  background: var(--n-red-bg);
+  border: 1px solid var(--n-red-line);
+  color: var(--n-red-text);
+}
+.task--notice.notice-blue{
+  background: var(--n-blue-bg);
+  border: 1px solid var(--n-blue-line);
+  color: var(--n-blue-text);
+}
+.task--notice.notice-yellow{
+  background: var(--n-yellow-bg);
+  border: 1px solid var(--n-yellow-line);
+  color: var(--n-yellow-text);
+}
 
 /* 모달 */
 .modal{
@@ -103,7 +148,23 @@ body{
   display:grid; gap:10px; margin-bottom:10px;
   grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr;
 }
+.modal__inner .grid.grid--notice{
+  grid-template-columns: 1fr 2fr 1fr; /* subj, text, color */
+}
 .modal__inner input, .modal__inner select, .modal__inner textarea{
   background:var(--panel-2); border:1px solid var(--line); color:var(--text); padding:10px 12px; border-radius:10px;
 }
 .modal__actions{display:flex; gap:8px; justify-content:flex-end; margin-top:8px}
+
+/* 반응형 */
+@media (max-width: 840px){
+  .add-row .row-1{
+    grid-template-columns: 1fr 1fr 1fr auto;
+  }
+  .modal__inner .grid{
+    grid-template-columns: 1fr 1fr;
+  }
+  .modal__inner .grid.grid--notice{
+    grid-template-columns: 1fr 1fr;
+  }
+}
