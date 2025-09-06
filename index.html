@@ -1,417 +1,504 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>숙제 & 수행평가</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>숙제 & 수행평가 메모</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Firebase compat -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">📒 숙제 & 수행평가</div>
-  <div class="actions">
-    <button id="adminBadge" class="chip" style="display:none">관리자</button>
-    <button id="loginBtn"  class="btn">🔑 로그인</button>
-    <button id="logoutBtn" class="btn" style="display:none">📜 로그아웃</button>
-  </div>
-</header>
+  <header class="admin-bar">
+    <h1>📒 숙제 & 수행평가</h1>
+    <div class="admin-right">
+      <button id="loginBtn" class="btn">🔑 로그인</button>
+      <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
+      <button id="adminBadge" class="chip" style="display:none">관리자</button>
+    </div>
+  </header>
 
-<main class="container">
-
-  <!-- 중요 전달 사항 -->
-  <section class="card notice">
-    <div class="card-head">
-      <div class="title">📢 중요 전달 사항</div>
-      <label class="switch">
+  <!-- ================= 중요 전달 사항 ================= -->
+  <section class="notice-wrap">
+    <div class="notice-head">
+      <h2>📣 중요 전달 사항</h2>
+      <label class="switch" id="noticeSwitchWrap" style="display:none">
         <input type="checkbox" id="noticeToggle" />
         <span class="slider"></span>
       </label>
     </div>
 
+    <div id="noticeEmpty" class="notice-empty">등록된 전달 사항이 없습니다.</div>
+    <ul id="noticeList" class="notice-list"></ul>
+
     <!-- 관리자만 보이는 입력 폼 -->
-    <div id="noticeFormWrap" class="notice-form">
-      <input id="noticeTitle" class="input" placeholder="제목" />
-      <select id="noticeLevel" class="select">
-        <option value="info">전달 사항</option>
-        <option value="warn">주의</option>
-        <option value="danger">중요</option>
-      </select>
-      <button id="noticeAddBtn" class="btn primary">+ 추가</button>
-      <textarea id="noticeBody" class="textarea" placeholder="내용 (줄바꿈 가능)"></textarea>
-    </div>
-
-    <div id="noticeListWrap" class="notice-list"></div>
-    <div id="noticeEmpty" class="empty">등록된 전달 사항이 없습니다.</div>
-  </section>
-
-  <!-- 시험 -->
-  <section class="card">
-    <div class="card-head">
-      <div class="title">🧪 시험</div>
-    </div>
-    <ul id="list_exam" class="task-list"></ul>
-
-    <!-- 관리자만 보이는 추가 폼 -->
-    <div class="add-row admin-only">
-      <input class="subj input" placeholder="과목" />
-      <input class="text input" placeholder="내용" />
-      <input class="date input" type="date" />
-      <input class="date input" type="date" />
-      <select class="start select"></select>
-      <select class="end select"></select>
-      <button class="add btn primary" data-cat="exam">+ 추가</button>
-      <textarea class="desc textarea" placeholder="상세 내용 (선택)"></textarea>
-    </div>
-  </section>
-
-  <!-- 수행평가 -->
-  <section class="card">
-    <div class="card-head">
-      <div class="title">🧾 수행평가</div>
-    </div>
-    <ul id="list_perf" class="task-list"></ul>
-
-    <div class="add-row admin-only">
-      <input class="subj input" placeholder="과목" />
-      <input class="text input" placeholder="내용" />
-      <input class="date input" type="date" />
-      <input class="date input" type="date" />
-      <select class="start select"></select>
-      <select class="end select"></select>
-      <button class="add btn primary" data-cat="perf">+ 추가</button>
-      <textarea class="desc textarea" placeholder="상세 내용 (선택)"></textarea>
-    </div>
-  </section>
-
-  <!-- 숙제 -->
-  <section class="card">
-    <div class="card-head">
-      <div class="title">📌 숙제</div>
-    </div>
-    <ul id="list_home" class="task-list"></ul>
-
-    <div class="add-row admin-only">
-      <input class="subj input" placeholder="과목" />
-      <input class="text input" placeholder="내용" />
-      <input class="date input" type="date" />
-      <input class="date input" type="date" />
-      <select class="start select"></select>
-      <select class="end select"></select>
-      <button class="add btn primary" data-cat="home">+ 추가</button>
-      <textarea class="desc textarea" placeholder="상세 내용 (선택)"></textarea>
-    </div>
-  </section>
-</main>
-
-<script>
-/* ====== 0) 설정 ====== */
-const ADMIN_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2"; // ← 관리자 UID로 교체
-const firebaseConfig = {
-  // ← 내 Firebase config 값으로 교체
-  apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
-  authDomain: "my-memo-site.firebaseapp.com",
-  projectId: "my-memo-site",
-  storageBucket: "my-memo-site.firebasestorage.app",
-  messagingSenderId: "196036694705",
-  appId: "1:196036694705:web:8988d12919420130464890"
-};
-
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
-
-/* ====== 1) 상태 ====== */
-let currentUser = null;
-let isAdmin = false;
-const $  = (q,root=document)=>root.querySelector(q);
-const $$ = (q,root=document)=>Array.from(root.querySelectorAll(q));
-
-function applyAdminUIFlag(){
-  document.body.classList.toggle('is-admin', isAdmin);
-  $("#adminBadge").style.display = isAdmin ? "" : "none";
-  // admin-only 폼
-  $$(".admin-only").forEach(el => el.style.display = isAdmin ? "" : "none");
-  // 전달사항 입력폼
-  const wrap = $("#noticeFormWrap");
-  if (wrap) wrap.style.display = isAdmin ? "" : "none";
-}
-
-/* ====== 2) 로그인 / 로그아웃 ====== */
-$("#loginBtn").addEventListener("click", async ()=>{
-  try {
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-  } catch {}
-  const provider = new firebase.auth.GoogleAuthProvider();
-  await auth.signInWithPopup(provider);
-});
-$("#logoutBtn").addEventListener("click", ()=> auth.signOut());
-
-auth.onAuthStateChanged(async (user)=>{
-  currentUser = user;
-  isAdmin = !!user && user.uid === ADMIN_UID;
-  $("#loginBtn").style.display  = user ? "none" : "";
-  $("#logoutBtn").style.display = user ? "" : "none";
-  applyAdminUIFlag();
-  await loadNoticeSettings();
-  await renderNoticeList();
-  startTaskListeners(); // 시험/수행/숙제 실시간
-});
-
-/* ====== 3) 전달 사항 ====== */
-
-// 표시 on/off 불러오기
-async function loadNoticeSettings(){
-  try{
-    const snap = await db.doc("settings/global").get();
-    const showNotice = snap.exists ? (snap.data().showNotice !== false) : true;
-    const toggle = $("#noticeToggle");
-    toggle.checked = showNotice;
-    $("#noticeListWrap").classList.toggle("hidden", !showNotice);
-  }catch(e){ console.error(e); }
-}
-
-// 표시 on/off 저장 (관리자만)
-$("#noticeToggle").addEventListener("change", async (e)=>{
-  if (!isAdmin){
-    e.preventDefault();
-    e.target.checked = !e.target.checked;
-    return;
-  }
-  try{
-    await db.doc("settings/global").set({ showNotice: e.target.checked }, { merge: true });
-    $("#noticeListWrap").classList.toggle("hidden", !e.target.checked);
-  }catch(err){
-    alert("설정 저장 실패: " + err.message);
-  }
-});
-
-// 전달사항 추가 (관리자만)
-$("#noticeAddBtn").addEventListener("click", async ()=>{
-  if (!isAdmin) return;
-  const title = $("#noticeTitle").value.trim();
-  const level = $("#noticeLevel").value;
-  const body  = $("#noticeBody").value.trim();
-  if (!title){ alert("제목을 입력해 주세요."); return; }
-  try{
-    await db.collection("notice").add({
-      title, level, body,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    $("#noticeTitle").value = "";
-    $("#noticeBody").value  = "";
-  }catch(e){ alert("추가 실패: "+e.message); }
-});
-
-// 전달사항 목록 렌더
-async function renderNoticeList(){
-  const list = $("#noticeListWrap");
-  list.innerHTML = "";
-  const snap = await db.collection("notice").orderBy("createdAt","desc").get();
-  if (snap.empty){ $("#noticeEmpty").style.display = ""; return; }
-  $("#noticeEmpty").style.display = "none";
-  snap.forEach(doc=>{
-    const d = doc.data();
-    const wrap = document.createElement("div");
-    wrap.className = `notice-item ${d.level||"info"}`;
-    wrap.innerHTML = `
-      <div class="notice-title">${esc(d.title)}</div>
-      ${d.body ? `<div class="notice-body">${esc(d.body).replace(/\n/g,"<br/>")}</div>`:""}
-    `;
-    list.appendChild(wrap);
-  });
-}
-
-/* ====== 4) 과제(시험/수행/숙제) ====== */
-
-const lists = { exam: $("#list_exam"), perf: $("#list_perf"), home: $("#list_home") };
-
-function startTaskListeners(){
-  ["exam","perf","home"].forEach(cat=>{
-    // 기존 리스너 제거가 필요하면 저장/해제 로직 추가
-    db.collection("users").doc(getOwnerUid())
-      .collection("tasks").doc(cat).collection("items")
-      .orderBy("due","asc")
-      .onSnapshot(snap=>{
-        const arr = [];
-        snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
-        renderList(cat, arr);
-      });
-  });
-}
-
-// 비로그인 때도 공개 UID로 읽게 (OWNER_UID를 본인 규칙대로 사용 중이라면, 그대로 유지)
-const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2"; // 예시
-function getOwnerUid(){
-  return currentUser?.uid || OWNER_UID;
-}
-
-function renderList(cat, items){
-  const ul = lists[cat];
-  ul.innerHTML = "";
-  for (const it of items){
-    const li = document.createElement("li");
-    li.className = "task";
-    const ddayBadge = makeDDayBadge(it.due);
-    const period = makePeriodText(it.startPeriod, it.endPeriod);
-    const range  = makeDateRange(it.from, it.due);
-    li.innerHTML = `
-      <label class="chk"><input type="checkbox" ${it.done?"checked":""} data-act="toggle" data-cat="${cat}" data-id="${it.id}"><span></span></label>
-      <div class="task-main">
-        <div class="task-title"><b>${esc(it.subj||"")}</b>${ddayBadge}</div>
-        <div class="task-text">${esc(it.text||"")}</div>
-        ${it.desc ? `<div class="task-desc">${esc(it.desc).replace(/\n/g,"<br/>")}</div>`:""}
-        <div class="task-meta">📅 ${range}${period?`  ·  ${period}`:""}</div>
+    <div id="noticeForm" class="notice-form" style="display:none">
+      <div class="grid-notice">
+        <input id="nf_title" class="inp" placeholder="제목" />
+        <select id="nf_level" class="sel">
+          <option value="info">안내</option>
+          <option value="warn">주의</option>
+          <option value="alert">긴급</option>
+        </select>
       </div>
-      ${isAdmin?`<div class="task-ops">
-         <button class="btn ghost" data-act="edit" data-cat="${cat}" data-id="${it.id}">수정</button>
-         <button class="btn ghost" data-act="del"  data-cat="${cat}" data-id="${it.id}">삭제</button>
-       </div>`:""}
-    `;
-    ul.appendChild(li);
+      <textarea id="nf_body" class="txt" rows="3" placeholder="내용 (줄바꿈 가능)"></textarea>
+      <button id="nf_add" class="btn primary">+ 추가</button>
+    </div>
+  </section>
+
+  <!-- ================= 시험 / 수행평가 / 숙제 ================= -->
+  <main class="container">
+    <!-- 시험 -->
+    <section>
+      <div class="section-title">🧪 시험</div>
+      <ul id="list_exam" class="task-list"></ul>
+      <div class="add-row" data-cat="exam" style="display:none">
+        <input class="subj" type="text" placeholder="과목" />
+        <input class="text" type="text" placeholder="내용" />
+        <input class="date" type="date" />
+        <input class="date" type="date" placeholder="끝 날짜(선택)" />
+        <select class="period-start">
+          <option value="">시작 교시</option><option>1교시</option><option>2교시</option>
+          <option>3교시</option><option>4교시</option><option>5교시</option>
+          <option>6교시</option><option>7교시</option>
+        </select>
+        <select class="period-end">
+          <option value="">끝 교시</option><option>1교시</option><option>2교시</option>
+          <option>3교시</option><option>4교시</option><option>5교시</option>
+          <option>6교시</option><option>7교시</option>
+        </select>
+        <textarea class="memo" rows="2" placeholder="상세 내용 (선택)"></textarea>
+        <button class="add btn">+ 추가</button>
+      </div>
+    </section>
+
+    <!-- 수행평가 -->
+    <section>
+      <div class="section-title">📝 수행평가</div>
+      <ul id="list_perf" class="task-list"></ul>
+      <div class="add-row" data-cat="perf" style="display:none">
+        <input class="subj" type="text" placeholder="과목" />
+        <input class="text" type="text" placeholder="내용" />
+        <input class="date" type="date" />
+        <input class="date" type="date" placeholder="끝 날짜(선택)" />
+        <select class="period-start">
+          <option value="">시작 교시</option><option>1교시</option><option>2교시</option>
+          <option>3교시</option><option>4교시</option><option>5교시</option>
+          <option>6교시</option><option>7교시</option>
+        </select>
+        <select class="period-end">
+          <option value="">끝 교시</option><option>1교시</option><option>2교시</option>
+          <option>3교시</option><option>4교시</option><option>5교시</option>
+          <option>6교시</option><option>7교시</option>
+        </select>
+        <textarea class="memo" rows="2" placeholder="상세 내용 (선택)"></textarea>
+        <button class="add btn">+ 추가</button>
+      </div>
+    </section>
+
+    <!-- 숙제 -->
+    <section>
+      <div class="section-title">📌 숙제</div>
+      <ul id="list_home" class="task-list"></ul>
+      <div class="add-row" data-cat="home" style="display:none">
+        <input class="subj" type="text" placeholder="과목" />
+        <input class="text" type="text" placeholder="내용" />
+        <input class="date" type="date" />
+        <input class="date" type="date" placeholder="끝 날짜(선택)" />
+        <select class="period-start">
+          <option value="">시작 교시</option><option>1교시</option><option>2교시</option>
+          <option>3교시</option><option>4교시</option><option>5교시</option>
+          <option>6교시</option><option>7교시</option>
+        </select>
+        <select class="period-end">
+          <option value="">끝 교시</option><option>1교시</option><option>2교시</option>
+          <option>3교시</option><option>4교시</option><option>5교시</option>
+          <option>6교시</option><option>7교시</option>
+        </select>
+        <textarea class="memo" rows="2" placeholder="상세 내용 (선택)"></textarea>
+        <button class="add btn">+ 추가</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+  // ====== 관리자 UID (반드시 관리자 UID로 교체) ======
+  const ADMIN_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
+
+  // ====== Firebase Config (지금 쓰는 값 그대로) ======
+  const firebaseConfig = {
+    apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
+    authDomain: "my-memo-site.firebaseapp.com",
+    projectId: "my-memo-site",
+    storageBucket: "my-memo-site.firebasestorage.app",
+    messagingSenderId: "196036694705",
+    appId: "1:196036694705:web:8988d12919420130464890"
+  };
+  firebase.initializeApp(firebaseConfig);
+
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+
+  const $  = (q, root=document) => root.querySelector(q);
+  const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
+
+  const el = {
+    loginBtn:  $("#loginBtn"),
+    logoutBtn: $("#logoutBtn"),
+    adminBadge: $("#adminBadge"),
+    // notice
+    noticeSwitchWrap: $("#noticeSwitchWrap"),
+    noticeToggle: $("#noticeToggle"),
+    noticeList: $("#noticeList"),
+    noticeEmpty: $("#noticeEmpty"),
+    noticeForm: $("#noticeForm"),
+    nf_title: $("#nf_title"),
+    nf_level: $("#nf_level"),
+    nf_body:  $("#nf_body"),
+    nf_add:   $("#nf_add"),
+    // lists
+    lists: { exam: $("#list_exam"), perf: $("#list_perf"), home: $("#list_home") },
+  };
+
+  let currentUser = null;
+  let isAdmin = false;
+  let unsubscribers = [];
+
+  // ===== LocalStorage 키 =====
+  const DRAFT_TASK = "memo:draft-task-v2";
+  const DRAFT_NOTICE = "memo:draft-notice-v1";
+
+  // ===== 경로 유틸 =====
+  const colTasks = (cat) => {
+    const uid = isAdmin ? ADMIN_UID : (currentUser?.uid || ADMIN_UID);
+    // 로그아웃도 읽기는 ADMIN_UID로
+    return db.collection("users").doc(uid).collection("tasks").doc(cat).collection("items");
+  };
+  const colAnnounces = () => db.collection("users").doc(ADMIN_UID).collection("announces");
+  const docSettings = () => db.collection("users").doc(ADMIN_UID).collection("settings").doc("app");
+
+  // ===== 로그인/로그아웃 =====
+  el.loginBtn.onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  el.logoutBtn.onclick = () => auth.signOut();
+
+  auth.onAuthStateChanged(async (user) => {
+    currentUser = user;
+    isAdmin = !!(user && user.uid === ADMIN_UID);
+    el.loginBtn.style.display  = user ? "none" : "";
+    el.logoutBtn.style.display = user ? "" : "none";
+    el.adminBadge.style.display = isAdmin ? "" : "none";
+
+    // 관리자만 입력/토글 노출
+    setEditVisible(isAdmin);
+
+    // 리스너 재시작
+    startListeners();
+  });
+
+  function setEditVisible(v){
+    $$(".add-row").forEach(r => r.style.display = v ? "" : "none");
+    el.noticeForm.style.display = v ? "" : "none";
+    el.noticeSwitchWrap.style.display = v ? "" : "none";
   }
 
-  ul.onclick = async (e)=>{
-    const t = e.target;
-    const act = t.getAttribute("data-act");
-    if (!act) return;
+  // ===== D-Day 뱃지 =====
+  function ddayLabel(start, end){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const s = start ? new Date(start) : null;
+    const e = end   ? new Date(end)   : null;
+    const target = e || s;
+    if(!target) return "";
 
-    const cat2 = t.getAttribute("data-cat");
-    const id   = t.getAttribute("data-id");
+    const diff = Math.floor((target - today) / 86400000);
+    let label, cls="future";
+    if(diff > 0){ label = `D-${diff}`; cls="future"; }
+    else if(diff === 0){ label = "D-0"; cls="today"; }
+    else { label = `D+${Math.abs(diff)}`; cls="past"; }
+    return `<span class="dday ${cls}">${label}</span>`;
+  }
 
-    if (act === "toggle"){
-      if (!currentUser){ t.checked = !t.checked; return; }
-      try{ await col(cat2).doc(id).update({ done:t.checked }); }catch(err){ alert(err.message); }
-    } else if (act === "del"){
-      if (!isAdmin) return;
-      if (!confirm("삭제할까요?")) return;
-      await col(cat2).doc(id).delete();
-    } else if (act === "edit"){
-      if (!isAdmin) return;
-      openEdit(cat2, id);
+  function ymd(dateStr){
+    if(!dateStr) return "";
+    const d = new Date(dateStr+"T00:00:00");
+    const week = ["일","월","화","수","목","금","토"][d.getDay()];
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} (${week})`;
+  }
+
+  // ===== 목록 렌더 =====
+  function renderTasks(cat, items){
+    const ul = el.lists[cat];
+    ul.innerHTML = "";
+    if(!items.length){
+      ul.innerHTML = `<li class="empty">등록된 항목이 없습니다.</li>`;
+      return;
+    }
+    for(const it of items){
+      const line1 = `
+        <div class="task-head">
+          <b class="task-subj">${it.subj||""}</b>
+          ${ddayLabel(it.dueStart, it.dueEnd)}
+        </div>`;
+      const line2 = `<div class="task-text">${it.text||""}</div>`;
+      const line3 = `<div class="task-meta">📅 ${ymd(it.dueStart)}${it.dueEnd?` ~ ${ymd(it.dueEnd)}`:""}${(it.periodStart||it.periodEnd)?` · ${it.periodStart||""}${it.periodEnd?`~${it.periodEnd}`:""}`:""}</div>`;
+      const memo = it.memo ? `<div class="task-memo">${it.memo}</div>` : "";
+      const adminBtns = isAdmin ? `
+        <div class="task-btns">
+          <button class="btn ghost" data-act="edit" data-cat="${cat}" data-id="${it.id}">수정</button>
+          <button class="btn ghost" data-act="del"  data-cat="${cat}" data-id="${it.id}">삭제</button>
+        </div>` : "";
+
+      const li = document.createElement("li");
+      li.className = "task";
+      li.innerHTML = `
+        <label class="chk-wrap">
+          <input type="checkbox" ${it.done?"checked":""} data-act="toggle" data-cat="${cat}" data-id="${it.id}">
+          <span></span>
+        </label>
+        <div class="task-body">
+          ${line1}${line2}${memo}${line3}
+        </div>
+        ${adminBtns}
+      `;
+      ul.appendChild(li);
+    }
+
+    ul.onclick = async (e)=>{
+      const t = e.target;
+      const act = t.getAttribute("data-act");
+      if(!act) return;
+      const cat2 = t.getAttribute("data-cat");
+      const id   = t.getAttribute("data-id");
+      if(act==="toggle"){
+        if(!isAdmin){ t.checked = !t.checked; return; }
+        await colTasks(cat2).doc(id).update({ done: t.checked });
+      }else if(act==="del"){
+        if(!isAdmin) return;
+        if(confirm("삭제할까요?")) await colTasks(cat2).doc(id).delete();
+      }else if(act==="edit"){
+        if(!isAdmin) return;
+        openEditDialog(cat2, id);
+      }
+    };
+  }
+
+  // 간단 편집(모달 없이 prompt) – 필요시 모달로 확장 가능
+  async function openEditDialog(cat, id){
+    const ref = await colTasks(cat).doc(id).get();
+    if(!ref.exists) return;
+    const it = ref.data();
+    const subj = prompt("과목", it.subj||""); if(subj===null) return;
+    const text = prompt("내용", it.text||""); if(text===null) return;
+    const memo = prompt("상세 내용(선택)", it.memo||""); if(memo===null) return;
+    await colTasks(cat).doc(id).update({ subj, text, memo });
+  }
+
+  // ===== 목록 구독 =====
+  function startListeners(){
+    unsubscribers.forEach(u => u && u());
+    unsubscribers = [];
+
+    // 전달 사항 표시 여부
+    const uS = docSettings().onSnapshot(snap=>{
+      const show = !!snap.data()?.showNotice;
+      el.noticeToggle.checked = show;
+      // 표시 여부와 무관하게 목록은 보여주되, 빈 문구는 show일 때만 감춰도 OK
+      // 여기서는 show=false 여도 목록은 표시(요청사항에 따라 조정 가능)
+    });
+    unsubscribers.push(uS);
+
+    // 전달 사항 목록
+    const uN = colAnnounces().orderBy("createdAt","desc").onSnapshot(snap=>{
+      const arr = [];
+      snap.forEach(d=>arr.push({ id:d.id, ...d.data() }));
+      renderNotices(arr);
+    });
+    unsubscribers.push(uN);
+
+    // 각 카테고리
+    ["exam","perf","home"].forEach(cat=>{
+      const u = colTasks(cat).orderBy("dueStart","asc").onSnapshot(snap=>{
+        const arr = [];
+        snap.forEach(d=>arr.push({ id:d.id, ...d.data() }));
+        renderTasks(cat, arr);
+      });
+      unsubscribers.push(u);
+    });
+  }
+
+  // ===== 전달 사항 렌더 =====
+  function renderNotices(list){
+    el.noticeList.innerHTML = "";
+    if(!list.length){
+      el.noticeEmpty.style.display = "";
+      return;
+    }
+    el.noticeEmpty.style.display = "none";
+    for(const n of list){
+      const li = document.createElement("li");
+      li.className = `notice-item notice-${n.level||"info"}`;
+      li.innerHTML = `
+        <div class="notice-title">
+          <span class="tag ${n.level||"info"}">${(n.level==="alert"?"긴급":(n.level==="warn"?"주의":"안내"))}</span>
+          <b>${escapeHtml(n.title||"")}</b>
+        </div>
+        <div class="notice-body">${(n.body||"").replaceAll("\n","<br>")}</div>
+        ${isAdmin?`<div class="task-btns"><button class="btn ghost" data-act="ndel" data-id="${n.id}">삭제</button></div>`:""}
+      `;
+      el.noticeList.appendChild(li);
+    }
+    if(isAdmin){
+      el.noticeList.onclick = async (e)=>{
+        const t = e.target;
+        const act = t.getAttribute("data-act");
+        if(act==="ndel"){
+          const id = t.getAttribute("data-id");
+          if(confirm("전달 사항을 삭제할까요?")){
+            await colAnnounces().doc(id).delete();
+          }
+        }
+      }
+    }
+  }
+
+  function escapeHtml(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+
+  // ===== 전달 사항 ON/OFF (관리자) =====
+  el.noticeToggle.onchange = async ()=>{
+    if(!isAdmin){ el.noticeToggle.checked = !el.noticeToggle.checked; return; }
+    try{
+      await docSettings().set({ showNotice: el.noticeToggle.checked }, { merge:true });
+    }catch(e){
+      alert(`설정 저장 실패: ${e.message}`);
     }
   };
-}
 
-function col(cat){
-  return db.collection("users").doc(getOwnerUid())
-           .collection("tasks").doc(cat).collection("items");
-}
-
-function makeDDayBadge(due){
-  if (!due) return "";
-  const d = new Date(due+"T00:00:00");
-  const today = new Date();
-  const diff = Math.floor((d - toMidnight(today))/86400000);
-  let label = "";
-  let cls   = "";
-  if (diff > 0) { label = `D-${diff}`; cls = "p-future"; }
-  else if (diff === 0) { label = "D-DAY"; cls="p-today"; }
-  else { label = `D+${Math.abs(diff)}`; cls="p-past"; }
-  return `<span class="dday ${cls}">${label}</span>`;
-}
-function toMidnight(dt){ return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); }
-
-function makeDateRange(from, to){
-  const a = from ? toDisplayDate(from) : null;
-  const b = to ? toDisplayDate(to) : null;
-  if (a && b && a!==b) return `${a} ~ ${b}`;
-  return b || a || "";
-}
-function toDisplayDate(iso){
-  const d = new Date(iso+"T00:00:00");
-  const w = ["일","월","화","수","목","금","토"][d.getDay()];
-  const y = d.getFullYear();
-  const m = ("0"+(d.getMonth()+1)).slice(-2);
-  const day = ("0"+d.getDate()).slice(-2);
-  return `${y}-${m}-${day} (${w})`;
-}
-function makePeriodText(s,e){
-  if (!s && !e) return "";
-  if (s && e) return `${s}교시 ~ ${e}교시`;
-  if (s) return `${s}교시`;
-  return `${e}교시`;
-}
-
-/* ====== 5) 추가 폼(관리자만) ====== */
-function fillPeriodSelects(){
-  $$(".add-row .start").forEach(sel=>{
-    sel.innerHTML = ["","1","2","3","4","5","6","7"].map(v=>
-      `<option value="${v}">${v? v+"교시":"교시 없음"}</option>`).join("");
+  // ===== 전달 사항 추가 (관리자) + 초안 저장 =====
+  function loadNoticeDraft(){
+    try{
+      const d = JSON.parse(localStorage.getItem(DRAFT_NOTICE)||"{}");
+      el.nf_title.value = d.title || "";
+      el.nf_level.value = d.level || "info";
+      el.nf_body.value  = d.body  || "";
+    }catch(_){}
+  }
+  function saveNoticeDraft(){
+    const data = { title: el.nf_title.value, level: el.nf_level.value, body: el.nf_body.value };
+    localStorage.setItem(DRAFT_NOTICE, JSON.stringify(data));
+  }
+  ["input","change"].forEach(ev=>{
+    el.nf_title.addEventListener(ev, saveNoticeDraft);
+    el.nf_level.addEventListener(ev, saveNoticeDraft);
+    el.nf_body.addEventListener(ev,  saveNoticeDraft);
   });
-  $$(".add-row .end").forEach(sel=>{
-    sel.innerHTML = ["","1","2","3","4","5","6","7"].map(v=>
-      `<option value="${v}">${v? v+"교시":"교시 없음"}</option>`).join("");
-  });
-}
-fillPeriodSelects();
 
-$$(".add-row .add").forEach(btn=>{
-  btn.addEventListener("click", async ()=>{
-    if (!isAdmin) return;
-    const row  = btn.closest(".add-row");
-    const cat  = btn.dataset.cat;
-    const subj = $(".subj", row).value.trim();
-    const text = $(".text", row).value.trim();
-    const from = $(".date:nth-of-type(1)", row).value || "";
-    const due  = $(".date:nth-of-type(2)", row).value || "";
-    const start= $(".start",row).value || "";
-    const end  = $(".end",row).value || "";
-    const desc = $(".desc", row).value.trim();
-
-    if (!subj || !text){ alert("과목/내용을 입력해 주세요."); return; }
-    await col(cat).add({
-      subj, text,
-      from, due,
-      startPeriod: start || null,
-      endPeriod: end || null,
-      desc: desc || "",
-      done: false,
+  el.nf_add.onclick = async ()=>{
+    if(!isAdmin) return;
+    const title = el.nf_title.value.trim();
+    const body  = el.nf_body.value.trim();
+    const level = el.nf_level.value;
+    if(!title || !body){ alert("제목과 내용을 입력해 주세요."); return; }
+    await colAnnounces().add({
+      title, body, level,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    $(".subj", row).value="";
-    $(".text", row).value="";
-    $(".date:nth-of-type(1)", row).value="";
-    $(".date:nth-of-type(2)", row).value="";
-    $(".start", row).value="";
-    $(".end", row).value="";
-    $(".desc", row).value="";
-  });
-});
+    // 성공 → 폼 비우고 초안 삭제
+    el.nf_title.value = ""; el.nf_body.value = ""; el.nf_level.value = "info";
+    localStorage.removeItem(DRAFT_NOTICE);
+  };
 
-/* ====== 6) 수정 모달(간단 버전) ====== */
-function openEdit(cat, id){
-  // 간단: 현재 항목 값만 읽어서 prompt로 수정 (필요 시 UI 모달로 교체)
-  col(cat).doc(id).get().then(doc=>{
-    const d = doc.data();
-    const subj = prompt("과목", d.subj||""); if (subj===null) return;
-    const text = prompt("내용", d.text||""); if (text===null) return;
-    const from = prompt("시작일(YYYY-MM-DD, 선택)", d.from||""); if (from===null) return;
-    const due  = prompt("마감일(YYYY-MM-DD)", d.due||""); if (due===null) return;
-    const start= prompt("시작교시(숫자, 선택)", d.startPeriod||""); if (start===null) return;
-    const end  = prompt("끝교시(숫자, 선택)", d.endPeriod||""); if (end===null) return;
-    const desc = prompt("상세 내용(선택)", d.desc||""); if (desc===null) return;
-
-    col(cat).doc(id).update({
-      subj, text,
-      from: from || "",
-      due:  due  || "",
-      startPeriod: start || null,
-      endPeriod:   end   || null,
-      desc: desc || ""
+  // ===== 과목/내용/날짜/교시/메모 초안 저장 =====
+  function gatherTaskDraft(){
+    const data = {};
+    $$(".add-row").forEach(row=>{
+      const cat = row.dataset.cat;
+      data[cat] = {
+        subj:  $(".subj", row).value,
+        text:  $(".text", row).value,
+        date1: $(".date:nth-of-type(1)", row).value,
+        date2: $(".date:nth-of-type(2)", row).value,
+        ps:    $(".period-start", row).value,
+        pe:    $(".period-end", row).value,
+        memo:  $(".memo", row).value
+      };
     });
-  });
-}
+    return data;
+  }
+  function loadTaskDraft(){
+    try{
+      const raw = localStorage.getItem(DRAFT_TASK);
+      if(!raw) return;
+      const d = JSON.parse(raw);
+      $$(".add-row").forEach(row=>{
+        const cat = row.dataset.cat;
+        const x = d?.[cat]; if(!x) return;
+        $(".subj", row).value = x.subj||"";
+        $(".text", row).value = x.text||"";
+        $(".date:nth-of-type(1)", row).value = x.date1||"";
+        $(".date:nth-of-type(2)", row).value = x.date2||"";
+        $(".period-start", row).value = x.ps||"";
+        $(".period-end", row).value = x.pe||"";
+        $(".memo", row).value = x.memo||"";
+      });
+    }catch(_){}
+  }
+  function persistTaskDraft(){ localStorage.setItem(DRAFT_TASK, JSON.stringify(gatherTaskDraft())); }
+  document.addEventListener("input",(e)=>{ if(e.target.closest(".add-row")) persistTaskDraft(); });
 
-/* ====== 7) 유틸 ====== */
-function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+  function clearTaskRow(row){
+    $(".subj", row).value = "";
+    $(".text", row).value = "";
+    $(".date:nth-of-type(1)", row).value = "";
+    $(".date:nth-of-type(2)", row).value = "";
+    $(".period-start", row).value = "";
+    $(".period-end", row).value = "";
+    $(".memo", row).value = "";
+    persistTaskDraft();
+  }
 
-/* ====== 8) 1분 자동 새로고침 (조용히) ====== */
-setInterval(()=>{ location.reload(); }, 60*1000);
+  // ===== 추가 버튼 바인딩 =====
+  function bindAddRows(){
+    $$(".add-row").forEach(row=>{
+      const btn = $(".add", row);
+      const cat = row.dataset.cat;
+      btn.onclick = async ()=>{
+        if(!isAdmin){ alert("관리자만 추가할 수 있습니다."); return; }
+        const subj = $(".subj", row).value.trim();
+        const text = $(".text", row).value.trim();
+        const date1= $(".date:nth-of-type(1)", row).value || "";
+        const date2= $(".date:nth-of-type(2)", row).value || "";
+        const ps   = $(".period-start", row).value || "";
+        const pe   = $(".period-end", row).value || "";
+        const memo = $(".memo", row).value.trim();
 
-</script>
+        if(!subj || !text){ alert("과목/내용을 입력해 주세요."); return; }
+        await colTasks(cat).add({
+          subj, text, memo,
+          dueStart: date1 || null,
+          dueEnd:   date2 || null,
+          periodStart: ps || null,
+          periodEnd:   pe || null,
+          done:false,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        clearTaskRow(row);
+      };
+    });
+  }
+
+  // ===== 최초 로드 시 초안 복원 =====
+  loadNoticeDraft();
+  loadTaskDraft();
+
+  // ===== 바인딩 & 리스너 시작 =====
+  bindAddRows();
+  startListeners();
+
+  // ===== 1분마다 조용한 갱신 =====
+  setInterval(()=>{ startListeners(); }, 60*1000);
+
+  </script>
 </body>
 </html>
