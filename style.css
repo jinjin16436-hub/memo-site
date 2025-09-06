@@ -116,3 +116,13 @@ body{
   .modal__inner .grid{grid-template-columns: 1fr 1fr}
   .modal__inner .grid.grid--notice{grid-template-columns: 1fr}
 }
+
+/* 드롭다운/달력 등이 카드나 모달의 클리핑에 잘리지 않도록 */
+.modal, .modal .modal-content, .card, .section {
+  overflow: visible !important;
+}
+.dropdown-menu, .select-menu, .flatpickr-calendar {
+  position: absolute;              /* 떠서 뜨는 요소 */
+  z-index: 9999 !important;        /* 최상위로 */
+}
+
