@@ -5,25 +5,25 @@
   --muted:#99a7bd;
   --line:#223044;
 
-  --brand:#8ab4ff;
   --btn:#7aa2ff;
   --btn-hover:#6993f8;
 
-  --pill-hot:#ff5a5f;
-  --pill-warn:#f0a739;
-  --pill-thin:#c0c9dd;
+  /* D-day */
+  --pill-red:#ff5a5f;      /* 빨강: D-1, D-DAY */
+  --pill-orange:#f0a739;   /* 주황: D-2~3 */
+  --pill-yellow:#ffd85e;   /* 노랑: D-4~5 */
+  --pill-green:#52d284;    /* 초록: D-6+ */
+  --pill-past:#c0c9dd;     /* 지난 일정 */
 
+  /* notices */
   --notice-yellow:#fff3c4;
   --notice-orange:#ffe0c2;
   --notice-red:#ffd1d1;
   --notice-green:#d8ffd8;
   --notice-blue:#d6e7ff;
-  --notice-ink:#122;
 }
-
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;color:var(--text);background:var(--bg);font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", sans-serif}
-a{color:inherit}
 
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:1px solid var(--line);background:rgba(20,28,38,.6);backdrop-filter: blur(6px);}
 .topbar h1{font-size:20px;margin:0}
@@ -75,17 +75,20 @@ a{color:inherit}
 .btn{padding:10px 14px;border-radius:10px;background:var(--btn);border:1px solid #567fe2;color:#fff;font-weight:600;cursor:pointer}
 .btn:hover{background:var(--btn-hover)}
 .btn.light{background:#1b283a;border-color:#1b2d47}
-.btn.add{font-weight:700}
 
 .badge.admin{background:#2b3d5e;border:1px solid #3b5586;color:#a8c2ff;padding:6px 10px;border-radius:999px}
 
+/* D-day 배지 */
 .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px}
-.pill.hot{background:var(--pill-hot);color:#fff}
-.pill.warn{background:var(--pill-warn);color:#2a1f00}
-.pill.thin{background:var(--pill-thin);color:#10223e}
+.pill.red    {background:var(--pill-red);    color:#fff;}
+.pill.orange {background:var(--pill-orange); color:#2a1f00;}
+.pill.yellow {background:var(--pill-yellow); color:#1c1700;}
+.pill.green  {background:var(--pill-green);  color:#06220f;}
+.pill.past   {background:var(--pill-past);   color:#10223e;}
 
 .muted{color:var(--muted);margin:8px 0}
 
+/* 스위치 */
 .switch{position:relative;display:inline-block;width:56px;height:30px}
 .switch input{opacity:0;width:0;height:0}
 .slider{position:absolute;inset:0;background:#2e3c4e;border-radius:30px;transition:.2s;border:1px solid var(--line)}
@@ -93,6 +96,7 @@ a{color:inherit}
 .switch input:checked + .slider{background:#60c079}
 .switch input:checked + .slider:before{transform: translateX(26px)}
 
+/* 모달 */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50}
 .modal-body{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:680px;max-width:96%}
 .modal-body .grid{display:grid;grid-template-columns: 1fr 1fr 160px 160px 130px 130px; gap:10px}
