@@ -1,463 +1,519 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>부광고 1-1 숙제 & 수행평가</title>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-<header class="topbar">
-  <h1>📒 숙제 & 수행평가</h1>
-  <div class="spacer"></div>
-  <button id="loginBtn" class="btn">🔑 Google 로그인</button>
-  <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
-</header>
-
-<!-- ===================== 중요 전달 사항 ===================== -->
-<section class="notice-block">
-  <div class="notice-head">
-    <div class="title">
-      <span class="ico">📢</span>
-      <span>중요 전달 사항</span>
+  <!-- 상단 바 -->
+  <header class="admin-bar">
+    <h1>📒 숙제 & 수행평가</h1>
+    <div class="right">
+      <span id="adminBadge" class="badge" style="display:none">관리자</span>
+      <button id="loginBtn" class="btn">🔑 Google 로그인</button>
+      <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
     </div>
+  </header>
 
-    <div class="notice-controls">
-      <!-- 표시 토글 (모두에게 보이는 상태를 관리자만 변경) -->
-      <label class="switch">
-        <input id="toggleNotice" type="checkbox">
-        <span class="slider"></span>
-      </label>
-      <span class="toggle-label">표시</span>
-    </div>
-  </div>
+  <main class="container">
 
-  <!-- 공지 목록 -->
-  <div id="noticeList" class="notice-list"></div>
-
-  <!-- 관리자 전용 입력 -->
-  <div id="noticeForm" class="notice-form" style="display:none">
-    <div class="row">
-      <input id="noticeTitle"   class="inp" placeholder="제목"/>
-      <select id="noticeType"   class="inp">
-        <option value="yellow">전달 사항(노랑)</option>
-        <option value="red">긴급(빨강)</option>
-        <option value="blue">안내(파랑)</option>
-        <option value="green">참고(초록)</option>
-        <option value="purple">중요(보라)</option>
-      </select>
-      <button id="addNotice" class="btn primary">+ 추가</button>
-    </div>
-    <textarea id="noticeBody" class="inp" rows="4" placeholder="내용 (줄바꿈 가능)"></textarea>
-  </div>
-</section>
-
-<!-- ===================== 섹션: 시험 / 수행평가 / 숙제 ===================== -->
-<main class="container">
-
-  <!-- 시험 -->
-  <section>
-    <div class="section-head" onclick="toggleSection('sec_exam')">
-      <span>🧪 시험</span>
-      <span class="arrow">▾</span>
-    </div>
-    <div id="sec_exam" class="section-body open">
-      <ul id="list_exam" class="task-list"></ul>
-      <div class="add-row" data-cat="exam" style="display:none">
-        <input class="subj inp" type="text" placeholder="과목"/>
-        <input class="text inp" type="text" placeholder="내용"/>
-        <input class="date inp" type="date"/>
-        <input class="date inp" type="date"/>
-        <select class="startPd inp">
-          <option value="">교시 없음</option>
-          <option value="1">1교시</option><option value="2">2교시</option>
-          <option value="3">3교시</option><option value="4">4교시</option>
-          <option value="5">5교시</option><option value="6">6교시</option>
-          <option value="7">7교시</option>
-        </select>
-        <select class="endPd inp">
-          <option value="">교시 없음</option>
-          <option value="1">1교시</option><option value="2">2교시</option>
-          <option value="3">3교시</option><option value="4">4교시</option>
-          <option value="5">5교시</option><option value="6">6교시</option>
-          <option value="7">7교시</option>
-        </select>
-        <button class="add btn primary">+ 추가</button>
-      </div>
-      <textarea class="detail inp add-detail" rows="3" placeholder="상세 내용 (선택)"></textarea>
-    </div>
-  </section>
-
-  <!-- 수행평가 -->
-  <section>
-    <div class="section-head" onclick="toggleSection('sec_perf')">
-      <span>📄 수행평가</span>
-      <span class="arrow">▾</span>
-    </div>
-    <div id="sec_perf" class="section-body open">
-      <ul id="list_perf" class="task-list"></ul>
-      <div class="add-row" data-cat="perf" style="display:none">
-        <input class="subj inp" type="text" placeholder="과목"/>
-        <input class="text inp" type="text" placeholder="내용"/>
-        <input class="date inp" type="date"/>
-        <input class="date inp" type="date"/>
-        <select class="startPd inp">
-          <option value="">교시 없음</option>
-          <option value="1">1교시</option><option value="2">2교시</option>
-          <option value="3">3교시</option><option value="4">4교시</option>
-          <option value="5">5교시</option><option value="6">6교시</option>
-          <option value="7">7교시</option>
-        </select>
-        <select class="endPd inp">
-          <option value="">교시 없음</option>
-          <option value="1">1교시</option><option value="2">2교시</option>
-          <option value="3">3교시</option><option value="4">4교시</option>
-          <option value="5">5교시</option><option value="6">6교시</option>
-          <option value="7">7교시</option>
-        </select>
-        <button class="add btn primary">+ 추가</button>
-      </div>
-      <textarea class="detail inp add-detail" rows="3" placeholder="상세 내용 (선택)"></textarea>
-    </div>
-  </section>
-
-  <!-- 숙제 -->
-  <section>
-    <div class="section-head" onclick="toggleSection('sec_home')">
-      <span>📌 숙제</span>
-      <span class="arrow">▾</span>
-    </div>
-    <div id="sec_home" class="section-body open">
-      <ul id="list_home" class="task-list"></ul>
-      <div class="add-row" data-cat="home" style="display:none">
-        <input class="subj inp" type="text" placeholder="과목"/>
-        <input class="text inp" type="text" placeholder="내용"/>
-        <input class="date inp" type="date"/>
-        <input class="date inp" type="date"/>
-        <select class="startPd inp">
-          <option value="">교시 없음</option>
-          <option value="1">1교시</option><option value="2">2교시</option>
-          <option value="3">3교시</option><option value="4">4교시</option>
-          <option value="5">5교시</option><option value="6">6교시</option>
-          <option value="7">7교시</option>
-        </select>
-        <select class="endPd inp">
-          <option value="">교시 없음</option>
-          <option value="1">1교시</option><option value="2">2교시</option>
-          <option value="3">3교시</option><option value="4">4교시</option>
-          <option value="5">5교시</option><option value="6">6교시</option>
-          <option value="7">7교시</option>
-        </select>
-        <button class="add btn primary">+ 추가</button>
-      </div>
-      <textarea class="detail inp add-detail" rows="3" placeholder="상세 내용 (선택)"></textarea>
-    </div>
-  </section>
-
-</main>
-
-<!-- Firebase (compat) -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-<script>
-  // ===== Firebase 설정 (그대로 사용) =====
-  const firebaseConfig = {
-    apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
-    authDomain: "my-memo-site.firebaseapp.com",
-    projectId: "my-memo-site",
-    storageBucket: "my-memo-site.firebasestorage.app",
-    messagingSenderId: "196036694705",
-    appId: "1:196036694705:web:8988d12919420130464890"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db   = firebase.firestore();
-
-  // ===== 관리자 UID =====
-  const OWNER_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
-
-  // ===== 유틸 =====
-  const $  = (q, r=document)=>r.querySelector(q);
-  const $$ = (q, r=document)=>Array.from(r.querySelectorAll(q));
-  const weekday = (d)=>["(일)","(월)","(화)","(수)","(목)","(금)","(토)"][new Date(d+"T00:00:00").getDay()];
-
-  function periodLabel(v){
-    if (v===undefined || v===null) return "";
-    const s = String(v).trim();
-    if (!s) return "";
-    if (/^\d+$/.test(s)) return `${s}교시`;
-    return "";
-  }
-
-  function ddayLabel(start){
-    if(!start) return "";
-    const base=new Date(); base.setHours(0,0,0,0);
-    const s = new Date(start+"T00:00:00");
-    if(isNaN(s.getTime())) return "";
-    const diff = Math.round((s-base)/86400000);
-    if (diff<0) return `<span class="dday past">A+${Math.abs(diff)}</span>`;
-    if (diff===0) return `<span class="dday warn">D-DAY</span>`;
-    let cls="far"; if(diff<=2) cls="urgent"; else if(diff<=3) cls="soon"; else if(diff<=5) cls="near";
-    return `<span class="dday ${cls}">D-${diff}</span>`;
-  }
-
-  // ===== 전역 상태 =====
-  let currentUser=null;
-  let unsubTasks = [];
-  let unsubNotice = null;
-  let unsubSettings = null;
-
-  // ===== 섹션 토글 저장 =====
-  function toggleSection(id){
-    const b = document.getElementById(id);
-    b.classList.toggle("open");
-    const st = {
-      exam: $("#sec_exam")?.classList.contains("open"),
-      perf: $("#sec_perf")?.classList.contains("open"),
-      home: $("#sec_home")?.classList.contains("open"),
-    };
-    localStorage.setItem("open:v1", JSON.stringify(st));
-  }
-  (function restoreOpen(){
-    try{
-      const s = JSON.parse(localStorage.getItem("open:v1")||"{}");
-      if(s.exam===false) $("#sec_exam")?.classList.remove("open");
-      if(s.perf===false) $("#sec_perf")?.classList.remove("open");
-      if(s.home===false) $("#sec_home")?.classList.remove("open");
-    }catch{}
-  })();
-
-  // ===== Firestore refs =====
-  const tasksCol = (cat, uid)=> db.collection("users").doc(uid).collection("tasks").doc(cat).collection("items");
-  const settingsDoc = db.collection("settings").doc("global");
-  const noticeCol = db.collection("notice");
-
-  // ===== 로그인 제어 =====
-  $("#loginBtn").onclick = async ()=>{
-    try{
-      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-      await auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());
-    }catch(e){ alert("로그인 실패: "+e.message); }
-  };
-  $("#logoutBtn").onclick = ()=> auth.signOut();
-
-  auth.onAuthStateChanged(user=>{
-    currentUser=user;
-    $("#loginBtn").style.display = user? "none":"";
-    $("#logoutBtn").style.display= user? "":"none";
-    const isAdmin = !!(user && user.uid===OWNER_UID);
-    setEditVisible(isAdmin);
-    startListeners(isAdmin);
-  });
-
-  // ===== 편집 UI 노출 (관리자만) =====
-  function setEditVisible(isAdmin){
-    $$(".add-row").forEach(r=> r.style.display = isAdmin? "" : "none");
-    $$(".add-detail").forEach(t=> t.style.display = isAdmin? "" : "none");
-    $("#noticeForm").style.display = isAdmin? "" : "none";
-  }
-
-  // ===== 섹션별 실시간 구독 =====
-  function startListeners(isAdmin){
-    // 기존 해제
-    unsubTasks.forEach(u=>u&&u()); unsubTasks=[];
-    unsubNotice && unsubNotice(); unsubNotice=null;
-    unsubSettings && unsubSettings(); unsubSettings=null;
-
-    const readUid = (currentUser && currentUser.uid) ? currentUser.uid : OWNER_UID;
-
-    ["exam","perf","home"].forEach(cat=>{
-      const u = tasksCol(cat, readUid).orderBy("start","asc").onSnapshot(snap=>{
-        const arr=[]; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
-        renderList(cat, arr, isAdmin);
-      });
-      unsubTasks.push(u);
-    });
-
-    // 공지 목록
-    unsubNotice = noticeCol.orderBy("createdAt","desc").onSnapshot(snap=>{
-      const arr=[]; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
-      renderNotices(arr, isAdmin);
-    });
-
-    // 표시 ON/OFF
-    unsubSettings = settingsDoc.onSnapshot(doc=>{
-      const v = doc.exists? !!doc.data().showNotice : false;
-      $("#toggleNotice").checked = v;
-      $(".notice-block").classList.toggle("hidden", !v);
-    });
-  }
-
-  // ===== 목록 렌더 =====
-  function renderList(cat, items, isAdmin){
-    const ul = document.getElementById("list_"+cat);
-    ul.innerHTML = "";
-    for(const it of items){
-      ul.appendChild(renderOne(cat, it, isAdmin));
-    }
-    bindAdd(cat);
-  }
-
-  function renderOne(cat, it, isAdmin){
-    const li = document.createElement("li");
-    li.className = "task";
-    const hasS = !!(it.start && !isNaN(new Date(it.start+"T00:00:00")));
-    const hasE = !!(it.end   && !isNaN(new Date(it.end  +"T00:00:00")));
-    const sStr = hasS? `${it.start} ${weekday(it.start)}` : "";
-    const eStr = hasE? `${it.end} ${weekday(it.end)}` : "";
-    const sp = periodLabel(it.startPd);
-    const ep = periodLabel(it.endPd);
-
-    const parts=[];
-    if(sStr) parts.push(sStr);
-    if(eStr) parts.push(eStr);
-    if(sp && ep) parts.push(`${sp} ~ ${ep}`);
-    else if(sp) parts.push(sp);
-    else if(ep) parts.push(ep);
-    const dateLine = parts.length ? `📅 ${parts.join("  ~  ")}` : "";
-
-    li.innerHTML = `
-      <label class="chk"><input type="checkbox"><span></span></label>
-      <div class="main">
-        <div class="line1">
-          <b class="subject">${(it.subj||"")}</b>
-          ${ddayLabel(it.start)}
+    <!-- ================= 전달 사항 ================= -->
+    <section class="notice-block">
+      <div class="notice-head">
+        <div class="left">
+          <span class="title">📢 중요 전달 사항</span>
         </div>
-        <div class="line2">${(it.text||"").replace(/\n/g,"<br>")}</div>
-        ${it.detail ? `<div class="line3 small">${it.detail.replace(/\n/g,"<br>")}</div>` : ""}
-        ${dateLine ? `<div class="meta">${dateLine}</div>` : ""}
+        <div class="right">
+          <!-- 토글은 항상 보이게 -->
+          <label class="switch">
+            <input id="toggleNotice" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
-      <div class="ops" style="${isAdmin?'':'display:none'}">
-        <button class="btn ghost edit">수정</button>
-        <button class="btn ghost del">삭제</button>
+
+      <!-- 꺼짐 안내 메시지(목록 숨김시만 안내) -->
+      <div id="noticeHiddenMsg" class="notice-muted" style="display:none">
+        (현재 전달 사항은 “표시 끔” 상태입니다. 관리자만 토글할 수 있어요.)
       </div>
-    `;
 
-    $(".edit", li)?.addEventListener("click", ()=> openEdit(cat, it));
-    $(".del", li)?.addEventListener("click", async ()=>{
-      if(!confirm("삭제할까요?")) return;
-      try{ await tasksCol(cat, OWNER_UID).doc(it.id).delete(); }
-      catch(e){ alert("삭제 실패: "+e.message); }
-    });
-    return li;
-  }
+      <!-- 전달 사항 목록 -->
+      <div id="noticeList" class="notice-list"></div>
 
-  // ===== 항목 추가 =====
-  function bindAdd(cat){
-    const wrap = $(`.add-row[data-cat="${cat}"]`);
-    if(!wrap) return;
-    wrap.querySelector(".add").onclick = async ()=>{
-      if(!(currentUser && currentUser.uid===OWNER_UID)) { alert("관리자만 추가할 수 있어요."); return; }
-      const subj = $(".subj", wrap).value.trim();
-      const text = $(".text", wrap).value.trim();
-      const dates = $$(".date", wrap).map(i=>i.value.trim());
-      const start = dates[0] || "";
-      const end   = dates[1] || "";
-      const startPd = $(".startPd", wrap).value;
-      const endPd   = $(".endPd", wrap).value;
-      const detail  = wrap.parentElement.querySelector(".add-detail").value.trim();
+      <!-- 전달 사항 입력(관리자만 보임) -->
+      <div id="noticeForm" class="notice-form" style="display:none">
+        <div class="row">
+          <input id="noticeTitle" class="input" placeholder="제목" />
+          <select id="noticeLevel" class="input">
+            <option value="info">안내(파랑)</option>
+            <option value="warn">주의(주황)</option>
+            <option value="alert">중요(빨강)</option>
+          </select>
+          <button id="btnAddNotice" class="btn primary">+ 추가</button>
+        </div>
+        <textarea id="noticeBody" class="input wide" placeholder="내용 (줄바꿈 가능)"></textarea>
+      </div>
+    </section>
 
-      if(!subj || !text){ alert("과목/내용을 입력하세요."); return; }
+    <!-- ================= 시험 ================= -->
+    <section>
+      <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
+      <div id="sec_exam" class="section-body open">
+        <ul id="list_exam" class="task-list"></ul>
 
-      try{
-        await tasksCol(cat, OWNER_UID).add({
-          subj, text, detail, start, end, startPd, endPd,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        // 입력 초기화
-        $$(".inp", wrap).forEach(i=> i.value="");
-        wrap.parentElement.querySelector(".add-detail").value = "";
-      }catch(e){ alert("저장 실패: "+e.message); }
+        <!-- 관리자만 입력 보임 -->
+        <div class="add-row" data-cat="exam" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <input class="date" type="date" />
+          <input class="date2" type="date" placeholder="종료일(선택)" />
+          <select class="pStart">
+            <option value="">교시 없음</option>
+            <option>1교시</option><option>2교시</option><option>3교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option>
+            <option>7교시</option>
+          </select>
+          <select class="pEnd">
+            <option value="">교시 없음</option>
+            <option>1교시</option><option>2교시</option><option>3교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option>
+            <option>7교시</option>
+          </select>
+          <button class="add btn primary">+ 추가</button>
+        </div>
+        <textarea class="detail add-row-detail" data-cat="exam" style="display:none" placeholder="상세 내용 (선택)"></textarea>
+      </div>
+    </section>
+
+    <!-- ================= 수행평가 ================= -->
+    <section>
+      <button class="section-head" onclick="toggleSection('sec_perf')">📝 수행평가 ▾</button>
+      <div id="sec_perf" class="section-body open">
+        <ul id="list_perf" class="task-list"></ul>
+
+        <div class="add-row" data-cat="perf" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <input class="date" type="date" />
+          <input class="date2" type="date" placeholder="종료일(선택)" />
+          <select class="pStart">
+            <option value="">교시 없음</option>
+            <option>1교시</option><option>2교시</option><option>3교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option>
+            <option>7교시</option>
+          </select>
+          <select class="pEnd">
+            <option value="">교시 없음</option>
+            <option>1교시</option><option>2교시</option><option>3교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option>
+            <option>7교시</option>
+          </select>
+          <button class="add btn primary">+ 추가</button>
+        </div>
+        <textarea class="detail add-row-detail" data-cat="perf" style="display:none" placeholder="상세 내용 (선택)"></textarea>
+      </div>
+    </section>
+
+    <!-- ================= 숙제 ================= -->
+    <section>
+      <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
+      <div id="sec_home" class="section-body open">
+        <ul id="list_home" class="task-list"></ul>
+
+        <div class="add-row" data-cat="home" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <input class="date" type="date" />
+          <input class="date2" type="date" placeholder="종료일(선택)" />
+          <select class="pStart">
+            <option value="">교시 없음</option>
+            <option>1교시</option><option>2교시</option><option>3교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option>
+            <option>7교시</option>
+          </select>
+          <select class="pEnd">
+            <option value="">교시 없음</option>
+            <option>1교시</option><option>2교시</option><option>3교시</option>
+            <option>4교시</option><option>5교시</option><option>6교시</option>
+            <option>7교시</option>
+          </select>
+          <button class="add btn primary">+ 추가</button>
+        </div>
+        <textarea class="detail add-row-detail" data-cat="home" style="display:none" placeholder="상세 내용 (선택)"></textarea>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase 초기화 -->
+  <script>
+    const firebaseConfig = {
+      /* ⬇⬇ 당신 프로젝트 값으로 유지/교체 ⬇⬇ */
+      apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
+      authDomain: "my-memo-site.firebaseapp.com",
+      projectId: "my-memo-site",
+      storageBucket: "my-memo-site.firebasestorage.app",
+      messagingSenderId: "196036694705",
+      appId: "1:196036694705:web:8988d12919420130464890"
+      /* ⬆⬆ */
     };
-  }
+    firebase.initializeApp(firebaseConfig);
+  </script>
 
-  // ===== 편집 다이얼로그 (간단) =====
-  function openEdit(cat, it){
-    const subj=prompt("과목", it.subj||""); if(subj===null) return;
-    const text=prompt("내용", it.text||""); if(text===null) return;
-    const start=prompt("시작 날짜(YYYY-MM-DD)", it.start||"")||"";
-    const end  =prompt("끝 날짜(YYYY-MM-DD)", it.end||"")||"";
-    const startPd=prompt("시작 교시(숫자 또는 빈칸)", it.startPd||"")||"";
-    const endPd  =prompt("끝 교시(숫자 또는 빈칸)", it.endPd||"")||"";
-    const detail =prompt("상세 내용(선택, \\n 줄바꿈)", it.detail||"")||"";
-    tasksCol(cat, OWNER_UID).doc(it.id).update({subj,text,start,end,startPd,endPd,detail})
-      .catch(e=>alert("수정 실패: "+e.message));
-  }
+  <!-- 앱 코드 -->
+  <script>
+    // ===== 기본 상수/핸들 =====
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
 
-  // ===== 공지 렌더 =====
-  function renderNotices(items, isAdmin){
-    const box = $("#noticeList");
-    box.innerHTML = "";
-    for(const n of items){
-      const card = document.createElement("div");
-      card.className = `note ${n.type||"yellow"}`;
-      card.innerHTML = `
-        <div class="note-title">${(n.title||"")}</div>
-        <div class="note-body">${(n.body||"").replace(/\n/g,"<br>")}</div>
-        ${isAdmin ? `<div class="note-ops">
-          <button class="btn ghost" data-act="edit">수정</button>
-          <button class="btn ghost" data-act="del">삭제</button>
-        </div>` : ""}
-      `;
-      if(isAdmin){
-        $("[data-act='edit']", card).onclick = async ()=>{
-          const title = prompt("제목", n.title||""); if(title===null) return;
-          const body  = prompt("내용 (\\n 줄바꿈)", n.body||""); if(body===null) return;
-          const type  = prompt("색(yellow/red/blue/green/purple)", n.type||"yellow")||"yellow";
-          try{ await noticeCol.doc(n.id).update({title, body, type}); }
-          catch(e){ alert("수정 실패: "+e.message); }
-        };
-        $("[data-act='del']", card).onclick = async ()=>{
-          if(!confirm("공지 삭제할까요?")) return;
-          try{ await noticeCol.doc(n.id).delete(); }
-          catch(e){ alert("삭제 실패: "+e.message); }
-        };
+    const ADMIN_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";   // 관리자 UID (수정)
+    const OWNER_UID = ADMIN_UID;                         // 비로그인 공개 읽기 소스(기존과 동일)
+
+    const $  = (q, r=document)=>r.querySelector(q);
+    const $$ = (q, r=document)=>Array.from(r.querySelectorAll(q));
+
+    const el = {
+      login: $("#loginBtn"),
+      logout: $("#logoutBtn"),
+      adminBadge: $("#adminBadge"),
+      lists: { exam: $("#list_exam"), perf: $("#list_perf"), home: $("#list_home") },
+      // notice
+      noticeList:  $("#noticeList"),
+      noticeForm:  $("#noticeForm"),
+      noticeTitle: $("#noticeTitle"),
+      noticeLevel: $("#noticeLevel"),
+      noticeBody:  $("#noticeBody"),
+      noticeToggle: $("#toggleNotice"),
+      noticeHiddenMsg: $("#noticeHiddenMsg"),
+    };
+
+    let currentUser = null;
+    let isAdmin = false;
+    let unsub = [];
+    let unsubNotice = null;
+    let unsubSettings = null;
+
+    // ===== 섹션 토글 저장/복원 =====
+    const OPEN_KEY = "memo:open-v2";
+    function toggleSection(id){
+      const b = $("#"+id);
+      if(!b) return;
+      b.classList.toggle("open");
+      saveOpen();
+    }
+    function saveOpen(){
+      const s = {
+        exam: $("#sec_exam").classList.contains("open"),
+        perf: $("#sec_perf").classList.contains("open"),
+        home: $("#sec_home").classList.contains("open"),
+      };
+      localStorage.setItem(OPEN_KEY, JSON.stringify(s));
+    }
+    (function restoreOpen(){
+      try{
+        const s = JSON.parse(localStorage.getItem(OPEN_KEY)||"{}");
+        if(s.exam===false) $("#sec_exam")?.classList.remove("open");
+        if(s.perf===false) $("#sec_perf")?.classList.remove("open");
+        if(s.home===false) $("#sec_home")?.classList.remove("open");
+      }catch{}
+    })();
+
+    // ===== 공용 유틸 =====
+    function esc(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+    function fmtDate(y,m,d){
+      const weekday = ["일","월","화","수","목","금","토"];
+      const dt = new Date(`${y}-${m}-${d}T00:00:00`);
+      return `${y}-${m}-${d} (${weekday[dt.getDay()]})`;
+    }
+    function ddayBadge(dateStr){
+      if(!dateStr) return "";
+      const t0 = new Date().setHours(0,0,0,0);
+      const t1 = new Date(dateStr+"T00:00:00").getTime();
+      const diff = Math.round((t1 - t0)/86400000);
+
+      let label="", cls="";
+      if(diff > 0){
+        label = `D-${diff}`;
+        if(diff<=1) cls="dd-red";
+        else if(diff<=3) cls="dd-orange";
+        else if(diff<=5) cls="dd-yellow";
+        else cls="dd-green";
+      }else if(diff === 0){
+        label = "D-day";
+        cls = "dd-red";
+      }else{
+        label = `D+${Math.abs(diff)}`;
+        cls = "dd-past";
       }
-      box.appendChild(card);
+      return `<span class="dday ${cls}">${label}</span>`;
     }
-  }
 
-  // 공지 추가
-  $("#addNotice").onclick = async ()=>{
-    if(!(currentUser && currentUser.uid===OWNER_UID)){ alert("관리자만 추가 가능합니다."); return; }
-    const title = $("#noticeTitle").value.trim();
-    const body  = $("#noticeBody").value.trim();
-    const type  = $("#noticeType").value;
-    if(!title || !body){ alert("제목/내용을 입력하세요."); return; }
-    try{
-      await noticeCol.add({title, body, type, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
-      $("#noticeTitle").value=""; $("#noticeBody").value="";
-    }catch(e){ alert("공지 저장 실패: "+e.message); }
-  };
+    // ===== Firestore 경로 =====
+    const userCol = (uid)=>db.collection("users").doc(uid).collection("tasks");
+    const col     = (cat)=>{
+      const uid = (currentUser?.uid) || OWNER_UID;
+      return userCol(uid).doc(cat).collection("items");
+    };
 
-  // 표시 ON/OFF 토글
-  $("#toggleNotice").addEventListener("change", async (e)=>{
-    const on = e.target.checked;
-    if(!(currentUser && currentUser.uid===OWNER_UID)){
-      // 읽기용 상태는 그대로 유지시키고 토글은 되돌림
-      e.target.checked = !on;
-      alert("관리자만 변경할 수 있어요.");
-      return;
+    // ===== 렌더링(카드) =====
+    function renderItem(cat, arr){
+      const ul = el.lists[cat];
+      ul.innerHTML = "";
+      for(const it of arr){
+        const dateText = it.due ? fmtDate(...it.due.split("-")) : "";
+        const when = it.pStart && it.pEnd ? `${it.pStart} ~ ${it.pEnd}`
+                  : it.pStart ? it.pStart
+                  : it.pEnd   ? it.pEnd : "";
+
+        const dBadge = ddayBadge(it.due);
+
+        const li = document.createElement("li");
+        li.className = "task";
+        li.innerHTML = `
+          <div class="task__left">
+            <label class="chk-wrap">
+              <input type="checkbox" ${it.done?"checked":""} data-act="toggle" data-cat="${cat}" data-id="${it.id}">
+              <span></span>
+            </label>
+          </div>
+          <div class="task__main ${it.done?'done':''}">
+            <div class="line1">
+              <div class="subject">
+                <b>${esc(it.subj||"")}</b>
+                ${dBadge}
+              </div>
+            </div>
+            <div class="line2">${esc(it.text||"")}</div>
+            ${it.detail ? `<div class="line3">${esc(it.detail)}</div>` : ""}
+            <div class="meta">
+              ${it.due?`<span class="cal">📅 ${fmtDate(...it.due.split("-"))}${when?` · ${when}`:""}</span>`:""}
+            </div>
+          </div>
+          <div class="task__right" style="display:${isAdmin?'':'none'}">
+            <button class="btn ghost" data-act="edit" data-cat="${cat}" data-id="${it.id}">수정</button>
+            <button class="btn ghost" data-act="del"  data-cat="${cat}" data-id="${it.id}">삭제</button>
+          </div>
+        `;
+        ul.appendChild(li);
+      }
+
+      ul.onclick = async (e)=>{
+        const t = e.target;
+        const act = t.getAttribute("data-act");
+        if(!act) return;
+        const id  = t.getAttribute("data-id");
+        const cat2= t.getAttribute("data-cat");
+
+        if(act==="toggle"){
+          if(!currentUser){ t.checked=!t.checked; return alert("로그인 후 완료 체크가 가능합니다."); }
+          await col(cat2).doc(id).update({ done: t.checked });
+        }else if(act==="del"){
+          if(!isAdmin) return;
+          if(confirm("삭제할까요?")){
+            await col(cat2).doc(id).delete();
+          }
+        }else if(act==="edit"){
+          if(!isAdmin) return;
+          openEdit(cat2, id);
+        }
+      };
     }
-    try{
-      await settingsDoc.set({showNotice: on}, {merge:true});
-    }catch(err){
-      alert("설정 저장 실패: "+err.message);
-      e.target.checked = !on; // 되돌리기
+
+    // ===== 실시간 구독 =====
+    function startListeners(){
+      unsub.forEach(u=>u&&u()); unsub=[];
+      ["exam","perf","home"].forEach(cat=>{
+        const u = col(cat).orderBy("due","asc").onSnapshot(snap=>{
+          const arr=[];
+          snap.forEach(d=>arr.push({id:d.id,...d.data()}));
+          renderItem(cat, arr);
+        });
+        unsub.push(u);
+      });
+
+      // 전달 사항
+      if(unsubNotice) unsubNotice();
+      unsubNotice = db.collection("notice").orderBy("createdAt","desc").onSnapshot(snap=>{
+        const arr=[]; snap.forEach(d=>arr.push({id:d.id,...d.data()}));
+        renderNotice(arr);
+      });
+
+      // 표시 설정
+      const settingsDoc = db.collection("settings").doc("global");
+      if(unsubSettings) unsubSettings();
+      unsubSettings = settingsDoc.onSnapshot(doc=>{
+        const v = doc.exists ? !!doc.data().showNotice : false;
+        el.noticeToggle.checked = v;
+        el.noticeList.classList.toggle("hidden", !v);
+        el.noticeHiddenMsg.style.display = v ? "none" : "";
+      });
     }
-  });
 
-  // 1분마다 조용히 갱신
-  setInterval(()=> {
-    // Firestore onSnapshot이 실시간이지만, 혹시 모를 캐시 또는 렌더 꼬임 대비
-    // 표시 상태는 onSnapshot으로 자동 반영되므로, 여기서는 섹션 접힘 상태만 갱신
-    // (필요시 강제 새로고침 아래 주석 해제)
-    // location.reload();
-  }, 60000);
-</script>
+    // ===== 전달 사항 렌더 =====
+    function renderNotice(items){
+      el.noticeList.innerHTML = "";
+      if(items.length===0){
+        el.noticeList.innerHTML = `<div class="notice-card empty">등록된 전달 사항이 없습니다.</div>`;
+        return;
+      }
+      for(const it of items){
+        const color = it.level==="alert" ? "alert" :
+                      it.level==="warn"  ? "warn"  : "info";
+        const card = document.createElement("div");
+        card.className = `notice-card ${color}`;
+        card.innerHTML = `
+          <div class="notice-title">${esc(it.title||"")}</div>
+          <div class="notice-body">${(it.body||"").replaceAll("\n","<br>")}</div>
+          <div class="notice-actions" style="display:${isAdmin?'flex':'none'}">
+            <button class="btn ghost" data-id="${it.id}" data-act="editNotice">수정</button>
+            <button class="btn ghost" data-id="${it.id}" data-act="delNotice">삭제</button>
+          </div>
+        `;
+        el.noticeList.appendChild(card);
+      }
 
+      el.noticeList.onclick = async (e)=>{
+        const t = e.target;
+        const act= t.getAttribute("data-act");
+        if(!act) return;
+        const id = t.getAttribute("data-id");
+        if(act==="delNotice"){
+          if(!isAdmin) return;
+          if(confirm("전달 사항을 삭제할까요?")) await db.collection("notice").doc(id).delete();
+        }else if(act==="editNotice"){
+          if(!isAdmin) return;
+          // 간단 편집 프롬프트
+          const doc = await db.collection("notice").doc(id).get();
+          const d = doc.data();
+          const title = prompt("제목", d.title||""); if(title===null) return;
+          const body  = prompt("내용(줄바꿈 \\n)", d.body||""); if(body===null) return;
+          const level = prompt("레벨(info/warn/alert)", d.level||"info")||"info";
+          await db.collection("notice").doc(id).update({ title, body, level });
+        }
+      };
+    }
+
+    // ===== 전달 사항 추가 & 토글 =====
+    $("#btnAddNotice").addEventListener("click", async ()=>{
+      if(!isAdmin) return alert("관리자만 추가할 수 있어요.");
+      const title = el.noticeTitle.value.trim();
+      const body  = el.noticeBody.value.trim();
+      const level = el.noticeLevel.value;
+      if(!title || !body) return alert("제목/내용을 입력해 주세요.");
+      await db.collection("notice").add({
+        title, body, level,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      el.noticeTitle.value=""; el.noticeBody.value="";
+    });
+
+    el.noticeToggle.addEventListener("change", async ()=>{
+      const settingsDoc = db.collection("settings").doc("global");
+      if(!isAdmin){
+        // 권한 없으면 되돌리기
+        const snap = await settingsDoc.get();
+        const v = snap.exists ? !!snap.data().showNotice : false;
+        el.noticeToggle.checked = v;
+        return alert("관리자만 변경할 수 있어요.");
+      }
+      try{
+        await settingsDoc.set({ showNotice: el.noticeToggle.checked }, { merge:true });
+      }catch(e){
+        alert("설정 저장 실패: " + e.message);
+      }
+    });
+
+    // ===== 추가 폼 바인드 =====
+    function bindAddRows(){
+      $$(".add-row").forEach(row=>{
+        row.style.display = isAdmin? "" : "none";
+      });
+      $$(".add-row-detail").forEach(a=>{
+        a.style.display = isAdmin? "" : "none";
+      });
+
+      $$(".add-row .add").forEach(btn=>{
+        btn.onclick = async ()=>{
+          if(!isAdmin) return alert("관리자만 추가할 수 있어요.");
+          const row = btn.closest(".add-row");
+          const cat = row.dataset.cat;
+
+          const subj = $(".subj", row).value.trim();
+          const text = $(".text", row).value.trim();
+          const due  = $(".date", row).value;
+          const due2 = $(".date2", row).value;
+          const pStart = $(".pStart", row).value;
+          const pEnd   = $(".pEnd", row).value;
+          const detail = $(`.add-row-detail[data-cat="${cat}"]`)?.value || "";
+
+          if(!subj || !text || !due) return alert("과목/내용/날짜는 필수입니다.");
+
+          await col(cat).add({
+            subj, text, detail,
+            due, due2: due2||"",
+            pStart: pStart||"", pEnd: pEnd||"",
+            done:false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          $(".subj", row).value="";
+          $(".text", row).value="";
+          $(".date", row).value="";
+          $(".date2", row).value="";
+          $(".pStart", row).value="";
+          $(".pEnd", row).value="";
+          if($(`.add-row-detail[data-cat="${cat}"]`)) $(`.add-row-detail[data-cat="${cat}"]`).value="";
+        };
+      });
+    }
+
+    // ===== 수정 팝업(간단) =====
+    async function openEdit(cat, id){
+      const doc = await col(cat).doc(id).get();
+      const d = doc.data();
+      const subj = prompt("과목", d.subj||""); if(subj===null) return;
+      const text = prompt("내용", d.text||""); if(text===null) return;
+      const due  = prompt("날짜(YYYY-MM-DD)", d.due||""); if(due===null) return;
+      const due2 = prompt("종료일(선택)", d.due2||"");
+      const pStart= prompt("시작 교시(빈칸 가능)", d.pStart||"");
+      const pEnd  = prompt("끝 교시(빈칸 가능)", d.pEnd||"");
+      const detail= prompt("상세 내용(선택, \\n 줄바꿈)", d.detail||"")||"";
+      await col(cat).doc(id).update({ subj, text, due, due2:due2||"", pStart:pStart||"", pEnd:pEnd||"", detail });
+    }
+
+    // ===== 로그인/권한 =====
+    el.login.onclick  = ()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    el.logout.onclick = ()=>auth.signOut();
+
+    auth.onAuthStateChanged(u=>{
+      currentUser = u || null;
+      isAdmin = !!(currentUser && currentUser.uid===ADMIN_UID);
+
+      el.login.style.display  = currentUser? "none": "";
+      el.logout.style.display = currentUser? "": "none";
+      el.adminBadge.style.display = isAdmin? "inline-block": "none";
+
+      // 관리자일 때만 입력 영역/버튼 표시
+      bindAddRows();
+
+      // 카드 우측 수정/삭제 보임 제어는 렌더 내부에서 isAdmin 사용
+
+      startListeners();
+    });
+
+    // ===== 1분마다 D-day 배지 리프레시(부드럽게) =====
+    setInterval(()=>{
+      // 리스트 재렌더 대신, 뱃지 텍스트만 갱신
+      $$(".task .meta .cal").forEach(()=>{}); // NOP(실시간 스냅샷으로 콘텐츠 유지)
+      // 필요시 location.reload(); 로 바꿀 수 있음(추천X)
+    }, 60000);
+  </script>
 </body>
 </html>
