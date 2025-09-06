@@ -75,6 +75,7 @@ html,body{margin:0;padding:0;color:var(--text);background:var(--bg);font-family:
 .btn{padding:10px 14px;border-radius:10px;background:var(--btn);border:1px solid #567fe2;color:#fff;font-weight:600;cursor:pointer}
 .btn:hover{background:var(--btn-hover)}
 .btn.light{background:#1b283a;border-color:#1b2d47}
+.btn.add{font-weight:700}
 
 .badge.admin{background:#2b3d5e;border:1px solid #3b5586;color:#a8c2ff;padding:6px 10px;border-radius:999px}
 
