@@ -134,7 +134,7 @@
 
 </main>
 
-<!-- 수정 모달 -->
+<!-- 항목 수정 모달 -->
 <div id="editModal" class="modal" style="display:none">
   <div class="modal-body">
     <h3>항목 수정</h3>
@@ -165,13 +165,35 @@
   </div>
 </div>
 
+<!-- 전달 사항 수정 모달 -->
+<div id="noticeModal" class="modal" style="display:none">
+  <div class="modal-body">
+    <h3>전달 사항 수정</h3>
+    <div class="grid" style="grid-template-columns: 1fr 180px; gap:10px">
+      <input id="nmTitle" class="input" placeholder="제목" />
+      <select id="nmTone" class="select">
+        <option value="yellow">전달 사항</option>
+        <option value="orange">주의</option>
+        <option value="red">긴급</option>
+        <option value="green">안내</option>
+        <option value="blue">정보</option>
+      </select>
+    </div>
+    <textarea id="nmBody" class="textarea" placeholder="내용 (줄바꿈 가능)"></textarea>
+    <div class="right" style="margin-top:12px">
+      <button id="nmCancel" class="btn light">취소</button>
+      <button id="nmSave"   class="btn">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase compat SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-/* ========= Firebase 설정 (교체 필요) ========= */
+/* ========= Firebase 설정 (⚠️교체) ========= */
 const firebaseConfig = {
   apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
   authDomain: "my-memo-site.firebaseapp.com",
@@ -184,50 +206,45 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-/* ========= UID (교체 필요) ========= */
+/* ========= UID (⚠️교체) ========= */
 const ADMIN_UID  = "vv0bADtWdqQUnqFMy8k01dhO13t2";
 const PUBLIC_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
 
 /* ========= 상태 ========= */
 let currentUser=null, isAdmin=false;
+const $ = (q,r=document)=>r.querySelector(q);
+
 const lists = {
-  exam: document.getElementById('list_exam'),
-  perf: document.getElementById('list_perf'),
-  home: document.getElementById('list_home'),
+  exam: $("#list_exam"),
+  perf: $("#list_perf"),
+  home: $("#list_home"),
 };
 let unsubs = [];
 
 /* ========= 로그인 ========= */
-const $ = (q,r=document)=>r.querySelector(q);
-document.getElementById('loginBtn').onclick = async ()=>{
+$("#loginBtn").onclick = async ()=>{
   try{
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-  }catch(e){ alert("로그인 실패: "+e.message); }
+  }catch(e){ alert("로그인 실패: " + e.message); }
 };
-document.getElementById('logoutBtn').onclick = ()=>auth.signOut();
+$("#logoutBtn").onclick = ()=>auth.signOut();
 
 auth.onAuthStateChanged(u=>{
-  currentUser = u;
-  isAdmin = !!(u && u.uid === ADMIN_UID);
-
-  document.getElementById('loginBtn').style.display  = u? "none":"";
-  document.getElementById('logoutBtn').style.display = u? "":"none";
-  document.getElementById('adminBadge').style.display= isAdmin? "":"none";
-  document.querySelectorAll('.add-row').forEach(r=>r.style.display = isAdmin? "":"none");
-  document.getElementById('noticeEditor').style.display = isAdmin? "":"none";
-
+  currentUser=u; isAdmin=!!(u && u.uid===ADMIN_UID);
+  $("#loginBtn").style.display  = u? "none":"";
+  $("#logoutBtn").style.display = u? "":"none";
+  $("#adminBadge").style.display= isAdmin? "":"none";
+  document.querySelectorAll('.add-row').forEach(r=>r.style.display=isAdmin? "":"none");
+  $("#noticeEditor").style.display = isAdmin? "":"none";
   bindDraft();
   startListeners();
   loadNoticeToggle();
 });
 
-/* ========= Firestore 경로 ========= */
+/* ========= 경로 ========= */
 const readUid  = ()=> (isAdmin ? ADMIN_UID : PUBLIC_UID);
-const writeUid = ()=> {
-  if(!isAdmin) throw new Error("권한 없음");
-  return ADMIN_UID;
-};
+const writeUid = ()=> { if(!isAdmin) throw new Error("권한 없음"); return ADMIN_UID; };
 function taskCol(cat, forWrite=false){
   return db.collection("users").doc(forWrite? writeUid(): readUid())
            .collection("tasks").doc(cat).collection("items");
@@ -328,7 +345,7 @@ function startListeners(){
   });
   loadNotices();
 }
-setInterval(()=>startListeners(), 60000); // 조용한 갱신
+setInterval(()=>startListeners(), 60000); // 1분마다 조용한 갱신
 
 /* ========= 추가 폼 + 임시 저장 ========= */
 const DRAFT_KEY="memo:draft-v2";
@@ -400,8 +417,8 @@ document.querySelectorAll(".add-row .add").forEach(btn=>{
   };
 });
 
-/* ========= 수정 모달 ========= */
-const modal = document.getElementById("editModal");
+/* ========= 항목 수정 모달 ========= */
+const editModal=$("#editModal");
 const editSubj=$("#editSubj"), editText=$("#editText"), editStart=$("#editStart"),
       editEnd=$("#editEnd"), editStartPeriod=$("#editStartPeriod"),
       editEndPeriod=$("#editEndPeriod"), editDetail=$("#editDetail");
@@ -418,11 +435,11 @@ function openEdit(cat,id){
     editStartPeriod.value=d.startPeriod||"";
     editEndPeriod.value=d.endPeriod||"";
     editDetail.value=d.detail||"";
-    modal.style.display="flex";
+    editModal.style.display="flex";
   });
 }
-document.getElementById("editCancel").onclick=()=> modal.style.display="none";
-document.getElementById("editSave").onclick=async ()=>{
+$("#editCancel").onclick=()=> editModal.style.display="none";
+$("#editSave").onclick=async ()=>{
   if(!isAdmin){ alert("관리자만 수정할 수 있습니다."); return; }
   try{
     await taskCol(editing.cat,true).doc(editing.id).update({
@@ -432,16 +449,17 @@ document.getElementById("editSave").onclick=async ()=>{
       endDate:   editEnd.value || editStart.value,
       startPeriod: editStartPeriod.value || "",
       endPeriod:   editEndPeriod.value   || "",
-      detail: editDetail.value || ""    // ✅ 상세 내용 저장
+      detail: editDetail.value || ""   // ✅ 상세내용 저장
     });
-    modal.style.display="none";
+    editModal.style.display="none";
   }catch(e){ alert("수정 실패: "+e.message); }
 };
 
-/* ========= 전달 사항 ========= */
+/* ========= 전달 사항 (표시/CRUD) ========= */
 const uiDoc = db.collection("settings").doc(ADMIN_UID).collection("ui").doc("global");
+
 async function loadNoticeToggle(){
-  const tgl = document.getElementById("noticeToggle");
+  const tgl = $("#noticeToggle");
   try{
     const s = await uiDoc.get();
     tgl.checked = !!(s.exists && s.data().showNotices);
@@ -452,41 +470,96 @@ async function loadNoticeToggle(){
     try{ await uiDoc.set({showNotices: tgl.checked},{merge:true}); }catch(e){ alert("표시 설정 실패: "+e.message); }
   };
 }
+
 function loadNotices(){
+  // 표시 설정(투명도)
   uiDoc.get().then(s=>{
     const show = !!(s.exists && s.data().showNotices);
-    document.getElementById("noticeWrap").style.opacity = show? "1":".45";
+    $("#noticeWrap").style.opacity = show? "1":".45";
   });
-  db.collection("users").doc(readUid()).collection("notices").orderBy("createdAt","desc")
+
+  const wrap = $("#noticeWrap");
+  db.collection("users").doc(readUid()).collection("notices")
+    .orderBy("createdAt","desc")
     .onSnapshot(snap=>{
-      const wrap=document.getElementById("noticeWrap");
-      if(snap.empty){ wrap.innerHTML='<p class="muted">등록된 전달 사항이 없습니다.</p>'; return; }
+      if(snap.empty){
+        wrap.innerHTML = '<p class="muted">등록된 전달 사항이 없습니다.</p>';
+        return;
+      }
       const html=[];
-      snap.forEach(d=>{
-        const n=d.data(), tone=n.tone||"yellow";
+      snap.forEach(doc=>{
+        const n=doc.data(), id=doc.id, tone=n.tone||"yellow";
         html.push(`
-          <article class="notice ${tone}">
+          <article class="notice ${tone}" data-id="${id}">
             <div class="notice-title">${escapeHtml(n.title||"")}</div>
             <pre class="notice-body">${escapeHtml(n.body||"")}</pre>
+            <div class="notice-ops" style="margin-top:8px; ${isAdmin? '':'display:none'}">
+              <button class="btn light" data-act="n-edit" data-id="${id}">수정</button>
+              <button class="btn light" data-act="n-del"  data-id="${id}">삭제</button>
+            </div>
           </article>
         `);
       });
-      wrap.innerHTML=html.join("");
+      wrap.innerHTML = html.join("");
     }, err=>console.error(err));
+
+  // 수정/삭제 위임
+  wrap.onclick = async (e)=>{
+    const act = e.target?.dataset?.act; if(!act) return;
+    if(!isAdmin) return;
+    const id = e.target.dataset.id;
+    const ref = db.collection("users").doc(writeUid()).collection("notices").doc(id);
+
+    if(act==="n-del"){
+      if(!confirm("이 전달 사항을 삭제할까요?")) return;
+      try{ await ref.delete(); }catch(err){ alert("삭제 실패: "+err.message); }
+    }
+    if(act==="n-edit"){
+      try{
+        const snap = await ref.get();
+        if(!snap.exists) return alert("문서를 찾을 수 없습니다.");
+        const n = snap.data();
+        openNoticeEdit(id, n.title||"", n.body||"", n.tone||"yellow");
+      }catch(err){ alert("불러오기 실패: "+err.message); }
+    }
+  };
 }
-document.getElementById("noticeAdd").onclick = async ()=>{
-  if(!isAdmin){ alert("관리자만 추가할 수 있습니다."); return; }
-  const title=$("#noticeTitle").value.trim();
-  const body =$("#noticeBody").value.trim();
-  const tone =$("#noticeTone").value;
-  if(!title){ alert("제목을 입력하세요."); return; }
+
+// 전달 사항 수정 모달 로직
+const noticeModal = $("#noticeModal");
+const nmTitle = $("#nmTitle"), nmBody=$("#nmBody"), nmTone=$("#nmTone");
+const nmCancel=$("#nmCancel"), nmSave=$("#nmSave");
+let editingNoticeId=null;
+
+function openNoticeEdit(id, title, body, tone){
+  editingNoticeId=id;
+  nmTitle.value=title;
+  nmBody.value=body;
+  nmTone.value=tone||"yellow";
+  noticeModal.style.display="flex";
+}
+nmCancel.onclick=()=>{ noticeModal.style.display="none"; editingNoticeId=null; };
+nmSave.onclick = async ()=>{
+  if(!isAdmin) return alert("관리자만 수정할 수 있습니다.");
+  if(!editingNoticeId) return;
+  const t = nmTitle.value.trim();
+  const b = nmBody.value.trim();
+  const o = nmTone.value;
+  if(!t) return alert("제목을 입력하세요.");
   try{
-    await db.collection("users").doc(writeUid()).collection("notices").add({
-      title, body, tone, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    $("#noticeTitle").value=""; $("#noticeBody").value="";
-  }catch(e){ alert("추가 실패: "+e.message); }
+    await db.collection("users").doc(writeUid()).collection("notices")
+      .doc(editingNoticeId).update({ title:t, body:b, tone:o });
+    noticeModal.style.display="none";
+    editingNoticeId=null;
+  }catch(err){ alert("수정 실패: "+err.message); }
 };
+
+/* ========= 유틸 ========= */
+function loadNoticeDefaultsToVisibleOnce(){
+  // 최초 생성해두고 싶다면 사용(선택)
+  uiDoc.set({showNotices:true},{merge:true}).catch(()=>{});
+}
+loadNoticeDefaultsToVisibleOnce();
 </script>
 </body>
 </html>
