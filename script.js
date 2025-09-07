@@ -95,29 +95,82 @@ const lists = {
   home: $("#list_home"),
 };
 
-function taskItemHTML(cat, id, it){
+// li 요소를 *문자열이 아닌* DOM으로 만든다 (줄바꿈은 textContent + CSS로 처리)
+function taskItemElement(cat, id, it){
+  const li = document.createElement("li");
+  li.className = "task";
+
+  const main = document.createElement("div");
+  main.className = "task__main";
+  li.appendChild(main);
+
+  // 1) 제목 + D-day
+  const titleRow = document.createElement("div");
+  const strong = document.createElement("b");
+  strong.textContent = it.subj || "";
+  titleRow.appendChild(strong);
+
+  // D-day는 이미 HTML 뱃지이므로 안전하게 넣어도 됨
+  const ddayWrap = document.createElement("span");
+  ddayWrap.innerHTML = " " + renderDday(it.start, it.end);
+  titleRow.appendChild(ddayWrap);
+  main.appendChild(titleRow);
+
+  // 2) 본문(내용)
+  if (it.text) {
+    const textEl = document.createElement("div");
+    textEl.textContent = it.text;              // ✅ 줄바꿈 안전
+    main.appendChild(textEl);
+  }
+
+  // 3) 날짜/교시 메타
   const dates = dateSpanText(it.start, it.end);
   const pTxt  = periodText(it.pStart, it.pEnd);
-  return `
-  <li class="task">
-    <div class="task__main">
-      <div><b>${escapeHTML(it.subj||"")}</b> ${renderDday(it.start, it.end)}</div>
-      ${it.text ? `<div>${escapeHTML(it.text)}</div>` : ""}
-      <div class="meta">📅 ${dates}${pTxt?` · ${pTxt}`:""}</div>
-      ${it.detail ? `<pre>${escapeHTML(it.detail)}</pre>` : ""}
-      ${currentUser?.uid===ADMIN_UID ? `
-        <div class="card-actions">
-          <button class="btn" onclick="openEdit('${cat}','${id}')">수정</button>
-          <button class="btn" onclick="doDelete('${cat}','${id}')">삭제</button>
-        </div>` : ``}
-    </div>
-  </li>`;
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  meta.textContent = `📅 ${dates}${pTxt ? ` · ${pTxt}` : ""}`;
+  main.appendChild(meta);
+
+  // 4) 상세 내용(여러 줄) – 줄바꿈을 그대로 보여줌
+  if (it.detail) {
+    const details = document.createElement("div");
+    details.className = "details";
+    details.textContent = it.detail;           // ✅ 줄바꿈 안전
+    main.appendChild(details);
+  }
+
+  // 5) 관리자만 버튼 보이기
+  if (currentUser?.uid === ADMIN_UID) {
+    const actions = document.createElement("div");
+    actions.className = "card-actions";
+
+    const bEdit = document.createElement("button");
+    bEdit.className = "btn";
+    bEdit.textContent = "수정";
+    bEdit.onclick = () => openEdit(cat, id);
+
+    const bDel = document.createElement("button");
+    bDel.className = "btn";
+    bDel.textContent = "삭제";
+    bDel.onclick = () => doDelete(cat, id);
+
+    actions.appendChild(bEdit);
+    actions.appendChild(bDel);
+    main.appendChild(actions);
+  }
+
+  return li;
 }
 
+// 스냅샷 → 리스트 렌더링
 function renderList(cat, docs){
   const ul = lists[cat];
-  ul.innerHTML = docs.map(d => taskItemHTML(cat, d.id, d.data())).join("");
+  ul.innerHTML = "";                      // 기존 내용 비우고
+  const frag = document.createDocumentFragment();
+  docs.forEach(d => frag.appendChild(taskItemElement(cat, d.id, d.data())));
+  ul.appendChild(frag);
 }
+
 
 // ===== 6) 구독 시작/해제 =====
 function startListen(){
