@@ -7,97 +7,159 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- 상단 바 -->
   <header class="admin-bar">
     <h1>📒 숙제 & 수행평가</h1>
+    <div class="spacer"></div>
+    <span id="adminBadge" class="badge" style="display:none">관리자</span>
     <button id="loginBtn" class="btn">로그인</button>
     <button id="logoutBtn" class="btn" style="display:none">로그아웃</button>
-    <span id="adminBadge" style="display:none" class="badge">관리자</span>
   </header>
 
   <main class="container">
 
-    <!-- 중요 전달 사항 -->
-    <section>
+    <!-- 중요 전달 사항 (전역 ON/OFF) -->
+    <section class="section">
       <div class="section-head">
         <h2>📢 중요 전달 사항</h2>
-        <label class="switch" id="noticeToggleWrap" style="display:none">
-          <input type="checkbox" id="noticeToggle">
+        <div class="spacer"></div>
+        <!-- 관리자에게만 보이는 ON/OFF 스위치 -->
+        <label id="noticeToggleWrap" class="switch" style="display:none" title="모든 사용자에게 '중요 전달 사항' 섹션 표시/숨김">
+          <input type="checkbox" id="noticeToggle" />
           <span class="slider"></span>
         </label>
       </div>
+
       <div id="noticeBox" class="section-body">
-        <div id="noticeAddRow" class="add-row" style="display:none">
-          <input class="subj" type="text" placeholder="제목" />
-          <select class="cat">
-            <option value="공지">공지</option>
-            <option value="안내">안내</option>
-            <option value="알림">알림</option>
-          </select>
-          <textarea class="text" placeholder="상세 내용 (줄바꿈 가능)"></textarea>
-          <button class="add btn">+ 추가</button>
+        <!-- 관리자만 보이는 추가 폼 -->
+        <div class="add-row" data-cat="notice" style="display:none">
+          <div class="row row-notice">
+            <input class="subj" type="text" placeholder="제목" />
+            <select class="cat">
+              <option value="공지">공지(빨강)</option>
+              <option value="안내">안내(노랑)</option>
+              <option value="알림">알림(초록)</option>
+            </select>
+            <button class="add btn">+ 추가</button>
+          </div>
+          <textarea class="detail wide" placeholder="상세 내용 (줄바꿈 가능)"></textarea>
         </div>
+
         <ul id="list_notice" class="task-list"></ul>
       </div>
     </section>
 
     <!-- 시험 -->
-    <section>
+    <section class="section">
       <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
       <div id="sec_exam" class="section-body open">
         <ul id="list_exam" class="task-list"></ul>
+
         <div class="add-row" data-cat="exam" style="display:none">
-          <input class="subj" type="text" placeholder="과목" />
-          <input class="text" type="text" placeholder="내용" />
-          <input class="date" type="date" /> ~ <input class="date2" type="date" />
-          <select class="startPeriod"></select>
-          <select class="endPeriod"></select>
-          <textarea class="detail" placeholder="상세 내용 (선택)"></textarea>
+          <div class="row">
+            <input class="subj" type="text" placeholder="과목" />
+            <input class="text" type="text" placeholder="내용" />
+            <input class="date" type="date" />
+            <input class="date2" type="date" />
+          </div>
+          <textarea class="detail wide" placeholder="상세 내용 (선택)"></textarea>
           <button class="add btn">+ 추가</button>
         </div>
       </div>
     </section>
 
     <!-- 수행평가 -->
-    <section>
+    <section class="section">
       <button class="section-head" onclick="toggleSection('sec_perf')">📄 수행평가 ▾</button>
       <div id="sec_perf" class="section-body open">
         <ul id="list_perf" class="task-list"></ul>
+
         <div class="add-row" data-cat="perf" style="display:none">
-          <input class="subj" type="text" placeholder="과목" />
-          <input class="text" type="text" placeholder="내용" />
-          <input class="date" type="date" /> ~ <input class="date2" type="date" />
-          <select class="startPeriod"></select>
-          <select class="endPeriod"></select>
-          <textarea class="detail" placeholder="상세 내용 (선택)"></textarea>
+          <div class="row">
+            <input class="subj" type="text" placeholder="과목" />
+            <input class="text" type="text" placeholder="내용" />
+            <input class="date" type="date" />
+            <input class="date2" type="date" />
+          </div>
+          <textarea class="detail wide" placeholder="상세 내용 (선택)"></textarea>
           <button class="add btn">+ 추가</button>
         </div>
       </div>
     </section>
 
     <!-- 숙제 -->
-    <section>
+    <section class="section">
       <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
       <div id="sec_home" class="section-body open">
         <ul id="list_home" class="task-list"></ul>
+
         <div class="add-row" data-cat="home" style="display:none">
-          <input class="subj" type="text" placeholder="과목" />
-          <input class="text" type="text" placeholder="내용" />
-          <input class="date" type="date" /> ~ <input class="date2" type="date" />
-          <select class="startPeriod"></select>
-          <select class="endPeriod"></select>
-          <textarea class="detail" placeholder="상세 내용 (선택)"></textarea>
+          <div class="row">
+            <input class="subj" type="text" placeholder="과목" />
+            <input class="text" type="text" placeholder="내용" />
+            <input class="date" type="date" />
+            <input class="date2" type="date" />
+          </div>
+          <textarea class="detail wide" placeholder="상세 내용 (선택)"></textarea>
           <button class="add btn">+ 추가</button>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Firebase SDK -->
+  <!-- ======= 수정 팝업 다이얼로그 ======= -->
+  <div id="editModal" class="modal hidden" aria-hidden="true">
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h3 id="modalTitle">항목 수정</h3>
+
+      <div class="form">
+        <div class="row">
+          <label>분류</label>
+          <select id="mCat" disabled>
+            <option value="notice">중요 전달 사항</option>
+            <option value="exam">시험</option>
+            <option value="perf">수행평가</option>
+            <option value="home">숙제</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label>제목/과목</label>
+          <input id="mSubj" type="text" />
+        </div>
+
+        <div class="row">
+          <label>내용</label>
+          <input id="mText" type="text" />
+        </div>
+
+        <div class="row">
+          <label>시작일</label>
+          <input id="mStart" type="date" />
+          <label class="ml">종료일</label>
+          <input id="mEnd" type="date" />
+        </div>
+
+        <div class="row">
+          <label>상세 내용</label>
+        </div>
+        <textarea id="mDetail" rows="8" placeholder="여러 줄 입력 가능 (Shift+Enter 줄바꿈)"></textarea>
+      </div>
+
+      <div class="modal__actions">
+        <button id="mSave" class="btn primary">저장</button>
+        <button id="mCancel" class="btn" data-close>취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- JS -->
+  <!-- 앱 스크립트 -->
   <script src="script.js"></script>
 </body>
 </html>
