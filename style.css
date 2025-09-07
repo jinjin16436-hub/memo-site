@@ -1,180 +1,75 @@
-:root{
-  --bg: #0f1623;
-  --panel: #151c24;
-  --card: rgba(255,255,255,.03);
-  --fg: #e9eef7;
-  --muted: #9fb0c9;
-  --border: #293040;
-  --accent: #6aa5ff;
-
-  --dd-red: #ff4d4f;
-  --dd-orange: #ff9f43;
-  --dd-yellow: #ffd43b;
-  --dd-green: #5fd38c;
-  --dd-gray: #8a93a6;
-
-  --notice-blue: #dfe9ff;
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: #111722;
+  color: #fff;
+  margin: 0;
 }
 
-*{ box-sizing:border-box; }
-html,body{ height:100%; }
-body{
-  margin:0;
-  font-family: 'Pretendard','Noto Sans KR','Apple SD Gothic Neo',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-  background: var(--bg);
-  color: var(--fg);
+.container { padding: 1rem; }
+
+.section-head {
+  background: #1c2333;
+  color: #fff;
+  font-weight: bold;
+  padding: 0.6rem;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 
-/* 상단바 */
-.admin-bar{
-  position:sticky; top:0; z-index:50;
-  display:flex; justify-content:space-between; align-items:center;
-  padding:14px 20px;
-  background:#121a2a; border-bottom:1px solid var(--border);
-}
-.admin-bar h1{ margin:0; font-size:1.25rem; }
-.admin-bar .right{ display:flex; gap:8px; align-items:center; }
-.badge{
-  background:#2b3550; color:#b8c5ff; padding:4px 8px; border-radius:999px; font-size:.85rem;
+.section-body { padding: 0.5rem 1rem; }
+
+.task-list { list-style: none; padding: 0; margin: 0; }
+
+.task {
+  background: #1b2230;
+  margin: 0.4rem 0;
+  padding: 0.8rem;
+  border-radius: 8px;
 }
 
-/* 컨테이너 */
-.container{
-  max-width: 1280px;
-  margin: 18px auto 80px;
-  padding: 0 18px;
-}
+.task__main { margin-left: 0.5rem; }
 
-/* 블록(섹션) */
-.block{
-  background: var(--panel);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:14px;
-  margin-top:18px;
+.dday {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
 }
-.block-head{
-  display:flex; justify-content:space-between; align-items:center;
-  margin-bottom:8px;
-}
-.block h2{ margin:0; }
+.dday.red { background: #d9534f; }
+.dday.orange { background: #f0ad4e; }
+.dday.yellow { background: #ffd500; color:#000; }
+.dday.green { background: #5cb85c; }
+.dday.past { background: #777; }
 
-/* 리스트 그리드 */
-.list{
-  list-style:none; margin:12px 0 0; padding:0;
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(420px,1fr)); gap:14px 16px;
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
 }
-.list.onecol{ grid-template-columns: 1fr; }
-
-/* 카드형 task */
-.task{
-  background: var(--card);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:14px 16px;
-  box-shadow:0 2px 8px rgba(0,0,0,.12);
-  display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
+.switch input { display:none; }
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 24px;
 }
-.task-main{ flex:1; min-width:0; }
-.task-title{ margin:0 0 2px; font-weight:700; font-size:1.05rem; }
-.task-title .dday{ margin-left:8px; }
-.task-text{ margin-top:2px; white-space:pre-line; }
-.task-date{ margin-top:6px; color:var(--muted); font-size:.95rem; }
-.task-detail{ margin-top:8px; color:var(--muted); font-size:.92rem; white-space:pre-line; }
-
-.task-actions{ display:flex; gap:8px; }
-.btn-ghost{
-  background:transparent; color:#cfe0ff; border:1px solid var(--border);
-  padding:6px 10px; border-radius:10px; cursor:pointer;
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px; width: 18px;
+  left: 3px; bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
 }
-.btn-ghost:hover{ background:#1b2438; }
-
-/* 공통 버튼 */
-.btn{
-  background: var(--accent);
-  color:#fff; border:none; padding:8px 14px; border-radius:10px; cursor:pointer;
+input:checked + .slider {
+  background-color: #5cb85c;
 }
-.btn:hover{ opacity:.9; }
-
-/* 추가 폼 */
-.add-row{ background:#101827; border:1px dashed var(--border); border-radius:12px; padding:12px; margin-top:12px; }
-.add-row input, .add-row select, .add-row textarea{
-  width:100%; background:#1b2235; color:var(--fg); border:1px solid var(--border); border-radius:10px; padding:8px;
+input:checked + .slider:before {
+  transform: translateX(22px);
 }
-.add-row .row1{ display:grid; grid-template-columns: 1.2fr 1.6fr repeat(2, 1fr) repeat(2, .9fr) auto; gap:8px; }
-.add-row.two-lines .row1{ margin-bottom:8px; }
-.add-row textarea.detail{ min-height:66px; resize:vertical; }
-
-/* 중요 전달사항 카드 */
-.notice-card{
-  background: var(--notice-blue);
-  color:#0d1a2b;
-  border-radius:12px; padding:14px; border:1px solid #cfe1ff;
-}
-.notice-card h3{ margin:0 0 4px; font-weight:800; }
-.notice-card .type{ font-weight:700; margin-right:6px; }
-.notice-card .admin-tools{ margin-top:8px; display:flex; gap:8px; }
-#noticeEmpty{ color:var(--muted); margin-top:8px; }
-
-/* 스위치 */
-.switch{ position:relative; width:58px; height:30px; }
-.switch input{ display:none; }
-.slider{
-  position:absolute; inset:0; background:#2a344b; border-radius:999px;
-  transition: .2s; box-shadow: inset 0 0 0 2px #1f2940;
-}
-.slider:before{
-  content:""; position:absolute; height:22px; width:22px; left:4px; top:4px;
-  background:white; border-radius:50%; transition:.2s;
-}
-.switch input:checked + .slider{ background:#5fd38c; }
-.switch input:checked + .slider:before{ transform: translateX(28px); }
-
-/* D-Day 뱃지 */
-.dday{
-  display:inline-block; padding:2px 8px; border-radius:999px; font-weight:700; font-size:.86rem;
-  color:#0d1016; background:#eee;
-}
-.dd-red{ background: var(--dd-red); color:#fff; }
-.dd-orange{ background: var(--dd-orange); color:#1b1200; }
-.dd-yellow{ background: var(--dd-yellow); color:#302700; }
-.dd-green{ background: var(--dd-green); color:#042012; }
-.dd-gray{ background: var(--dd-gray); color:#0e1118; }
-
-/* 관리자만 보이는 부분 공통 */
-.admin-only{}
-
-/* 빈 상태 */
-.empty{ color:var(--muted); padding:10px 4px; }
-
-/* 모바일 대응 */
-@media (max-width: 860px){
-  .add-row .row1{ grid-template-columns: 1fr; }
-}
-
-/* 공통 카드 기본형은 그대로 사용 */
-.notice-card{
-  border-radius:12px; padding:14px; border:1px solid #cfe1ff;
-}
-
-/* 타입별 색상 */
-.notice-red{    /* 공지 */
-  background:#FFE8E8;    /* 옅은 빨강 */
-  border-color:#FFB3B3;
-  color:#2B0D0D;
-}
-.notice-yellow{ /* 안내 */
-  background:#FFF7D6;    /* 옅은 노랑 */
-  border-color:#FFE08A;
-  color:#2B1E00;
-}
-.notice-green{  /* 알림 */
-  background:#E7F8E9;    /* 옅은 초록 */
-  border-color:#B7EBC6;
-  color:#05210F;
-}
-
-/* 제목/버튼은 기존 스타일 유지 */
-.notice-card h3{ margin:0 0 4px; font-weight:800; }
-.notice-card .type{ font-weight:700; margin-right:6px; }
-.notice-card .admin-tools{ margin-top:8px; display:flex; gap:8px; }
