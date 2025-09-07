@@ -105,3 +105,87 @@ input:checked + .slider:before{transform:translateX(24px)}
 .modal.hidden{display:none}
 .modal__body{background:#101826;border:1px solid var(--border);border-radius:14px;min-width:320px;max-width:540px;width:92vw;padding:16px;display:flex;flex-direction:column;gap:10px}
 .modal__actions{display:flex;gap:8px;justify-content:flex-end}
+
+/* ===== 폰트 / 기본 대비 리셋 ===== */
+:root{
+  --fg-strong: #e9ecf1;   /* 가장 밝은 본문 */
+  --fg-base:   #cfd6de;   /* 일반 본문 */
+  --fg-dim:    #9aa6b2;   /* 메타/부가 텍스트 */
+  --card-bg:   #0f1720;   /* 카드 내부 배경 (살짝 더 밝게) */
+  --page-bg:   #0b1220;   /* 페이지 배경 */
+}
+
+html, body{
+  font-family: "Noto Sans KR", system-ui, -apple-system, "Segoe UI",
+               Roboto, "Helvetica Neue", Arial, "Apple SD Gothic Neo",
+               "Malgun Gothic", "맑은 고딕", "Noto Sans", sans-serif;
+  color: var(--fg-base);
+  background: var(--page-bg);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 제목/섹션 헤더는 더 또렷하게 */
+h1, h2, h3, .section-head{
+  color: var(--fg-strong);
+}
+
+/* 카드(항목) 대비 상향 */
+.card, .task{
+  background: var(--card-bg);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* 항목 제목(과목) + D-day 라인 */
+.task__main > .title,
+.task__main > div:first-child{
+  color: var(--fg-strong);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+/* 본문(내용) */
+.task__main > .body,
+.task__main > div:nth-child(2){
+  color: var(--fg-base);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+/* 날짜/교시 등 메타라인 */
+.task__main .meta{
+  color: var(--fg-dim);
+  margin-top: 4px;
+  font-size: 0.95rem;
+}
+
+/* 상세내용(pre)도 가독성 높이기 */
+.task__main pre{
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--fg-base);
+  background: rgba(255,255,255,0.03);
+  border: 1px dashed rgba(255,255,255,0.08);
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+/* 버튼 대비 */
+.btn{
+  color: var(--fg-strong);
+  background: rgba(88,130,255,0.15);
+  border: 1px solid rgba(88,130,255,0.25);
+}
+.btn:hover{
+  background: rgba(88,130,255,0.25);
+}
+
+/* D-day 배지 색상도 또렷하게 */
+.dday{ font-weight:700; }
+.dday.red{    background:#ef4444; color:#fff; }
+.dday.orange{ background:#f59e0b; color:#1b1b1b; }
+.dday.yellow{ background:#fde047; color:#1b1b1b; }
+.dday.green{  background:#22c55e; color:#0b1720; }
+.dday.gray{   background:#64748b; color:#fff; }
+
