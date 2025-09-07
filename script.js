@@ -171,6 +171,201 @@ function renderList(cat, docs){
   ul.appendChild(frag);
 }
 
+/* ===== (A) Firestore 경로: 공지 ===== */
+function colNotice() {
+  const uid = (currentUser && currentUser.uid === ADMIN_UID) ? ADMIN_UID : PUBLIC_UID;
+  return db.collection("users").doc(uid).collection("notice").doc("items").collection("list");
+}
+// 표시 설정 문서: users/{uid}/settings/app ( { noticeEnabled: true/false } )
+function docAppSettings() {
+  const uid = (currentUser && currentUser.uid === ADMIN_UID) ? ADMIN_UID : PUBLIC_UID;
+  return db.collection("users").doc(uid).collection("settings").doc("app");
+}
+
+/* ===== (B) DOM 캐시 ===== */
+const noticeList  = $("#noticeList");
+const noticeAdd   = $("#noticeAddRow");
+const noticeToggle= $("#noticeToggle");
+const nTitle = $("#nTitle"), nBody = $("#nBody"), nKind = $("#nKind"), nAdd = $("#nAdd");
+
+/* 수정 모달 */
+const noticeModal = $("#noticeModal");
+const nmTitle = $("#nmTitle"), nmBody = $("#nmBody"), nmKind = $("#nmKind"), nmSave = $("#nmSave");
+let noticeEditCtx = { id: null };
+
+/* ===== (C) 렌더링 ===== */
+// 한 건 DOM으로
+function noticeItemEl(id, it) {
+  const li = document.createElement("li");
+  const card = document.createElement("div");
+  card.className = `notice-card ${it.kind || "info"}`;
+
+  // 제목
+  if (it.title) {
+    const t = document.createElement("div");
+    t.className = "title";
+    t.textContent = it.title;
+    card.appendChild(t);
+  }
+
+  // 본문
+  if (it.body) {
+    const b = document.createElement("div");
+    b.className = "body";
+    b.textContent = it.body;  // 줄바꿈 그대로
+    card.appendChild(b);
+  }
+
+  // 관리자 액션
+  if (currentUser?.uid === ADMIN_UID) {
+    const actions = document.createElement("div");
+    actions.className = "card-actions";
+    const e = document.createElement("button");
+    e.className = "btn"; e.textContent = "수정";
+    e.onclick = () => openNoticeEdit(id);
+    const d = document.createElement("button");
+    d.className = "btn"; d.textContent = "삭제";
+    d.onclick = () => doNoticeDelete(id);
+    actions.appendChild(e); actions.appendChild(d);
+    card.appendChild(actions);
+  }
+
+  li.appendChild(card);
+  return li;
+}
+
+// 리스트 렌더
+function renderNotice(docs) {
+  noticeList.innerHTML = "";
+  if (!docs.length) {
+    const empty = document.createElement("div");
+    empty.style.opacity = .7;
+    empty.style.padding = "10px 6px";
+    empty.textContent = "등록된 전달 사항이 없습니다.";
+    noticeList.appendChild(empty);
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  docs.forEach(d => frag.appendChild(noticeItemEl(d.id, d.data())));
+  noticeList.appendChild(frag);
+}
+
+/* ===== (D) 구독 ===== */
+let unNotice = null;
+async function startNoticeListen() {
+  stopNoticeListen();
+
+  // 표시 설정 로드 & 반영
+  try {
+    const s = await docAppSettings().get();
+    const enabled = s.exists ? !!s.data().noticeEnabled : true;
+    noticeToggle.checked = enabled;
+    $("#noticeList").parentElement.style.display = enabled ? "" : "none";
+  } catch(e) {
+    console.warn("notice settings load fail", e);
+    noticeToggle.checked = true;
+  }
+
+  // 목록 구독
+  unNotice = colNotice().orderBy("createdAt","desc").onSnapshot(
+    snap => {
+      const arr = []; snap.forEach(d => arr.push(d));
+      renderNotice(arr);
+    },
+    err => {
+      console.error(err);
+      alert("전달 사항 목록을 불러오지 못했습니다: " + err.message);
+    }
+  );
+}
+function stopNoticeListen(){ if (unNotice) { unNotice(); unNotice = null; }}
+
+/* ===== (E) 추가/수정/삭제 ===== */
+// 관리자만 보이기 연결(기존 setAdminVisible에서 함께 호출)
+function setNoticeVisible(isAdmin){
+  noticeAdd.style.display = isAdmin ? "" : "none";
+  noticeToggle.disabled   = isAdmin ? false : true;
+}
+
+nAdd?.addEventListener("click", async () => {
+  if (currentUser?.uid !== ADMIN_UID) { alert("관리자만 추가할 수 있습니다."); return; }
+  const title = nTitle.value.trim();
+  const body  = nBody.value;
+  const kind  = nKind.value || "info";
+  if (!title) { alert("제목을 입력하세요."); return; }
+  try {
+    await colNotice().add({
+      title, body, kind,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    nTitle.value = ""; nBody.value = ""; nKind.value = "info";
+  } catch(e) {
+    alert("추가 실패: " + e.message);
+  }
+});
+
+// 수정
+async function openNoticeEdit(id){
+  if (currentUser?.uid !== ADMIN_UID) return;
+  noticeEditCtx.id = id;
+  const snap = await colNotice().doc(id).get();
+  const it = snap.data() || {};
+  nmTitle.value = it.title || "";
+  nmBody.value  = it.body  || "";
+  nmKind.value  = it.kind  || "info";
+  noticeModal.classList.remove("hidden");
+}
+function closeNoticeEdit(){
+  noticeModal.classList.add("hidden");
+  noticeEditCtx.id = null;
+}
+nmSave?.addEventListener("click", async () => {
+  if (currentUser?.uid !== ADMIN_UID) return;
+  const id = noticeEditCtx.id;
+  if (!id) return;
+  try {
+    await colNotice().doc(id).update({
+      title: nmTitle.value.trim(),
+      body : nmBody.value,
+      kind : nmKind.value
+    });
+    closeNoticeEdit();
+  } catch(e) {
+    alert("수정 실패: " + e.message);
+  }
+});
+
+// 삭제
+async function doNoticeDelete(id){
+  if (currentUser?.uid !== ADMIN_UID) return;
+  if (!confirm("정말 삭제할까요?")) return;
+  try { await colNotice().doc(id).delete(); }
+  catch(e){ alert("삭제 실패: " + e.message); }
+}
+
+/* ===== (F) 표시 토글 저장 ===== */
+noticeToggle?.addEventListener("change", async (e) => {
+  const meAdmin = (currentUser?.uid === ADMIN_UID);
+  if (!meAdmin) { e.preventDefault(); noticeToggle.checked = !noticeToggle.checked; return; }
+  const on = noticeToggle.checked;
+  try {
+    await docAppSettings().set({ noticeEnabled: on }, { merge:true });
+    $("#noticeList").parentElement.style.display = on ? "" : "none";
+  } catch(err) {
+    alert("설정 저장 실패: " + err.message);
+    noticeToggle.checked = !on;
+  }
+});
+
+/* ===== (G) 기존 흐름에 연결 ===== */
+// 1) 로그인 상태 변화에서: setAdminVisible 이후에 호출
+//    (이미 있는 auth.onAuthStateChanged 콜백 안쪽에 아래 2줄만 추가하세요)
+setNoticeVisible(!!currentUser && currentUser.uid === ADMIN_UID);
+startNoticeListen();
+
+// 2) 화면 떠날 때 해제 (선택)
+window.addEventListener("beforeunload", stopNoticeListen);
+
 
 // ===== 6) 구독 시작/해제 =====
 function startListen(){
