@@ -17,32 +17,40 @@
 
 <main class="container">
 
-  <!-- 중요 전달 사항 -->
-  <section class="card">
-    <div class="section-head">
-      <span>📢 중요 전달 사항</span>
-      <label class="switch" style="margin-left:auto">
-        <input id="noticeToggle" type="checkbox">
-        <span class="slider"></span>
-      </label>
+ <!-- ===== 중요 전달 사항 ===== -->
+<section id="sec_notice" class="sec">
+  <div class="section-head" style="display:flex;align-items:center;gap:12px;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:20px">📢</span>
+      <span>중요 전달 사항</span>
     </div>
 
-  <!-- 관리자 전용 입력 폼 -->
-  <div id="noticeAddRow" class="add-row" style="display:none; gap:10px; align-items:flex-start">
-    <input id="nTitle" class="input subj" type="text" placeholder="제목" style="flex:2;">
-    <select id="nKind" class="select" style="width:140px">
-      <option value="notice">공지(빨강)</option>
-      <option value="info">안내(노랑)</option>
-      <option value="alert">알림(초록)</option>
-    </select>
-    <button id="nAdd" class="btn">+ 추가</button>
-    <textarea id="nBody" class="detail" placeholder="상세 내용 (줄바꿈 가능)" rows="4" style="width:100%;margin-top:8px"></textarea>
+    <!-- ON/OFF 스위치 (앱 설정) -->
+    <label class="switch">
+      <input id="noticeToggle" type="checkbox">
+      <span class="slider round"></span>
+    </label>
   </div>
 
-  <ul id="noticeList" class="task-list"></ul>
+  <div class="section-body open">
+    <!-- 관리자 전용 추가 폼 (관리자 로그인 시에만 JS로 보이게) -->
+    <div id="noticeAddRow" class="add-row" style="margin-bottom:12px; display:none;">
+      <input id="nTitle" class="subj" type="text" placeholder="제목" />
+      <select id="nKind" class="select">
+        <option value="notice">공지(빨강)</option>
+        <option value="info">안내(노랑)</option>
+        <option value="alert">알림(초록)</option>
+      </select>
+      <button id="nAddBtn" class="btn">+ 추가</button>
+      <textarea id="nBody" class="detail" rows="4" placeholder="상세 내용 (줄바꿈 가능)"></textarea>
+    </div>
+
+    <!-- 전달 사항 목록 -->
+    <ul id="notice_list" class="task-list" style="margin-top:8px"></ul>
+  </div>
 </section>
 
-<!-- (선택) 공지 수정 모달 -->
+<!-- ===== 전달 사항 수정 모달 ===== -->
 <div id="noticeModal" class="modal hidden">
   <div class="modal__body">
     <h3>전달 사항 수정</h3>
@@ -59,6 +67,7 @@
     </div>
   </div>
 </div>
+
 
   <!-- ===== 시험 ===== -->
   <section class="sec">
