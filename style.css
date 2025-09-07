@@ -119,3 +119,26 @@ html,body{margin:0;padding:0;color:var(--text);background:var(--bg);font-family:
   line-height: 1.4;                /* 줄 간격 조금 여유 */
 }
 
+/* 중요 전달 사항 (항목) 스타일 */
+.notice-item {
+  background: transparent !important;  /* 배경 제거 */
+  border: none !important;            /* 테두리 제거 */
+  box-shadow: none !important;
+  padding: 6px 0 !important;
+  margin: 6px 0 !important;
+
+  font-family: inherit !important;    /* 일반 항목과 동일한 폰트 */
+  font-size: 0.95rem !important;
+  font-weight: normal !important;
+  color: #cfe0f6 !important;          /* 본문 색상과 동일 */
+  line-height: 1.5;
+}
+
+/* 중요 전달 사항 제목만 강조 */
+.notice-item strong {
+  font-weight: bold;
+  font-size: 1rem;
+  color: #fff;   /* 제목은 흰색으로 강조 */
+}
+
+
