@@ -151,3 +151,30 @@ body{
 @media (max-width: 860px){
   .add-row .row1{ grid-template-columns: 1fr; }
 }
+
+/* 공통 카드 기본형은 그대로 사용 */
+.notice-card{
+  border-radius:12px; padding:14px; border:1px solid #cfe1ff;
+}
+
+/* 타입별 색상 */
+.notice-red{    /* 공지 */
+  background:#FFE8E8;    /* 옅은 빨강 */
+  border-color:#FFB3B3;
+  color:#2B0D0D;
+}
+.notice-yellow{ /* 안내 */
+  background:#FFF7D6;    /* 옅은 노랑 */
+  border-color:#FFE08A;
+  color:#2B1E00;
+}
+.notice-green{  /* 알림 */
+  background:#E7F8E9;    /* 옅은 초록 */
+  border-color:#B7EBC6;
+  color:#05210F;
+}
+
+/* 제목/버튼은 기존 스타일 유지 */
+.notice-card h3{ margin:0 0 4px; font-weight:800; }
+.notice-card .type{ font-weight:700; margin-right:6px; }
+.notice-card .admin-tools{ margin-top:8px; display:flex; gap:8px; }
