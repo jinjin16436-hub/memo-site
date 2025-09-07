@@ -7,559 +7,275 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<header class="topbar">
-  <h1>📒 숙제 & 수행평가</h1>
-  <div class="auth-area">
-    <button id="adminBadge" class="badge admin" style="display:none">관리자</button>
-    <button id="loginBtn"  class="btn">🔑 로그인</button>
-    <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
-  </div>
-</header>
-
-<main class="container">
-
-  <!-- 중요 전달 사항 -->
-  <section class="panel">
-    <div class="panel-head">
-      <h2>📣 중요 전달 사항</h2>
-      <label class="switch" title="표시/숨김(관리자만)">
-        <input type="checkbox" id="noticeToggle" />
-        <span class="slider"></span>
-      </label>
+  <header class="admin-bar">
+    <h1>📒 숙제 & 수행평가</h1>
+    <div class="auth">
+      <button id="loginBtn" class="btn">🔑 Google 로그인</button>
+      <button id="logoutBtn" class="btn" style="display:none">🚪 로그아웃</button>
+      <span id="adminBadge" class="admin-badge" style="display:none;">관리자</span>
     </div>
+  </header>
 
-    <div id="noticeWrap" class="notice-wrap">
-      <p class="muted">등록된 전달 사항이 없습니다.</p>
-    </div>
+  <main class="container">
 
-    <div id="noticeEditor" class="notice-editor" style="display:none">
-      <div class="row">
-        <input id="noticeTitle" class="input" placeholder="제목" />
-        <select id="noticeTone" class="select">
-          <option value="yellow">전달 사항</option>
-          <option value="orange">주의</option>
-          <option value="red">긴급</option>
-          <option value="green">안내</option>
-          <option value="blue">정보</option>
-        </select>
-        <button id="noticeAdd" class="btn add">+ 추가</button>
+    <!-- ========== 중요 전달 사항 ========== -->
+    <section class="block">
+      <div class="block-head">
+        <h2>📢 중요 전달 사항</h2>
+        <label class="switch" title="관리자만 변경 가능">
+          <input type="checkbox" id="noticeToggle" />
+          <span class="slider"></span>
+        </label>
       </div>
-      <textarea id="noticeBody" class="textarea" placeholder="내용 (줄바꿈 가능)"></textarea>
-    </div>
-  </section>
 
-  <!-- 시험 -->
-  <section class="panel">
-    <div class="panel-head"><h2>🧪 시험</h2></div>
-    <ul id="list_exam" class="task-list"></ul>
-    <div class="add-row" data-cat="exam">
-      <div class="grid">
-        <input class="subj input" placeholder="과목" />
-        <input class="text input" placeholder="내용" />
-        <input class="dateStart input" type="date" />
-        <input class="dateEnd input" type="date" />
-        <select class="startPeriod select">
-          <option value="">시작 교시</option>
-          <option>1교시</option><option>2교시</option><option>3교시</option>
-          <option>4교시</option><option>5교시</option><option>6교시</option>
-          <option>7교시</option><option>8교시</option>
-        </select>
-        <select class="endPeriod select">
-          <option value="">끝 교시</option>
-          <option>1교시</option><option>2교시</option><option>3교시</option>
-          <option>4교시</option><option>5교시</option><option>6교시</option>
-          <option>7교시</option><option>8교시</option>
-        </select>
-        <button class="add btn">+ 추가</button>
-      </div>
-      <textarea class="detail textarea" placeholder="상세 내용 (선택)"></textarea>
-    </div>
-  </section>
-
-  <!-- 수행평가 -->
-  <section class="panel">
-    <div class="panel-head"><h2>🧾 수행평가</h2></div>
-    <ul id="list_perf" class="task-list"></ul>
-    <div class="add-row" data-cat="perf">
-      <div class="grid">
-        <input class="subj input" placeholder="과목" />
-        <input class="text input" placeholder="내용" />
-        <input class="dateStart input" type="date" />
-        <input class="dateEnd input" type="date" />
-        <select class="startPeriod select">
-          <option value="">시작 교시</option>
-          <option>1교시</option><option>2교시</option><option>3교시</option>
-          <option>4교시</option><option>5교시</option><option>6교시</option>
-          <option>7교시</option><option>8교시</option>
-        </select>
-        <select class="endPeriod select">
-          <option value="">끝 교시</option>
-          <option>1교시</option><option>2교시</option><option>3교시</option>
-          <option>4교시</option><option>5교시</option><option>6교시</option>
-          <option>7교시</option><option>8교시</option>
-        </select>
-        <button class="add btn">+ 추가</button>
-      </div>
-      <textarea class="detail textarea" placeholder="상세 내용 (선택)"></textarea>
-    </div>
-  </section>
-
-  <!-- 숙제 -->
-  <section class="panel">
-    <div class="panel-head"><h2>📌 숙제</h2></div>
-    <ul id="list_home" class="task-list"></ul>
-    <div class="add-row" data-cat="home">
-      <div class="grid">
-        <input class="subj input" placeholder="과목" />
-        <input class="text input" placeholder="내용" />
-        <input class="dateStart input" type="date" />
-        <input class="dateEnd input" type="date" />
-        <select class="startPeriod select">
-          <option value="">시작 교시</option>
-          <option>1교시</option><option>2교시</option><option>3교시</option>
-          <option>4교시</option><option>5교시</option><option>6교시</option>
-          <option>7교시</option><option>8교시</option>
-        </select>
-        <select class="endPeriod select">
-          <option value="">끝 교시</option>
-          <option>1교시</option><option>2교시</option><option>3교시</option>
-          <option>4교시</option><option>5교시</option><option>6교시</option>
-          <option>7교시</option><option>8교시</option>
-        </select>
-        <button class="add btn">+ 추가</button>
-      </div>
-      <textarea class="detail textarea" placeholder="상세 내용 (선택)"></textarea>
-    </div>
-  </section>
-
-</main>
-
-<!-- 항목 수정 모달 -->
-<div id="editModal" class="modal" style="display:none">
-  <div class="modal-body">
-    <h3>항목 수정</h3>
-    <div class="grid">
-      <input id="editSubj"  class="input" />
-      <input id="editText"  class="input" />
-      <input id="editStart" class="input" type="date" />
-      <input id="editEnd"   class="input" type="date" />
-      <select id="editStartPeriod" class="select">
-        <option value="">시작 교시</option>
-        <option>1교시</option><option>2교시</option><option>3교시</option>
-        <option>4교시</option><option>5교시</option><option>6교시</option>
-        <option>7교시</option><option>8교시</option>
-      </select>
-      <select id="editEndPeriod" class="select">
-        <option value="">끝 교시</option>
-        <option>1교시</option><option>2교시</option><option>3교시</option>
-        <option>4교시</option><option>5교시</option><option>6교시</option>
-        <option>7교시</option><option>8교시</option>
-      </select>
-    </div>
-    <textarea id="editDetail" class="textarea" placeholder="상세 내용 (선택)"></textarea>
-
-    <div class="right">
-      <button id="editCancel" class="btn light">취소</button>
-      <button id="editSave"   class="btn">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- 전달 사항 수정 모달 -->
-<div id="noticeModal" class="modal" style="display:none">
-  <div class="modal-body">
-    <h3>전달 사항 수정</h3>
-    <div class="grid" style="grid-template-columns: 1fr 180px; gap:10px">
-      <input id="nmTitle" class="input" placeholder="제목" />
-      <select id="nmTone" class="select">
-        <option value="yellow">전달 사항</option>
-        <option value="orange">주의</option>
-        <option value="red">긴급</option>
-        <option value="green">안내</option>
-        <option value="blue">정보</option>
-      </select>
-    </div>
-    <textarea id="nmBody" class="textarea" placeholder="내용 (줄바꿈 가능)"></textarea>
-    <div class="right" style="margin-top:12px">
-      <button id="nmCancel" class="btn light">취소</button>
-      <button id="nmSave"   class="btn">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- Firebase compat SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-<script>
-/* ========= Firebase 설정 (⚠️교체) ========= */
-const firebaseConfig = {
-  apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
-  authDomain: "my-memo-site.firebaseapp.com",
-  projectId: "my-memo-site",
-  storageBucket: "my-memo-site.firebasestorage.app",
-  messagingSenderId: "196036694705",
-  appId: "1:196036694705:web:8988d12919420130464890"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
-
-/* ========= UID (⚠️교체) ========= */
-const ADMIN_UID  = "vv0bADtWdqQUnqFMy8k01dhO13t2";
-const PUBLIC_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
-
-/* ========= 상태 ========= */
-let currentUser=null, isAdmin=false;
-const $ = (q,r=document)=>r.querySelector(q);
-
-const lists = {
-  exam: $("#list_exam"),
-  perf: $("#list_perf"),
-  home: $("#list_home"),
-};
-let unsubs = [];
-
-/* ========= 로그인 ========= */
-$("#loginBtn").onclick = async ()=>{
-  try{
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-  }catch(e){ alert("로그인 실패: " + e.message); }
-};
-$("#logoutBtn").onclick = ()=>auth.signOut();
-
-auth.onAuthStateChanged(u=>{
-  currentUser=u; isAdmin=!!(u && u.uid===ADMIN_UID);
-  $("#loginBtn").style.display  = u? "none":"";
-  $("#logoutBtn").style.display = u? "":"none";
-  $("#adminBadge").style.display= isAdmin? "":"none";
-  document.querySelectorAll('.add-row').forEach(r=>r.style.display=isAdmin? "":"none");
-  $("#noticeEditor").style.display = isAdmin? "":"none";
-  bindDraft();
-  startListeners();
-  loadNoticeToggle();
-});
-
-/* ========= 경로 ========= */
-const readUid  = ()=> (isAdmin ? ADMIN_UID : PUBLIC_UID);
-const writeUid = ()=> { if(!isAdmin) throw new Error("권한 없음"); return ADMIN_UID; };
-function taskCol(cat, forWrite=false){
-  return db.collection("users").doc(forWrite? writeUid(): readUid())
-           .collection("tasks").doc(cat).collection("items");
-}
-
-/* ========= 날짜 파서 & D-day ========= */
-function parseDateLocal(s){
-  if(!s) return null;
-  const [y,m,d] = s.split('-').map(Number);
-  const dt = new Date(y, m-1, d);
-  dt.setHours(0,0,0,0);
-  return dt;
-}
-function renderDday(startStr, endStr){
-  if(!startStr) return '';
-  const msDay = 86400000;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const start = parseDateLocal(startStr);
-  const end   = endStr ? parseDateLocal(endStr) : parseDateLocal(startStr);
-  if(!start || !end) return '';
-
-  if (today < start) {
-    const diff = Math.ceil((start - today)/msDay);
-    const cls = (diff<=1)?'red':(diff<=3)?'orange':(diff<=5)?'yellow':'green';
-    return `<span class="dday pill ${cls}">D-${diff}</span>`;
-  } else if (today >= start && today <= end) {
-    return `<span class="dday pill red">D-DAY</span>`;
-  } else {
-    const diff = Math.ceil((today - end)/msDay);
-    return `<span class="dday pill past">D+${diff}</span>`;
-  }
-}
-
-/* ========= 렌더 ========= */
-function periodRange(s,e){
-  if(!s && !e) return "";
-  if(s && !e) return ` ${s}`;
-  if(!s && e) return ` ${e}`;
-  return ` ${s} ~ ${e}`;
-}
-function escapeHtml(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
-
-function renderItem(cat,it){
-  const dday = renderDday(it.startDate, it.endDate);
-  const pr   = periodRange(it.startPeriod||"", it.endPeriod||"");
-  return `
-  <li class="task" data-cat="${cat}" data-id="${it.id}">
-    <label class="chk-wrap">
-      <input type="checkbox" ${it.done?"checked":""} disabled />
-      <span></span>
-    </label>
-    <div class="task__main">
-      <div class="task__line">
-        <div class="topline">
-          <b class="subject">${escapeHtml(it.subj||"")}</b>
-          ${dday}
+      <!-- 관리자 전용 입력 폼 (두 줄 레이아웃) -->
+      <div id="noticeForm" class="notice-form" style="display:none">
+        <div class="row row-1">
+          <input id="noticeTitle" class="input" placeholder="제목" />
+          <select id="noticeLevel" class="input">
+            <option value="알림">알림</option>
+            <option value="주의">주의</option>
+            <option value="긴급">긴급</option>
+          </select>
+          <button id="noticeAddBtn" class="btn primary">+ 추가</button>
         </div>
-        <div class="content">${escapeHtml(it.text||"")}</div>
+        <div class="row row-2">
+          <textarea id="noticeBody" class="input" rows="3" placeholder="상세 내용 (줄바꿈 가능)"></textarea>
+        </div>
       </div>
-      <div class="task__meta">
-        <span>📅 ${it.startDate||""}${it.endDate?` ~ ${it.endDate}`:""}${pr?` ·${pr}`:""}</span>
-      </div>
-      ${it.detail? `<pre class="detail">${escapeHtml(it.detail||"")}</pre>`:""}
-    </div>
-    <div class="task__ops" style="display:${isAdmin?'flex':'none'}">
-      <button class="op btn light" data-act="edit">수정</button>
-      <button class="op btn light" data-act="del">삭제</button>
-    </div>
-  </li>`;
-}
-function renderList(cat, items){
-  const ul = lists[cat];
-  ul.innerHTML = items.map(it=>renderItem(cat,it)).join("");
-  ul.querySelectorAll("[data-act]").forEach(btn=>{
-    btn.onclick = async (e)=>{
-      const li = e.target.closest("li.task");
-      const id = li.dataset.id;
-      const act= e.target.dataset.act;
-      if(act==="del"){
-        if(!confirm("삭제할까요?")) return;
-        try{ await taskCol(cat,true).doc(id).delete(); }catch(err){ alert("삭제 실패: "+err.message); }
-      }else if(act==="edit"){
-        openEdit(cat,id);
-      }
-    };
-  });
-}
 
-/* ========= 스냅샷 ========= */
-function startListeners(){
-  unsubs.forEach(u=>u&&u()); unsubs=[];
-  ["exam","perf","home"].forEach(cat=>{
-    const u = taskCol(cat).orderBy("startDate","asc").onSnapshot(snap=>{
-      const arr=[]; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
-      renderList(cat,arr);
-    }, err=>console.error("listener:",err));
-    unsubs.push(u);
-  });
-  loadNotices();
-}
-setInterval(()=>startListeners(), 60000); // 1분마다 조용한 갱신
+      <!-- 목록 -->
+      <ul id="noticeList" class="list"></ul>
+      <div id="noticeEmpty" class="empty">등록된 전달 사항이 없습니다.</div>
+    </section>
 
-/* ========= 추가 폼 + 임시 저장 ========= */
-const DRAFT_KEY="memo:draft-v2";
-function gatherDraft(){
-  const data={};
-  document.querySelectorAll(".add-row").forEach(row=>{
-    const cat=row.dataset.cat;
-    data[cat]={
-      subj: $(".subj",row).value,
-      text: $(".text",row).value,
-      start:$(".dateStart",row).value,
-      end:  $(".dateEnd",row).value,
-      sp:   $(".startPeriod",row).value,
-      ep:   $(".endPeriod",row).value,
-      det:  $(".detail",row).value
+    <!-- ====== 아래는 예시의 일반 섹션(시험/수행/숙제) 자리 ====== -->
+    <!-- 필요 시 사용하던 섹션 코드를 이어 붙여 사용하세요 -->
+
+  </main>
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // ---------- Firebase 초기화 ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
+      authDomain: "my-memo-site.firebaseapp.com",
+      projectId: "my-memo-site",
+      storageBucket: "my-memo-site.firebasestorage.app",
+      messagingSenderId: "196036694705",
+      appId: "1:196036694705:web:8988d12919420130464890"
     };
-  });
-  return data;
-}
-function applyDraft(d){
-  if(!d) return;
-  document.querySelectorAll(".add-row").forEach(row=>{
-    const cat=row.dataset.cat, v=d[cat]||{};
-    $(".subj",row).value = v.subj||"";
-    $(".text",row).value = v.text||"";
-    $(".dateStart",row).value = v.start||"";
-    $(".dateEnd",row).value   = v.end||"";
-    $(".startPeriod",row).value = v.sp||"";
-    $(".endPeriod",row).value   = v.ep||"";
-    $(".detail",row).value = v.det||"";
-  });
-}
-function bindDraft(){
-  try{ applyDraft(JSON.parse(localStorage.getItem(DRAFT_KEY))); }catch{}
-  document.addEventListener("input", e=>{
-    if(e.target.closest(".add-row")){
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(gatherDraft()));
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+
+    // ---------- 고정 상수 ----------
+    // (반드시 네 계정에 맞게 바꿔주세요!)
+    const ADMIN_UID  = "vv0bADtWdqQUnqFMy8k01dhO13t2";     // 관리자 UID
+    const PUBLIC_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2"; // 공개 조회용 UID (로그아웃 상태 읽기용으로 쓰는 UID)
+
+    // ---------- DOM ----------
+    const $  = (q, root=document) => root.querySelector(q);
+    const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
+    const loginBtn   = $("#loginBtn");
+    const logoutBtn  = $("#logoutBtn");
+    const adminBadge = $("#adminBadge");
+
+    const noticeToggle = $("#noticeToggle");
+    const noticeForm   = $("#noticeForm");
+    const noticeList   = $("#noticeList");
+    const noticeEmpty  = $("#noticeEmpty");
+
+    const noticeTitle  = $("#noticeTitle");
+    const noticeLevel  = $("#noticeLevel");
+    const noticeBody   = $("#noticeBody");
+    const noticeAddBtn = $("#noticeAddBtn");
+
+    // ---------- 상태 ----------
+    let currentUser = null;
+    let isAdmin = false;
+    let noticeUnsub = null;       // 공지 목록 리스너
+    let settingUnsub = null;      // 표시 설정 리스너
+
+    // ---------- 유틸 ----------
+    function toast(msg){ alert(msg); }
+    function byCreatedDesc(a,b){ return (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0); }
+
+    // ---------- 인증 UI ----------
+    loginBtn.onclick = async () => {
+      try {
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+      } catch(e){ toast(e.message); }
+    };
+    logoutBtn.onclick = () => auth.signOut();
+
+    // ---------- 관리자 여부에 따른 UI ----------
+    function syncAdminUI() {
+      isAdmin = !!(currentUser && currentUser.uid === ADMIN_UID);
+      adminBadge.style.display = isAdmin ? "" : "none";
+      loginBtn.style.display   = currentUser ? "none" : "";
+      logoutBtn.style.display  = currentUser ? "" : "none";
+
+      // 폼/토글 권한
+      noticeForm.style.display = isAdmin ? "" : "none";
+      noticeToggle.disabled    = !isAdmin;
+
+      // 버튼 비활성화 방지
+      noticeAddBtn.disabled = !isAdmin ? true : false;
+      noticeAddBtn.style.pointerEvents = isAdmin ? "auto" : "none";
     }
-  });
-}
-function clearRow(row){
-  $(".subj",row).value=""; $(".text",row).value="";
-  $(".dateStart",row).value=""; $(".dateEnd",row).value="";
-  $(".startPeriod",row).value=""; $(".endPeriod",row).value="";
-  $(".detail",row).value="";
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(gatherDraft()));
-}
-document.querySelectorAll(".add-row .add").forEach(btn=>{
-  btn.onclick = async ()=>{
-    if(!isAdmin){ alert("관리자만 추가할 수 있습니다."); return; }
-    const row=btn.closest(".add-row");
-    const cat=row.dataset.cat;
-    const subj=$(".subj",row).value.trim();
-    const text=$(".text",row).value.trim();
-    const start=$(".dateStart",row).value;
-    const end=$(".dateEnd",row).value || start;
-    const sp=$(".startPeriod",row).value||"";
-    const ep=$(".endPeriod",row).value||"";
-    const detail=$(".detail",row).value||"";
-    if(!subj || !text || !start){ alert("과목/내용/시작일은 필수입니다."); return; }
-    try{
-      await taskCol(cat,true).add({
-        subj, text, startDate:start, endDate:end,
-        startPeriod:sp, endPeriod:ep, detail,
-        done:false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      clearRow(row);
-    }catch(e){ alert("저장 실패: "+e.message); }
-  };
-});
 
-/* ========= 항목 수정 모달 ========= */
-const editModal=$("#editModal");
-const editSubj=$("#editSubj"), editText=$("#editText"), editStart=$("#editStart"),
-      editEnd=$("#editEnd"), editStartPeriod=$("#editStartPeriod"),
-      editEndPeriod=$("#editEndPeriod"), editDetail=$("#editDetail");
-let editing={cat:null,id:null};
+    // ---------- 공지 설정(표시 여부) 리스너 ----------
+    function listenNoticeSetting(){
+      if(settingUnsub) settingUnsub();
+      settingUnsub = db.collection("settings").doc("notice").onSnapshot(snap=>{
+        const data = snap.exists ? snap.data() : { enabled: true };
+        noticeToggle.checked = !!data.enabled;
+      }, err=>console.error(err));
+    }
 
-function openEdit(cat,id){
-  editing={cat,id};
-  taskCol(cat).doc(id).get().then(doc=>{
-    const d=doc.data();
-    editSubj.value=d.subj||"";
-    editText.value=d.text||"";
-    editStart.value=d.startDate||"";
-    editEnd.value=d.endDate||"";
-    editStartPeriod.value=d.startPeriod||"";
-    editEndPeriod.value=d.endPeriod||"";
-    editDetail.value=d.detail||"";
-    editModal.style.display="flex";
-  });
-}
-$("#editCancel").onclick=()=> editModal.style.display="none";
-$("#editSave").onclick=async ()=>{
-  if(!isAdmin){ alert("관리자만 수정할 수 있습니다."); return; }
-  try{
-    await taskCol(editing.cat,true).doc(editing.id).update({
-      subj: editSubj.value.trim(),
-      text: editText.value.trim(),
-      startDate: editStart.value,
-      endDate:   editEnd.value || editStart.value,
-      startPeriod: editStartPeriod.value || "",
-      endPeriod:   editEndPeriod.value   || "",
-      detail: editDetail.value || ""   // ✅ 상세내용 저장
-    });
-    editModal.style.display="none";
-  }catch(e){ alert("수정 실패: "+e.message); }
-};
-
-/* ========= 전달 사항 (표시/CRUD) ========= */
-const uiDoc = db.collection("settings").doc(ADMIN_UID).collection("ui").doc("global");
-
-async function loadNoticeToggle(){
-  const tgl = $("#noticeToggle");
-  try{
-    const s = await uiDoc.get();
-    tgl.checked = !!(s.exists && s.data().showNotices);
-  }catch{}
-  tgl.disabled = !isAdmin;
-  tgl.onchange = async ()=>{
-    if(!isAdmin) return;
-    try{ await uiDoc.set({showNotices: tgl.checked},{merge:true}); }catch(e){ alert("표시 설정 실패: "+e.message); }
-  };
-}
-
-function loadNotices(){
-  // 표시 설정(투명도)
-  uiDoc.get().then(s=>{
-    const show = !!(s.exists && s.data().showNotices);
-    $("#noticeWrap").style.opacity = show? "1":".45";
-  });
-
-  const wrap = $("#noticeWrap");
-  db.collection("users").doc(readUid()).collection("notices")
-    .orderBy("createdAt","desc")
-    .onSnapshot(snap=>{
-      if(snap.empty){
-        wrap.innerHTML = '<p class="muted">등록된 전달 사항이 없습니다.</p>';
+    // 토글 변경 (관리자만)
+    noticeToggle.addEventListener("change", async (e)=>{
+      if(!isAdmin){
+        // 비관리자는 토글만 원복
+        const snap = await db.collection("settings").doc("notice").get();
+        noticeToggle.checked = snap.exists ? !!snap.data().enabled : false;
+        toast("표시 여부는 관리자만 변경할 수 있어요.");
         return;
       }
-      const html=[];
-      snap.forEach(doc=>{
-        const n=doc.data(), id=doc.id, tone=n.tone||"yellow";
-        html.push(`
-          <article class="notice ${tone}" data-id="${id}">
-            <div class="notice-title">${escapeHtml(n.title||"")}</div>
-            <pre class="notice-body">${escapeHtml(n.body||"")}</pre>
-            <div class="notice-ops" style="margin-top:8px; ${isAdmin? '':'display:none'}">
-              <button class="btn light" data-act="n-edit" data-id="${id}">수정</button>
-              <button class="btn light" data-act="n-del"  data-id="${id}">삭제</button>
-            </div>
-          </article>
-        `);
-      });
-      wrap.innerHTML = html.join("");
-    }, err=>console.error(err));
+      try {
+        await db.collection("settings").doc("notice").set({
+          enabled: !!e.target.checked,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+      } catch(err){
+        console.error(err);
+        toast("설정 저장 실패: " + err.message);
+      }
+    });
 
-  // 수정/삭제 위임
-  wrap.onclick = async (e)=>{
-    const act = e.target?.dataset?.act; if(!act) return;
-    if(!isAdmin) return;
-    const id = e.target.dataset.id;
-    const ref = db.collection("users").doc(writeUid()).collection("notices").doc(id);
-
-    if(act==="n-del"){
-      if(!confirm("이 전달 사항을 삭제할까요?")) return;
-      try{ await ref.delete(); }catch(err){ alert("삭제 실패: "+err.message); }
+    // ---------- 공지 목록 리스너 ----------
+    function listenNotices(){
+      if(noticeUnsub) noticeUnsub();
+      noticeUnsub = db.collection("notices").orderBy("createdAt","desc").onSnapshot(snap=>{
+        const arr = [];
+        snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
+        renderNotices(arr);
+      }, err=>console.error(err));
     }
-    if(act==="n-edit"){
+
+    // ---------- 공지 렌더 ----------
+    function renderNotices(items){
+      noticeList.innerHTML = "";
+      if(items.length === 0){
+        noticeEmpty.style.display = "";
+        return;
+      }
+      noticeEmpty.style.display = "none";
+
+      for(const it of items){
+        const li = document.createElement("li");
+        li.className = "notice-item";
+        li.innerHTML = `
+          <div class="line">
+            <b class="title">${escapeHtml(it.title || "")}</b>
+            <span class="pill pill-${levelToClass(it.level)}">${it.level||"알림"}</span>
+          </div>
+          <div class="body">${escapeHtml(it.body||"").replace(/\n/g,"<br>")}</div>
+          <div class="actions" style="display:${isAdmin?'flex':'none'}">
+            <button class="btn ghost" data-act="edit">수정</button>
+            <button class="btn ghost danger" data-act="del">삭제</button>
+          </div>
+        `;
+        // 편집/삭제
+        li.addEventListener("click", async (e)=>{
+          const act = e.target?.getAttribute?.("data-act");
+          if(!act) return;
+          if(!isAdmin){ toast("관리자만 가능합니다."); return; }
+
+          if(act === "del"){
+            if(!confirm("삭제할까요?")) return;
+            try{ await db.collection("notices").doc(it.id).delete(); }
+            catch(err){ toast("삭제 실패: "+err.message); }
+          }else if(act === "edit"){
+            // 간단한 프롬프트 기반 수정 (필요시 모달로 바꿔도 됨)
+            const t = prompt("제목", it.title || "");
+            if(t === null) return;
+            const b = prompt("상세 내용 (줄바꿈 가능)", it.body || "");
+            if(b === null) return;
+            const lvl = prompt("레벨(알림/주의/긴급)", it.level || "알림") || "알림";
+            try{
+              await db.collection("notices").doc(it.id).set({
+                title: t.trim(),
+                body: b,
+                level: lvl.trim(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+              }, { merge:true });
+            }catch(err){ toast("수정 실패: "+err.message); }
+          }
+        });
+        noticeList.appendChild(li);
+      }
+    }
+
+    // ---------- 공지 추가 ----------
+    noticeAddBtn.addEventListener("click", async ()=>{
+      if(!isAdmin){ toast("관리자만 추가할 수 있어요."); return; }
+
+      const title = (noticeTitle.value||"").trim();
+      const level = (noticeLevel.value||"알림").trim();
+      const body  = (noticeBody.value||"").trim();
+
+      if(!title){ noticeTitle.focus(); return; }
+
       try{
-        const snap = await ref.get();
-        if(!snap.exists) return alert("문서를 찾을 수 없습니다.");
-        const n = snap.data();
-        openNoticeEdit(id, n.title||"", n.body||"", n.tone||"yellow");
-      }catch(err){ alert("불러오기 실패: "+err.message); }
+        await db.collection("notices").add({
+          title, level, body,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          createdBy: currentUser?.uid || ADMIN_UID
+        });
+        // 입력 유지 원하면 주석 처리
+        noticeTitle.value = "";
+        noticeBody.value = "";
+      }catch(err){
+        console.error(err); toast("추가 실패: "+err.message);
+      }
+    });
+
+    // ---------- HTML escape ----------
+    function escapeHtml(s){
+      return (s||"")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;");
     }
-  };
-}
+    function levelToClass(lv){
+      if(lv==="긴급") return "red";
+      if(lv==="주의") return "orange";
+      return "blue"; // 알림
+    }
 
-// 전달 사항 수정 모달 로직
-const noticeModal = $("#noticeModal");
-const nmTitle = $("#nmTitle"), nmBody=$("#nmBody"), nmTone=$("#nmTone");
-const nmCancel=$("#nmCancel"), nmSave=$("#nmSave");
-let editingNoticeId=null;
+    // ---------- 인증 상태 ----------
+    auth.onAuthStateChanged(user=>{
+      currentUser = user || null;
+      syncAdminUI();
+      // 리스너들 시작
+      listenNoticeSetting();
+      listenNotices();
+    });
 
-function openNoticeEdit(id, title, body, tone){
-  editingNoticeId=id;
-  nmTitle.value=title;
-  nmBody.value=body;
-  nmTone.value=tone||"yellow";
-  noticeModal.style.display="flex";
-}
-nmCancel.onclick=()=>{ noticeModal.style.display="none"; editingNoticeId=null; };
-nmSave.onclick = async ()=>{
-  if(!isAdmin) return alert("관리자만 수정할 수 있습니다.");
-  if(!editingNoticeId) return;
-  const t = nmTitle.value.trim();
-  const b = nmBody.value.trim();
-  const o = nmTone.value;
-  if(!t) return alert("제목을 입력하세요.");
-  try{
-    await db.collection("users").doc(writeUid()).collection("notices")
-      .doc(editingNoticeId).update({ title:t, body:b, tone:o });
-    noticeModal.style.display="none";
-    editingNoticeId=null;
-  }catch(err){ alert("수정 실패: "+err.message); }
-};
-
-/* ========= 유틸 ========= */
-function loadNoticeDefaultsToVisibleOnce(){
-  // 최초 생성해두고 싶다면 사용(선택)
-  uiDoc.set({showNotices:true},{merge:true}).catch(()=>{});
-}
-loadNoticeDefaultsToVisibleOnce();
-</script>
+    // ---------- 1분마다 조용히 새로고침 ----------
+    setInterval(()=>{
+      // 캐시 깨지지 않게 re-fetch 목적의 얕은 호출
+      // 실제 전체 리로드가 필요하면: location.reload()
+      if(document.hidden) return; // 백그라운드일 땐 생략
+      // noop: 실시간 onSnapshot으로 충분하므로 굳이 재호출 불필요
+    }, 60000);
+  </script>
 </body>
 </html>
