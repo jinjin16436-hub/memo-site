@@ -1,144 +1,108 @@
+/* ========= 기본 ========= */
 :root{
-  --bg:#0f1720;
-  --panel:#141c26;
-  --text:#dfe7f3;
-  --muted:#99a7bd;
-  --line:#223044;
+  --bg: #0f1722;
+  --panel: #111b29;
+  --text: #cfe0f6;
+  --text-weak: #90a4c6;
+  --white: #fff;
+  --border: rgba(255,255,255,.06);
 
-  --btn:#7aa2ff;
-  --btn-hover:#6993f8;
+  --btn: #5378ff;
+  --btn-ghost: rgba(255,255,255,.08);
+  --danger: #ff5a60;
 
-  /* D-day */
-  --pill-red:#ff5a5f;      /* 빨강: D-1, D-DAY */
-  --pill-orange:#f0a739;   /* 주황: D-2~3 */
-  --pill-yellow:#ffd85e;   /* 노랑: D-4~5 */
-  --pill-green:#52d284;    /* 초록: D-6+ */
-  --pill-past:#c0c9dd;     /* 지난 일정 */
-
-  /* notices */
-  --notice-yellow:#fff3c4;
-  --notice-orange:#ffe0c2;
-  --notice-red:#ffd1d1;
-  --notice-green:#d8ffd8;
-  --notice-blue:#d6e7ff;
-}
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;color:var(--text);background:var(--bg);font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", sans-serif}
-
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:1px solid var(--line);background:rgba(20,28,38,.6);backdrop-filter: blur(6px);}
-.topbar h1{font-size:20px;margin:0}
-.auth-area{display:flex;gap:8px;align-items:center}
-
-.container{max-width:1050px;margin:24px auto;padding:0 16px}
-
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin:18px 0;box-shadow:0 6px 20px rgba(0,0,0,.25)}
-.panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px dashed var(--line)}
-.panel h2{margin:0;font-size:18px}
-
-.notice-wrap{padding:12px 18px 18px}
-.notice-editor{padding:12px 18px 18px;border-top:1px dashed var(--line)}
-.notice{padding:14px;border-radius:12px;margin:10px 0;border:1px solid rgba(0,0,0,.06)}
-.notice .notice-title{font-weight:700;margin-bottom:6px}
-.notice pre{white-space:pre-wrap;margin:0;font-size:15px}
-.notice.yellow{background:var(--notice-yellow);color:#3b2e05}
-.notice.orange{background:var(--notice-orange);color:#4a2a0a}
-.notice.red{background:var(--notice-red);color:#3a1010}
-.notice.green{background:var(--notice-green);color:#063a06}
-.notice.blue{background:var(--notice-blue);color:#0f274f}
-
-.task-list{list-style:none;margin:0;padding:6px 12px 14px}
-.task{display:flex;gap:12px;padding:14px;border-bottom:1px dashed var(--line)}
-.task:last-child{border-bottom:0}
-.task__main{flex:1;min-width:0}
-.task__line .topline{display:flex;gap:10px;align-items:center;margin-bottom:6px}
-.subject{font-size:18px}
-.content{font-size:16px;opacity:.95}
-.task__meta{margin-top:6px;color:var(--muted);font-size:14px}
-.detail{margin-top:8px;background:#0c141f;border:1px solid var(--line);border-radius:8px;padding:10px;color:#cad6ea;white-space:pre-wrap}
-
-.chk-wrap{margin-top:6px}
-.chk-wrap input{accent-color:#7aa2ff;width:18px;height:18px}
-
-.task__ops{display:flex;gap:8px}
-
-.add-row{display:none;padding:14px;border-top:1px dashed var(--line)}
-.add-row .grid{display:grid;grid-template-columns: 1fr 1.2fr repeat(2,140px) repeat(2,120px) 110px; gap:10px; margin-bottom:10px}
-@media (max-width:980px){
-  .add-row .grid{grid-template-columns: 1fr 1fr 1fr 1fr; }
-}
-.add-row .textarea{min-height:68px}
-
-.input,.select,.textarea{width:100%;border:1px solid var(--line);background:#0e1723;color:var(--text);border-radius:10px;padding:10px 12px;font-size:15px}
-.textarea{resize:vertical}
-.input:focus,.select:focus,.textarea:focus{outline:2px solid #375a9e}
-
-.btn{padding:10px 14px;border-radius:10px;background:var(--btn);border:1px solid #567fe2;color:#fff;font-weight:600;cursor:pointer}
-.btn:hover{background:var(--btn-hover)}
-.btn.light{background:#1b283a;border-color:#1b2d47}
-.btn.add{font-weight:700}
-
-.badge.admin{background:#2b3d5e;border:1px solid #3b5586;color:#a8c2ff;padding:6px 10px;border-radius:999px}
-
-/* D-day 배지 */
-.pill{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px}
-.pill.red    {background:var(--pill-red);    color:#fff;}
-.pill.orange {background:var(--pill-orange); color:#2a1f00;}
-.pill.yellow {background:var(--pill-yellow); color:#1c1700;}
-.pill.green  {background:var(--pill-green);  color:#06220f;}
-.pill.past   {background:var(--pill-past);   color:#10223e;}
-
-.muted{color:var(--muted);margin:8px 0}
-
-/* 스위치 */
-.switch{position:relative;display:inline-block;width:56px;height:30px}
-.switch input{opacity:0;width:0;height:0}
-.slider{position:absolute;inset:0;background:#2e3c4e;border-radius:30px;transition:.2s;border:1px solid var(--line)}
-.slider:before{content:"";position:absolute;height:24px;width:24px;left:3px;top:2.5px;background:#fff;border-radius:50%;transition:.2s}
-.switch input:checked + .slider{background:#60c079}
-.switch input:checked + .slider:before{transform: translateX(26px)}
-
-/* 모달 */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50}
-.modal-body{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:680px;max-width:96%}
-.modal-body .grid{display:grid;grid-template-columns: 1fr 1fr 160px 160px 130px 130px; gap:10px}
-.modal .right{margin-top:12px;display:flex;justify-content:flex-end;gap:10px}
-
-/* 상세 내용 박스: 테두리/배경 제거 + 폰트 동일하게 */
-.task .detail{
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  padding: 6px 0 0 !important;   /* 위쪽만 살짝 띄움 */
-  margin-top: 6px !important;
-  color: #cfe0f6;                 /* 본문 색상과 통일 */
-  box-shadow: none !important;
-
-  font-family: inherit !important; /* 부모와 동일한 폰트 */
-  font-size: 0.9rem !important;    /* 본문보다 살짝 작게 */
-  font-weight: normal !important;  /* 굵기 일반 */
-  line-height: 1.4;                /* 줄 간격 조금 여유 */
+  --pill-blue: #2e6cff;
+  --pill-orange: #ff9f2e;
+  --pill-red: #ff5a60;
 }
 
-/* 중요 전달 사항 (항목) 스타일 */
-.notice-item {
-  background: transparent !important;  /* 배경 제거 */
-  border: none !important;            /* 테두리 제거 */
-  box-shadow: none !important;
-  padding: 6px 0 !important;
-  margin: 6px 0 !important;
-
-  font-family: inherit !important;    /* 일반 항목과 동일한 폰트 */
-  font-size: 0.95rem !important;
-  font-weight: normal !important;
-  color: #cfe0f6 !important;          /* 본문 색상과 동일 */
-  line-height: 1.5;
+/* Pretendard -> 기본 본문 동일화 */
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/ PretendardVariable.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-style: normal;
+}
+*{ box-sizing: border-box; }
+html,body{ margin:0; padding:0; background:var(--bg); color:var(--text); }
+body{
+  font-family: 'Pretendard Variable','Apple SD Gothic Neo','Noto Sans KR',system-ui,-apple-system,Segoe UI,Roboto;
+  line-height: 1.6;
 }
 
-/* 중요 전달 사항 제목만 강조 */
-.notice-item strong {
-  font-weight: bold;
-  font-size: 1rem;
-  color: #fff;   /* 제목은 흰색으로 강조 */
+/* ========= 공용 ========= */
+.container{ max-width: 1000px; margin: 18px auto 80px; padding: 0 18px; }
+.admin-bar{
+  max-width: 1000px; margin: 14px auto 0; padding: 0 18px;
+  display:flex; align-items:center; gap:12px;
+}
+.admin-bar h1{ margin:0; font-size: 20px; }
+.admin-badge{
+  margin-left: 4px; background: #39b66d; color: #0b2216; border-radius: 10px;
+  padding: 2px 8px; font-size: 12px; font-weight: 700;
 }
 
+.btn{
+  border: none; border-radius: 12px;
+  padding: 10px 16px; color: var(--white); background: var(--btn);
+  cursor: pointer; transition: .2s; font-weight: 600;
+}
+.btn:hover{ filter:brightness(1.08); }
+.btn.ghost{ background: var(--btn-ghost); color: var(--white); }
+.btn.ghost.danger{ color: #ffd7d9; background: rgba(255,90,96,.18); }
+.btn.primary{ background: var(--btn); }
 
+.input{
+  background: rgba(255,255,255,.06); color: var(--white); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 12px; outline: none; width: 100%;
+}
+.input:focus{ border-color: rgba(82,144,255,.6); box-shadow: 0 0 0 3px rgba(82,144,255,.2); }
+
+.block{ background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 16px 14px; margin-top: 18px; }
+.block-head{ display:flex; align-items:center; justify-content: space-between; margin-bottom: 10px; }
+.block-head h2{ margin: 0; font-size: 18px; }
+
+/* 토글 스위치 */
+.switch{ position: relative; display:inline-block; width:56px; height:28px; }
+.switch input{ opacity:0; width:0; height:0; }
+.slider{
+  position:absolute; inset:0; cursor:pointer; background:#7c98a6; border-radius: 999px;
+  transition:.2s;
+}
+.slider:before{
+  content:""; position:absolute; height:22px; width:22px; left:3px; top:3px; background:#fff;
+  border-radius:50%; transition:.2s;
+}
+.switch input:checked + .slider{ background:#6bd281; }
+.switch input:checked + .slider:before{ transform: translateX(28px); }
+
+/* 리스트 */
+.list{ list-style:none; margin: 8px 0 0; padding:0; }
+.empty{
+  margin-top: 8px; padding: 12px 12px; background: rgba(255,255,255,.03);
+  border: 1px dashed var(--border); border-radius: 10px; color: var(--text-weak);
+}
+
+/* ========= 중요 전달 사항 (폰트/톤 통일) ========= */
+.notice-form{ display:flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.notice-form .row{ display:grid; gap: 8px; }
+.notice-form .row-1{ grid-template-columns: 1fr 180px 120px; }
+.notice-form .row-2{ grid-template-columns: 1fr; }
+@media (max-width: 640px){
+  .notice-form .row-1{ grid-template-columns: 1fr; }
+}
+
+.notice-item{
+  background: transparent !important; border: none !important; box-shadow: none !important;
+  padding: 6px 0; margin: 6px 0; font-size: 0.98rem; color: var(--text);
+}
+.notice-item .line{ display:flex; align-items:center; gap:8px; }
+.notice-item .title{ font-weight: 800; color: var(--white); }
+.notice-item .body{ white-space: pre-line; margin-top: 4px; color: var(--text); }
+.notice-item .actions{ gap: 6px; margin-top: 6px; }
+
+/* pill */
+.pill{ display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; color:#0a1320; }
+.pill-blue{ background: var(--pill-blue); color: #e8f1ff; }
+.pill-orange{ background: var(--pill-orange); color: #231900; }
+.pill-red{ background: var(--pill-red); color: #ffe9ea; }
