@@ -115,3 +115,27 @@ body{
   color: #e0e0e0;          /* 카드 본문 텍스트 색과 동일 */
 }
 
+/* 중요 전달 사항 카드 스타일 */
+.notice-card {
+  border-radius: 12px;
+  padding: 16px;
+  margin: 10px 0;
+  color: var(--fg,#222);
+  background: var(--bg,#eef5ff);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.05) inset;
+}
+.notice-card .title { font-weight:700; margin-bottom:6px; }
+.notice-card .body  { white-space: pre-line; line-height: 1.7; }
+
+/* 타입별 배경색 */
+.notice-card.notice { --bg: #ffeaea; }   /* 공지 = 빨강 */
+.notice-card.info   { --bg: #fff5cc; }   /* 안내 = 노랑 */
+.notice-card.alert  { --bg: #e6f6e6; }   /* 알림 = 초록 */
+
+/* 토글 스위치 (이미 있다면 생략 가능) */
+.switch { position:relative; display:inline-block; width:58px; height:30px;}
+.switch input{opacity:0; width:0; height:0;}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#7b8fa1;border-radius:30px;transition:.2s}
+.slider:before{position:absolute;content:"";height:22px;width:22px;left:4px;top:4px;background:white;border-radius:50%;transition:.2s}
+.switch input:checked + .slider{background:#69c173;}
+.switch input:checked + .slider:before{transform:translateX(28px);}
