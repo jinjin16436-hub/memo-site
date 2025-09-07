@@ -14,15 +14,22 @@
   --pill-blue: #2e6cff;
   --pill-orange: #ff9f2e;
   --pill-red: #ff5a60;
+
+  --d-red: #ff6767;
+  --d-orange: #ffb54f;
+  --d-yellow: #ffd24f;
+  --d-green: #62d26f;
+  --d-gray: #8894a5;
 }
 
-/* Pretendard -> 기본 본문 동일화 */
+/* Pretendard */
 @font-face {
   font-family: 'Pretendard Variable';
-  src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/ PretendardVariable.woff2') format('woff2-variations');
+  src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/PretendardVariable.woff2') format('woff2-variations');
   font-weight: 45 920;
   font-style: normal;
 }
+
 *{ box-sizing: border-box; }
 html,body{ margin:0; padding:0; background:var(--bg); color:var(--text); }
 body{
@@ -31,7 +38,7 @@ body{
 }
 
 /* ========= 공용 ========= */
-.container{ max-width: 1000px; margin: 18px auto 80px; padding: 0 18px; }
+.container{ max-width: 1000px; margin: 18px auto 80px; padding: 0 18px; overflow: visible; }
 .admin-bar{
   max-width: 1000px; margin: 14px auto 0; padding: 0 18px;
   display:flex; align-items:center; gap:12px;
@@ -58,7 +65,10 @@ body{
 }
 .input:focus{ border-color: rgba(82,144,255,.6); box-shadow: 0 0 0 3px rgba(82,144,255,.2); }
 
-.block{ background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 16px 14px; margin-top: 18px; }
+.select-wrap{ position: relative; z-index: 4; }
+.select{ position: relative; z-index: 3; background: rgba(255,255,255,.06); }
+
+.block{ background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 16px 14px; margin-top: 18px; overflow: visible; }
 .block-head{ display:flex; align-items:center; justify-content: space-between; margin-bottom: 10px; }
 .block-head h2{ margin: 0; font-size: 18px; }
 
@@ -76,33 +86,71 @@ body{
 .switch input:checked + .slider{ background:#6bd281; }
 .switch input:checked + .slider:before{ transform: translateX(28px); }
 
-/* 리스트 */
+/* 리스트 & 빈 상태 */
 .list{ list-style:none; margin: 8px 0 0; padding:0; }
 .empty{
   margin-top: 8px; padding: 12px 12px; background: rgba(255,255,255,.03);
   border: 1px dashed var(--border); border-radius: 10px; color: var(--text-weak);
 }
 
-/* ========= 중요 전달 사항 (폰트/톤 통일) ========= */
+/* ========= 공지 ========= */
 .notice-form{ display:flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
 .notice-form .row{ display:grid; gap: 8px; }
 .notice-form .row-1{ grid-template-columns: 1fr 180px 120px; }
 .notice-form .row-2{ grid-template-columns: 1fr; }
-@media (max-width: 640px){
+@media (max-width: 760px){
   .notice-form .row-1{ grid-template-columns: 1fr; }
 }
 
+/* 공지 항목 */
 .notice-item{
-  background: transparent !important; border: none !important; box-shadow: none !important;
+  background: transparent; border: none; box-shadow: none;
   padding: 6px 0; margin: 6px 0; font-size: 0.98rem; color: var(--text);
 }
 .notice-item .line{ display:flex; align-items:center; gap:8px; }
 .notice-item .title{ font-weight: 800; color: var(--white); }
 .notice-item .body{ white-space: pre-line; margin-top: 4px; color: var(--text); }
 .notice-item .actions{ gap: 6px; margin-top: 6px; }
-
-/* pill */
-.pill{ display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; color:#0a1320; }
+.pill{ display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
 .pill-blue{ background: var(--pill-blue); color: #e8f1ff; }
 .pill-orange{ background: var(--pill-orange); color: #231900; }
 .pill-red{ background: var(--pill-red); color: #ffe9ea; }
+
+/* ========= 작업 폼 ========= */
+.task-form{ display:flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.task-form .row{ display:grid; gap: 8px; }
+.task-form .row-1{
+  grid-template-columns: 1fr 1.2fr 150px 150px 140px 140px 120px;
+}
+.task-form .row-2{ grid-template-columns: 1fr; }
+@media (max-width: 980px){
+  .task-form .row-1{
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ========= 작업 항목 ========= */
+.task{ display:flex; justify-content: space-between; align-items:flex-start; gap:8px; padding:12px 0; border-top: 1px dashed var(--border); }
+.task:first-child{ border-top: none; }
+.task-main{ min-width: 0; }
+.task-top{ display:flex; align-items:center; gap:8px; }
+.task-title{ font-weight: 800; color:#eaf3ff; }
+.task-text{ margin-top: 4px; color: var(--text); }
+.task-date{ margin-top: 2px; color: var(--text-weak); font-size: 0.95rem; }
+.task-detail{
+  margin: 8px 0 0; background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px; white-space: pre-wrap; color: var(--text);
+}
+.actions{ display:flex; gap: 6px; }
+
+/* D-day */
+.dday{
+  display:inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 800;
+  color: #0b1421; letter-spacing: .2px;
+}
+.dday.red{ background: var(--d-red); color: #fff; }
+.dday.orange{ background: var(--d-orange); color: #231900; }
+.dday.yellow{ background: var(--d-yellow); color: #231900; }
+.dday.green{ background: var(--d-green); color: #07220c; }
+.dday.past{ background: var(--d-gray); color: #0c121a; }
+.dday.inrange{ background: #ff3e3e; color:#fff; } /* D-Day */
