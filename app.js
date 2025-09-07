@@ -183,11 +183,16 @@ function renderNotices(items){
   }
   els.noticeEmpty.style.display = "none";
 
-  for(const it of items){
+  for (const it of items) {
+    const type = (it.type || "알림").trim();  // 기본: 알림(초록)
+    let tcls = "notice-green";
+    if (type === "공지") tcls = "notice-red";
+    else if (type === "안내") tcls = "notice-yellow";
+
     const li = document.createElement("li");
-    li.className = "notice-card";
+    li.className = `notice-card ${tcls}`;   // ← 타입별 색 적용!
     li.innerHTML = `
-      <h3><span class="type">[${esc(it.type||"알림")}]</span>${esc(it.title||"")}</h3>
+      <h3><span class="type">[${esc(type)}]</span>${esc(it.title||"")}</h3>
       <p>${escMultiline(it.detail||"")}</p>
       ${isAdmin ? `
         <div class="admin-tools">
@@ -195,6 +200,7 @@ function renderNotices(items){
           <button class="btn-ghost" data-act="del" data-id="${it.id}">삭제</button>
         </div>` : ``}
     `;
+    // (이하 관리자 edit/del 핸들러 동일)
     if(isAdmin){
       li.addEventListener("click", async (e)=>{
         const act = e.target.getAttribute("data-act");
@@ -205,7 +211,7 @@ function renderNotices(items){
         }else if(act==="edit"){
           const newTitle  = prompt("제목", it.title||"");
           if(newTitle===null) return;
-          const newType   = prompt("유형(공지/안내/알림)", it.type||"알림");
+          const newType   = prompt("유형(공지/안내/알림)", type);
           if(newType===null) return;
           const newDetail = prompt("상세", it.detail||"") ?? "";
           await db.collection("notices").doc(id).set(
@@ -217,6 +223,7 @@ function renderNotices(items){
     els.noticeList.appendChild(li);
   }
 }
+
 
 /************************************************************
  *  카테고리 목록 렌더링
