@@ -1,793 +1,103 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>부광고 1-1 숙제 & 수행평가</title>
-
-<style>
-:root{
-  --bg:#0f1620;
-  --card:#121b27;
-  --muted:#8aa0b2;
-  --text:#dbe8f5;
-  --accent:#86b7ff;
-  --line:#1f2a3a;
-  --btn:#7da2ff;
-  --btnText:#101418;
-
-  --dd-red:#f25f5c;
-  --dd-orange:#f7a540;
-  --dd-yellow:#ffd166;
-  --dd-green:#57cc99;
-
-  --notice-red:#ffe2e5;
-  --notice-yellow:#fff3cd;
-  --notice-green:#d1f3e6;
-}
-
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR","Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-}
-a{color:var(--accent); text-decoration:none}
-
-.container{
-  max-width:1200px; margin:24px auto; padding:0 16px;
-}
-
-header{
-  display:flex; align-items:center; gap:12px;
-  margin-bottom:24px;
-}
-h1{
-  margin:0; font-size:28px; font-weight:800;
-}
-.header-actions{margin-left:auto; display:flex; gap:10px;}
-.btn{
-  background:var(--btn); color:#fff; border:none; border-radius:10px;
-  padding:10px 14px; font-weight:700; cursor:pointer;
-}
-.btn:disabled{opacity:.6; cursor:default}
-.btn-ghost{
-  background:#1a2331; color:#bcd1e3; border:1px solid var(--line);
-  border-radius:10px; padding:8px 12px; cursor:pointer;
-}
-.section{margin-bottom:26px}
-.section-head{
-  font-size:20px; font-weight:800; display:flex; align-items:center; gap:8px;
-  margin:0 0 12px 0;
-}
-.card{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:18px;
-}
-
-.notice-wrap{margin-bottom:26px}
-.notice-header{
-  display:flex; align-items:center; gap:10px; margin-bottom:12px;
-}
-.switch{
-  margin-left:auto; display:inline-flex; align-items:center; gap:8px;
-}
-.switch input{display:none}
-.switch label{
-  width:56px; height:30px; background:#1f2d3a; border-radius:30px;
-  position:relative; cursor:pointer;
-}
-.switch label::after{
-  content:""; width:24px; height:24px; background:#fff; border-radius:50%;
-  position:absolute; left:3px; top:3px; transition:.2s;
-}
-.switch input:checked + label{
-  background:#63c27d;
-}
-.switch input:checked + label::after{
-  transform:translateX(26px);
-}
-
-.notice-form{
-  display:grid; grid-template-columns: 1fr 180px 120px; gap:10px; margin-bottom:12px;
-}
-.notice-form .wide{grid-column:1/-1}
-.select, .input, .textarea{
-  width:100%; background:#0f1520; border:1px solid var(--line);
-  border-radius:12px; color:var(--text); padding:12px;
-}
-.textarea{min-height:88px; resize:vertical}
-
-.notice-list{display:flex; flex-direction:column; gap:10px}
-
-/* 공지 카드 배경색(밝은 톤) */
-.notice-card{
-  border-radius:12px; padding:16px;
-  border:1px solid var(--line);
-}
-.notice-red{background:var(--notice-red); color:#3b181a}
-.notice-yellow{background:var(--notice-yellow); color:#3a2f10}
-.notice-green{background:var(--notice-green); color:#0e3c2b}
-.notice-title{font-weight:800; margin:0 0 8px 0; font-size:18px}
-.notice-body{white-space:normal; line-height:1.6}
-
-.notice-actions{margin-top:10px; display:flex; gap:8px}
-
-.group{margin-top:26px}
-.list{display:flex; flex-direction:column; gap:14px}
-
-.item{
-  padding:18px; border-radius:14px; border:1px solid var(--line);
-  background:var(--card);
-}
-.item-head{
-  display:flex; align-items:center; gap:10px; margin-bottom:6px;
-}
-.item-title{
-  margin:0; font-size:20px; font-weight:800;
-}
-.badge{
-  display:inline-flex; align-items:center; justify-content:center;
-  border-radius:999px; padding:2px 8px; font-weight:800; font-size:13px;
-}
-.dd-red{background:var(--dd-red); color:#151414}
-.dd-orange{background:var(--dd-orange); color:#151414}
-.dd-yellow{background:var(--dd-yellow); color:#151414}
-.dd-green{background:var(--dd-green); color:#07311f}
-.dd-gray{background:#556070; color:#fff}
-
-.item-text{margin:2px 0 10px 0; color:#cfe3f3}
-.item-meta{color:#9db2c2; display:flex; align-items:center; gap:8px}
-.item-actions{margin-left:auto; display:flex; gap:8px}
-
-/* 입력줄(관리자만 보임) - 2줄 구조 */
-.add-row{
-  margin-top:10px; padding:12px; border:1px dashed var(--line); border-radius:12px;
-}
-.add-grid{
-  display:grid;
-  grid-template-columns: 180px 1fr 180px 180px 140px 140px 120px;
-  gap:10px;
-}
-.add-grid .textarea{grid-column:1/-2} /* 다음줄로 크게 */
-.add-grid .btn{grid-column:-2/-1}
-
-/* 작은 뱃지 달력 아이콘 느낌 */
-.meta-icon{font-size:18px}
-
-/* ====== 모달(팝업) ====== */
-.modal{
-  position:fixed; inset:0; background:rgba(4,10,18,.65);
-  display:none; align-items:center; justify-content:center; z-index:99;
-}
-.modal.open{display:flex}
-.dialog{
-  width:min(720px, calc(100% - 40px)); border-radius:16px;
-  background:#0e1520; border:1px solid var(--line);
-}
-.dialog-head{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:14px 16px; border-bottom:1px solid var(--line);
-}
-.dialog-title{font-size:18px; font-weight:800; margin:0}
-.dialog-body{padding:16px; display:grid; gap:10px}
-.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-.dialog-actions{
-  padding:12px 16px; display:flex; gap:8px; justify-content:flex-end;
-  border-top:1px solid var(--line);
-}
-.label{font-size:13px; color:#9fb2c0}
-.input, .select, .textarea{outline:none}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>부광고 1-1 숙제 & 수행평가</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>📒 숙제 & 수행평가</h1>
-      <div class="header-actions">
-        <button id="loginBtn" class="btn">🔑 로그인</button>
-        <button id="logoutBtn" class="btn-ghost" style="display:none">🚪 로그아웃</button>
-      </div>
-    </header>
+  <header class="admin-bar">
+    <h1>📒 숙제 & 수행평가</h1>
+    <button id="loginBtn" class="btn">로그인</button>
+    <button id="logoutBtn" class="btn" style="display:none">로그아웃</button>
+    <span id="adminBadge" style="display:none" class="badge">관리자</span>
+  </header>
+
+  <main class="container">
 
     <!-- 중요 전달 사항 -->
-    <section class="notice-wrap card">
-      <div class="notice-header">
-        <h2 class="section-head">📢 중요 전달 사항</h2>
-        <div class="switch" title="관리자만 변경">
-          <input id="toggleNotices" type="checkbox">
-          <label for="toggleNotices"></label>
+    <section>
+      <div class="section-head">
+        <h2>📢 중요 전달 사항</h2>
+        <label class="switch" id="noticeToggleWrap" style="display:none">
+          <input type="checkbox" id="noticeToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div id="noticeBox" class="section-body">
+        <div id="noticeAddRow" class="add-row" style="display:none">
+          <input class="subj" type="text" placeholder="제목" />
+          <select class="cat">
+            <option value="공지">공지</option>
+            <option value="안내">안내</option>
+            <option value="알림">알림</option>
+          </select>
+          <textarea class="text" placeholder="상세 내용 (줄바꿈 가능)"></textarea>
+          <button class="add btn">+ 추가</button>
         </div>
+        <ul id="list_notice" class="task-list"></ul>
       </div>
-
-      <!-- 추가 폼(관리자 전용) -->
-      <div id="noticeForm" class="notice-form" style="display:none">
-        <input id="nfTitle" class="input" placeholder="제목" />
-        <select id="nfType" class="select">
-          <option value="notice">공지</option>
-          <option value="guide">안내</option>
-          <option value="alert">알림</option>
-        </select>
-        <button id="nfAdd" class="btn">+ 추가</button>
-        <textarea id="nfBody" class="textarea wide" placeholder="상세 내용 (줄바꿈 가능)"></textarea>
-      </div>
-
-      <div id="noticeList" class="notice-list"></div>
     </section>
 
     <!-- 시험 -->
-    <section class="section">
-      <h2 class="section-head">🧪 시험</h2>
-      <div class="list" id="list_exam"></div>
-
-      <!-- 추가 (관리자) -->
-      <div class="add-row" id="add_exam" style="display:none">
-        <div class="add-grid">
-          <input class="input subj" placeholder="과목" />
-          <input class="input text" placeholder="내용" />
-          <input class="input start" type="date" />
-          <input class="input end" type="date" />
-          <select class="select startp">
-            <option value="0">교시 없음</option>
-            <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option><option>8교시</option>
-          </select>
-          <select class="select endp">
-            <option value="0">교시 없음</option>
-            <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option><option>8교시</option>
-          </select>
-          <textarea class="textarea detail" placeholder="상세 내용 (선택) - 줄바꿈 가능"></textarea>
-          <button class="btn add">+ 추가</button>
+    <section>
+      <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
+      <div id="sec_exam" class="section-body open">
+        <ul id="list_exam" class="task-list"></ul>
+        <div class="add-row" data-cat="exam" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <input class="date" type="date" /> ~ <input class="date2" type="date" />
+          <select class="startPeriod"></select>
+          <select class="endPeriod"></select>
+          <textarea class="detail" placeholder="상세 내용 (선택)"></textarea>
+          <button class="add btn">+ 추가</button>
         </div>
       </div>
     </section>
 
     <!-- 수행평가 -->
-    <section class="section">
-      <h2 class="section-head">🧪 수행평가</h2>
-      <div class="list" id="list_perf"></div>
-
-      <div class="add-row" id="add_perf" style="display:none">
-        <div class="add-grid">
-          <input class="input subj" placeholder="과목" />
-          <input class="input text" placeholder="내용" />
-          <input class="input start" type="date" />
-          <input class="input end" type="date" />
-          <select class="select startp">
-            <option value="0">교시 없음</option>
-            <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option><option>8교시</option>
-          </select>
-          <select class="select endp">
-            <option value="0">교시 없음</option>
-            <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option><option>8교시</option>
-          </select>
-          <textarea class="textarea detail" placeholder="상세 내용 (선택) - 줄바꿈 가능"></textarea>
-          <button class="btn add">+ 추가</button>
+    <section>
+      <button class="section-head" onclick="toggleSection('sec_perf')">📄 수행평가 ▾</button>
+      <div id="sec_perf" class="section-body open">
+        <ul id="list_perf" class="task-list"></ul>
+        <div class="add-row" data-cat="perf" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <input class="date" type="date" /> ~ <input class="date2" type="date" />
+          <select class="startPeriod"></select>
+          <select class="endPeriod"></select>
+          <textarea class="detail" placeholder="상세 내용 (선택)"></textarea>
+          <button class="add btn">+ 추가</button>
         </div>
       </div>
     </section>
 
     <!-- 숙제 -->
-    <section class="section">
-      <h2 class="section-head">📌 숙제</h2>
-      <div class="list" id="list_home"></div>
-
-      <div class="add-row" id="add_home" style="display:none">
-        <div class="add-grid">
-          <input class="input subj" placeholder="과목" />
-          <input class="input text" placeholder="내용" />
-          <input class="input start" type="date" />
-          <input class="input end" type="date" />
-          <select class="select startp">
-            <option value="0">교시 없음</option>
-            <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option><option>8교시</option>
-          </select>
-          <select class="select endp">
-            <option value="0">교시 없음</option>
-            <option>1교시</option><option>2교시</option><option>3교시</option>
-            <option>4교시</option><option>5교시</option><option>6교시</option>
-            <option>7교시</option><option>8교시</option>
-          </select>
-          <textarea class="textarea detail" placeholder="상세 내용 (선택) - 줄바꿈 가능"></textarea>
-          <button class="btn add">+ 추가</button>
+    <section>
+      <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
+      <div id="sec_home" class="section-body open">
+        <ul id="list_home" class="task-list"></ul>
+        <div class="add-row" data-cat="home" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <input class="date" type="date" /> ~ <input class="date2" type="date" />
+          <select class="startPeriod"></select>
+          <select class="endPeriod"></select>
+          <textarea class="detail" placeholder="상세 내용 (선택)"></textarea>
+          <button class="add btn">+ 추가</button>
         </div>
       </div>
     </section>
-  </div>
+  </main>
 
-  <!-- ===== 모달(항목 수정) ===== -->
-  <div id="itemModal" class="modal">
-    <div class="dialog">
-      <div class="dialog-head">
-        <h3 class="dialog-title">항목 수정</h3>
-        <button class="btn-ghost" onclick="closeItemModal()">닫기</button>
-      </div>
-      <div class="dialog-body">
-        <div class="grid-2">
-          <div>
-            <div class="label">과목</div>
-            <input id="imSubj" class="input" />
-          </div>
-          <div>
-            <div class="label">내용</div>
-            <input id="imText" class="input" />
-          </div>
-        </div>
-        <div class="grid-2">
-          <div>
-            <div class="label">시작일</div>
-            <input id="imStart" type="date" class="input" />
-          </div>
-          <div>
-            <div class="label">종료일</div>
-            <input id="imEnd" type="date" class="input" />
-          </div>
-        </div>
-        <div class="grid-2">
-          <div>
-            <div class="label">시작 교시</div>
-            <select id="imStartP" class="select">
-              <option value="0">교시 없음</option>
-              <option>1교시</option><option>2교시</option><option>3교시</option>
-              <option>4교시</option><option>5교시</option><option>6교시</option>
-              <option>7교시</option><option>8교시</option>
-            </select>
-          </div>
-          <div>
-            <div class="label">종료 교시</div>
-            <select id="imEndP" class="select">
-              <option value="0">교시 없음</option>
-              <option>1교시</option><option>2교시</option><option>3교시</option>
-              <option>4교시</option><option>5교시</option><option>6교시</option>
-              <option>7교시</option><option>8교시</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <div class="label">상세 내용 (줄바꿈 가능)</div>
-          <textarea id="imDetail" class="textarea" rows="6"></textarea>
-        </div>
-      </div>
-      <div class="dialog-actions">
-        <button class="btn-ghost" onclick="closeItemModal()">취소</button>
-        <button class="btn" onclick="saveItemModal()">저장</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== 모달(전달 사항 수정) ===== -->
-  <div id="noticeModal" class="modal">
-    <div class="dialog">
-      <div class="dialog-head">
-        <h3 class="dialog-title">전달 사항 수정</h3>
-        <button class="btn-ghost" onclick="closeNoticeModal()">닫기</button>
-      </div>
-      <div class="dialog-body">
-        <div class="grid-2">
-          <div>
-            <div class="label">제목</div>
-            <input id="nmTitle" class="input" />
-          </div>
-          <div>
-            <div class="label">종류</div>
-            <select id="nmType" class="select">
-              <option value="notice">공지</option>
-              <option value="guide">안내</option>
-              <option value="alert">알림</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <div class="label">내용 (줄바꿈 가능)</div>
-          <textarea id="nmBody" class="textarea" rows="8"></textarea>
-        </div>
-      </div>
-      <div class="dialog-actions">
-        <button class="btn-ghost" onclick="closeNoticeModal()">취소</button>
-        <button class="btn" onclick="saveNoticeModal()">저장</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Firebase compat -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <script>
-  // ====== 1) Firebase 설정 (반드시 본인 프로젝트 값으로 교체) ======
-  const firebaseConfig = {
-    apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
-    authDomain: "my-memo-site.firebaseapp.com",
-    projectId: "my-memo-site",
-    storageBucket: "my-memo-site.firebasestorage.app",
-    messagingSenderId: "196036694705",
-    appId: "1:196036694705:web:8988d12919420130464890"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db   = firebase.firestore();
-
-  // ====== 2) 관리자 UID / 공개소스 UID (읽기 전용 표시용) ======
-  const ADMIN_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";     // 관리자 Google 로그인 UID
-  const OWNER_UID = ADMIN_UID;                 // 공개로 보여줄 소스 UID (관리 항목의 주인)
-
-  // ====== 3) 상태 및 DOM 참조 ======
-  let currentUser = null;
-  let unsubTasks = []; // 카테고리별 리스너 해제
-  let unsubNotices = null;
-  let unsubSettings = null;
-
-  const $  = (q, r=document)=>r.querySelector(q);
-  const $$ = (q, r=document)=>Array.from(r.querySelectorAll(q));
-
-  const el = {
-    loginBtn:   $("#loginBtn"),
-    logoutBtn:  $("#logoutBtn"),
-
-    // 공지
-    toggleNotices: $("#toggleNotices"),
-    noticeForm: $("#noticeForm"),
-    nfTitle:  $("#nfTitle"),
-    nfType:   $("#nfType"),
-    nfBody:   $("#nfBody"),
-    nfAdd:    $("#nfAdd"),
-    noticeList: $("#noticeList"),
-
-    // 리스트
-    lists: {
-      exam: $("#list_exam"),
-      perf: $("#list_perf"),
-      home: $("#list_home"),
-    },
-    adds: {
-      exam: $("#add_exam"),
-      perf: $("#add_perf"),
-      home: $("#add_home"),
-    }
-  };
-
-  // 모달용 전역
-  let editTarget = { cat:"", id:"", data:null };  // 항목
-  let editNotice = { id:"", data:null };
-
-  // ====== 4) Util ======
-  const esc = s=>(s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
-  const escWithBr = s => esc(s).replaceAll("\n","<br>");
-
-  const isAdmin = ()=> currentUser && currentUser.uid === ADMIN_UID;
-  const readUID = ()=> OWNER_UID; // 항상 공개 소스 UID에서 읽음
-
-  // D-day 계산 (시작일 기준 / between start-end → "D-day")
-  function ddBadge(start,end){
-    if(!start) return "";
-    const today = new Date(); today.setHours(0,0,0,0);
-    const s = new Date(start); s.setHours(0,0,0,0);
-    let e = end ? new Date(end) : null;
-    if(e) e.setHours(0,0,0,0);
-
-    // 기간 내면 D-day
-    if( e && today.getTime() >= s.getTime() && today.getTime() <= e.getTime()){
-      return `<span class="badge dd-red">D-day</span>`;
-    }
-
-    // 기간 전/후
-    const diff = Math.floor((s.getTime() - today.getTime())/86400000);
-    let txt = "", cls = "dd-green";
-    if(diff > 0){
-      txt = `D-${diff}`;
-      if(diff <= 1) cls = "dd-red";
-      else if(diff <= 3) cls = "dd-orange";
-      else if(diff <= 5) cls = "dd-yellow";
-      else cls = "dd-green";
-    }else if(diff === 0){
-      txt = "D-day"; cls = "dd-red";
-    }else{
-      // 지난 일정은 회색
-      txt = `D+${Math.abs(diff)}`; cls = "dd-gray";
-    }
-    return `<span class="badge ${cls}">${txt}</span>`;
-  }
-
-  function periodLabel(sp,ep){
-    sp = sp||"0"; ep = ep||"0";
-    if(sp==="0" && ep==="0") return "";
-    if(sp==="0" && ep!=="0") return `${ep} (종일 or 마감)`;
-    if(sp!=="0" && ep==="0") return `${sp}`;
-    if(sp===ep) return `${sp}`;
-    // ex: 5~6교시
-    return `${sp.replace("교시","")}~${ep}`;
-  }
-
-  // ====== 5) 렌더링 ======
-  function renderItem(cat, id, it){
-    const ul = el.lists[cat];
-
-    const badge = ddBadge(it.start, it.end);
-    const period = periodLabel(it.startp, it.endp);
-    const dateText = it.end && it.end!==it.start
-      ? `${it.start} ~ ${it.end}`
-      : `${it.start || it.end || ""}`;
-
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <div class="item-head">
-        <h3 class="item-title">${esc(it.subj||"")}</h3>
-        ${badge}
-        <div class="item-actions" style="${isAdmin()?"":"display:none"}">
-          <button class="btn-ghost" data-act="edit">수정</button>
-          <button class="btn-ghost" data-act="del">삭제</button>
-        </div>
-      </div>
-      <div class="item-text">${esc(it.text||"")}</div>
-      <div class="item-meta"><span class="meta-icon">📅</span>${esc(dateText)}
-        ${period ? `<span style="margin-left:8px">${esc(period)}</span>`:""}
-      </div>
-      ${it.detail? `<div class="item-meta" style="margin-top:8px">${escWithBr(it.detail||"")}</div>`:``}
-    `;
-
-    // 버튼
-    const actions = div.querySelector(".item-actions");
-    if(actions){
-      actions.querySelector('[data-act="edit"]').onclick = ()=> openItemModal(cat,id,it);
-      actions.querySelector('[data-act="del"]').onclick = ()=> delItem(cat,id);
-    }
-    ul.appendChild(div);
-  }
-
-  function renderList(cat, arr){
-    const ul = el.lists[cat];
-    ul.innerHTML = "";
-    arr.forEach(d=> renderItem(cat, d.id, d) );
-  }
-
-  function renderNoticeCard(doc){
-    const it = doc.data();
-    const id = doc.id;
-
-    let cls = "notice-green";
-    if(it.type==="notice") cls = "notice-red";
-    else if(it.type==="guide") cls = "notice-yellow";
-
-    const wrap = document.createElement("div");
-    wrap.className = `notice-card ${cls}`;
-    wrap.innerHTML = `
-      <div class="notice-title">[${it.type==="notice"?"공지":it.type==="guide"?"안내":"알림"}] ${esc(it.title||"")}</div>
-      <div class="notice-body">${escWithBr(it.body||"")}</div>
-      <div class="notice-actions" style="${isAdmin()?"":"display:none"}">
-        <button class="btn-ghost" data-act="edit">수정</button>
-        <button class="btn-ghost" data-act="del">삭제</button>
-      </div>
-    `;
-    const act = wrap.querySelector(".notice-actions");
-    if(act){
-      act.querySelector('[data-act="edit"]').onclick = ()=> openNoticeModal(id, it);
-      act.querySelector('[data-act="del"]').onclick = ()=> delNotice(id);
-    }
-    el.noticeList.appendChild(wrap);
-  }
-
-  // ====== 6) Firestore 리스너 ======
-  function col(cat){
-    // 항상 공개 소스(OWNER_UID) 기준으로 읽기
-    const uid = readUID();
-    return db.collection("users").doc(uid).collection("tasks").doc(cat).collection("items");
-  }
-
-  function startTaskListeners(){
-    unsubTasks.forEach(u=>u&&u());
-    unsubTasks = [];
-    ["exam","perf","home"].forEach(cat=>{
-      const u = col(cat).orderBy("start","asc").onSnapshot(snap=>{
-        const arr = [];
-        snap.forEach(doc=> arr.push({id:doc.id, ...doc.data()}) );
-        renderList(cat, arr);
-      }, e=>console.error(e));
-      unsubTasks.push(u);
-    });
-  }
-
-  function startNoticeListener(){
-    if(unsubNotices) unsubNotices();
-    const ref = db.collection("notices").orderBy("createdAt","desc");
-    unsubNotices = ref.onSnapshot(snap=>{
-      el.noticeList.innerHTML = "";
-      snap.forEach(doc=> renderNoticeCard(doc) );
-    }, e=>console.error(e));
-  }
-
-  function startSettingsListener(){
-    if(unsubSettings) unsubSettings();
-    const sref = db.collection("settings").doc("general");
-    unsubSettings = sref.onSnapshot(doc=>{
-      const d = doc.data() || {};
-      const on = !!d.noticesOn;
-      el.toggleNotices.checked = on;
-      // 표시 제어는 단순히 숨김/노출 (데이터는 항상 렌더됨)
-      el.noticeList.style.display = on ? "" : "none";
-    });
-  }
-
-  // ====== 7) CRUD ======
-  async function addRow(cat, row){
-    if(!isAdmin()) return alert("관리자만 추가할 수 있어요.");
-    const subj = $(".subj",row).value.trim();
-    const text = $(".text",row).value.trim();
-    const start= $(".start",row).value || "";
-    const end  = $(".end",row).value || "";
-    const startp = $(".startp",row).value||"0";
-    const endp   = $(".endp",row).value||"0";
-    const detail = $(".detail",row).value||"";
-
-    if(!subj || !text){ return alert("과목과 내용을 입력해 주세요."); }
-
-    await col(cat).add({
-      subj, text, start, end, startp, endp, detail,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    // 초기화
-    $(".subj",row).value=""; $(".text",row).value="";
-    $(".start",row).value=""; $(".end",row).value="";
-    $(".startp",row).value="0"; $(".endp",row).value="0";
-    $(".detail",row).value="";
-  }
-
-  async function delItem(cat,id){
-    if(!isAdmin()) return;
-    if(!confirm("삭제할까요?")) return;
-    await col(cat).doc(id).delete();
-  }
-
-  // ====== 8) 공지 CRUD ======
-  async function addNotice(){
-    if(!isAdmin()) return alert("관리자만 추가할 수 있어요.");
-    const title = el.nfTitle.value.trim();
-    const type  = el.nfType.value;
-    const body  = el.nfBody.value.trim();
-    if(!title || !body) return alert("제목/내용을 입력해 주세요.");
-    await db.collection("notices").add({
-      title, type, body,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    el.nfTitle.value=""; el.nfBody.value="";
-  }
-  async function delNotice(id){
-    if(!isAdmin()) return;
-    if(!confirm("삭제할까요?")) return;
-    await db.collection("notices").doc(id).delete();
-  }
-
-  // ====== 9) 공지 표시 ON/OFF ======
-  el.toggleNotices.addEventListener("change", async (e)=>{
-    if(!isAdmin()){
-      // 관리자만 변경 가능 → UI 되돌리기
-      startSettingsListener(); // 스냅샷이 다시 덮어씀
-      return alert("관리자만 변경할 수 있어요.");
-    }
-    const on = e.target.checked;
-    await db.collection("settings").doc("general").set({noticesOn:on},{merge:true});
-  });
-
-  // ====== 10) 로그인 / 상태 ======
-  el.loginBtn.onclick = async ()=>{
-    try{
-      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-      const provider = new firebase.auth.GoogleAuthProvider();
-      await auth.signInWithPopup(provider);
-    }catch(e){
-      console.error(e); alert("로그인 실패");
-    }
-  };
-  el.logoutBtn.onclick = ()=> auth.signOut();
-
-  auth.onAuthStateChanged(u=>{
-    currentUser = u;
-    el.loginBtn.style.display = u ? "none":"";
-    el.logoutBtn.style.display= u ? "":"none";
-
-    // 관리자만 입력줄/폼 표시
-    const show = isAdmin();
-    ["exam","perf","home"].forEach(cat=>{
-      el.adds[cat].style.display = show ? "" : "none";
-    });
-    el.noticeForm.style.display = show ? "" : "none";
-
-    // 리스너
-    startTaskListeners();
-    startNoticeListener();
-    startSettingsListener();
-  });
-
-  // ====== 11) 추가 버튼 바인딩 ======
-  // (각 add-row 의 +추가 버튼)
-  $$("#add_exam .add")[0].onclick = ()=> addRow("exam", el.adds.exam);
-  $$("#add_perf .add")[0].onclick = ()=> addRow("perf", el.adds.perf);
-  $$("#add_home .add")[0].onclick = ()=> addRow("home", el.adds.home);
-  el.nfAdd.onclick = addNotice;
-
-  // ====== 12) 모달 (항목) ======
-  const itemModal = $("#itemModal");
-  const im = {
-    subj: $("#imSubj"),
-    text: $("#imText"),
-    start: $("#imStart"),
-    end: $("#imEnd"),
-    startp: $("#imStartP"),
-    endp: $("#imEndP"),
-    detail: $("#imDetail"),
-  };
-
-  function openItemModal(cat, id, data){
-    if(!isAdmin()) return;
-    editTarget = { cat, id, data };
-    im.subj.value  = data.subj||"";
-    im.text.value  = data.text||"";
-    im.start.value = data.start||"";
-    im.end.value   = data.end||"";
-    im.startp.value= data.startp||"0";
-    im.endp.value  = data.endp||"0";
-    im.detail.value= data.detail||"";
-    itemModal.classList.add("open");
-  }
-  function closeItemModal(){ itemModal.classList.remove("open"); }
-
-  async function saveItemModal(){
-    if(!isAdmin()) return;
-    const {cat,id} = editTarget;
-    const up = {
-      subj: im.subj.value.trim(),
-      text: im.text.value.trim(),
-      start: im.start.value || "",
-      end:   im.end.value   || "",
-      startp: im.startp.value||"0",
-      endp:   im.endp.value||"0",
-      detail: im.detail.value||""
-    };
-    await col(cat).doc(id).set(up,{merge:true});
-    closeItemModal();
-  }
-
-  // ====== 13) 모달 (공지) ======
-  const noticeModal = $("#noticeModal");
-  const nm = {
-    title: $("#nmTitle"),
-    type:  $("#nmType"),
-    body:  $("#nmBody"),
-  };
-  function openNoticeModal(id, data){
-    if(!isAdmin()) return;
-    editNotice = {id, data};
-    nm.title.value = data.title||"";
-    nm.type.value  = data.type||"notice";
-    nm.body.value  = data.body||"";
-    noticeModal.classList.add("open");
-  }
-  function closeNoticeModal(){ noticeModal.classList.remove("open"); }
-  async function saveNoticeModal(){
-    if(!isAdmin()) return;
-    const up = {
-      title: nm.title.value.trim(),
-      type:  nm.type.value,
-      body:  nm.body.value
-    };
-    await db.collection("notices").doc(editNotice.id).set(up,{merge:true});
-    closeNoticeModal();
-  }
-  </script>
+  <!-- JS -->
+  <script src="script.js"></script>
 </body>
 </html>
-
