@@ -100,3 +100,18 @@ body{
 }
 .modal__foot{ display:flex; gap:8px; justify-content:flex-end; padding:0 14px }
 .ml{margin-left:6px}
+
+/* 상세 내용도 카드 본문과 동일하게 */
+.details {
+  font-family: inherit;    /* 부모와 같은 폰트 사용 */
+  font-size: 0.95rem;      /* 제목보다 살짝 작게 (본문과 동일) */
+  font-weight: normal;     /* 굵기 일반 */
+  line-height: 1.6;        /* 줄 간격 */
+  margin-top: 6px;         /* 위쪽 여백 조금 */
+  padding: 0;              /* 배경과 패딩 제거 */
+  border: none;            /* 테두리 제거 */
+  background: transparent; /* 배경색 제거 */
+  white-space: pre-line;   /* 줄바꿈(\n) 자동 반영 */
+  color: #e0e0e0;          /* 카드 본문 텍스트 색과 동일 */
+}
+
