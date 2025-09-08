@@ -10,9 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <!-- Favicon: 데이터 URL(SVG)로 404 방지 -->
+  <!-- favicon (404 방지: SVG 인라인) -->
   <link rel="icon" type="image/svg+xml"
         href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text y="50%" x="50%" dy=".35em" text-anchor="middle" font-size="48">📒</text></svg>'>
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -40,7 +41,7 @@
     </div>
 
     <div class="section-body open">
-      <!-- 관리자 전용 추가 폼 -->
+      <!-- 관리자 전용 추가 폼 (2줄 구성: 제목/종류 -> 본문 -> 추가 버튼) -->
       <div id="noticeAddRow" class="add-row col gap-8" style="display:none">
         <input id="nTitle" class="input subj" type="text" placeholder="제목" />
         <select id="nKind" class="select">
@@ -48,6 +49,7 @@
           <option value="info">안내(노랑)</option>
           <option value="alert">알림(초록)</option>
         </select>
+
         <textarea id="nBody" class="detail" rows="4" placeholder="상세 내용 (줄바꿈 가능)"></textarea>
         <button id="nAddBtn" class="btn align-end">+ 추가</button>
       </div>
@@ -114,4 +116,86 @@
 
   <!-- ===== 숙제 ===== -->
   <section class="sec">
-    <button class="section-head" onclick="toggleSection
+    <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
+    <div id="sec_home" class="section-body open">
+      <ul id="list_home" class="task-list"></ul>
+
+      <div class="add-row" data-cat="home" style="display:none">
+        <input class="subj" type="text" placeholder="과목" />
+        <input class="text" type="text" placeholder="내용" />
+        <input class="date"  type="date" />
+        <input class="date2" type="date" />
+        <select class="pStart">
+          <option value="">시작 교시</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+        </select>
+        <select class="pEnd">
+          <option value="">끝 교시</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+        </select>
+        <textarea class="detail" rows="4" placeholder="상세 내용 (선택)"></textarea>
+        <button class="btn add align-end">+ 추가</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ===== 항목 수정 모달 ===== -->
+<div id="editModal" class="modal hidden">
+  <div class="modal__body">
+    <h3>항목 수정</h3>
+    <input id="mSubj" class="input" placeholder="과목" />
+    <input id="mText" class="input" placeholder="내용" />
+    <div class="row gap-8">
+      <input id="mStart" class="input" type="date" />
+      <input id="mEnd" class="input" type="date" />
+    </div>
+    <div class="row gap-8">
+      <select id="mPStart" class="select">
+        <option value="">시작 교시</option>
+        <option>1</option><option>2</option><option>3</option><option>4</option>
+        <option>5</option><option>6</option><option>7</option><option>8</option>
+      </select>
+      <select id="mPEnd" class="select">
+        <option value="">끝 교시</option>
+        <option>1</option><option>2</option><option>3</option><option>4</option>
+        <option>5</option><option>6</option><option>7</option><option>8</option>
+      </select>
+    </div>
+    <textarea id="mDetail" class="detail" rows="6" placeholder="상세 내용 (줄바꿈)"></textarea>
+    <div class="modal__actions">
+      <button id="mSave" class="btn">저장</button>
+      <button class="btn" onclick="closeEdit()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 전달 사항 수정 모달 ===== -->
+<div id="noticeModal" class="modal hidden">
+  <div class="modal__body">
+    <h3>전달 사항 수정</h3>
+    <input id="nmTitle" class="input" placeholder="제목" />
+    <select id="nmKind" class="select" style="margin-top:8px">
+      <option value="notice">공지(빨강)</option>
+      <option value="info">안내(노랑)</option>
+      <option value="alert">알림(초록)</option>
+    </select>
+    <textarea id="nmBody" class="detail" rows="6" placeholder="상세 내용 (줄바꿈)"></textarea>
+    <div class="modal__actions">
+      <button id="nmSave" class="btn">저장</button>
+      <button id="nmClose" class="btn" onclick="closeNoticeEdit()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- App -->
+<script src="app.js"></script>
+</body>
+</html>
