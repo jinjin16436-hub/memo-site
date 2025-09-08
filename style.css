@@ -10,16 +10,28 @@
   --green:#22c55e;
   --gray:#6b7280;
   --border:#223041;
+
+  /* 가독성 상향 */
+  --fg-strong:#e9ecf1;
+  --fg-base:#cfd6de;
+  --fg-dim:#9aa6b2;
+  --card-bg:#0f1720;
+  --page-bg:#0b1220;
 }
 
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
   margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Pretendard,Roboto,Helvetica,Arial,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
-  line-height:1.5;
+  color:var(--fg-base);
+  background:var(--page-bg);
+  font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",
+    Roboto,"Helvetica Neue",Arial,"Apple SD Gothic Neo",
+    "Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  line-height:1.55;
 }
 
 /* layout */
@@ -28,18 +40,17 @@ body{
   position:sticky;top:0;z-index:3;
   background:rgba(15,22,32,.9);backdrop-filter:saturate(180%) blur(8px);
   border-bottom:1px solid var(--border);
-  padding:12px 16px;
-  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;
 }
-.topbar h1{margin:0;font-size:20px}
+.topbar h1{margin:0;font-size:20px;color:var(--fg-strong)}
 .auth .btn{margin-left:8px}
 
-.sec{margin:20px 0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--card)}
+.sec{margin:20px 0;border:1px solid var(--border);border-radius:14px;background:var(--card-bg);overflow:hidden}
 .section-head{
   width:100%;text-align:left;
   background:rgba(255,255,255,0.03);
   border-bottom:1px dashed var(--border);
-  padding:14px 16px;font-weight:600;
+  padding:14px 16px;font-weight:700;color:var(--fg-strong);
   display:flex;align-items:center;gap:8px
 }
 .section-body{padding:16px}
@@ -61,34 +72,37 @@ body{
   border-radius:10px;padding:10px 12px;font-size:14px
 }
 .select{padding:9px 10px}
-.btn{cursor:pointer;background:#1e293b;border-color:#2b3a52}
-.btn:hover{background:#263547}
+.btn{cursor:pointer;background:rgba(88,130,255,0.15);border:1px solid rgba(88,130,255,0.25);color:var(--fg-strong)}
+.btn:hover{background:rgba(88,130,255,0.25)}
 .btn:active{transform:translateY(1px)}
 
 .task-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .task{
-  border:1px solid var(--border);border-radius:12px;background:#0f1722;
+  border:1px solid var(--border);border-radius:12px;background:var(--card-bg);
   padding:14px 16px;
 }
-.task .meta{color:var(--muted);margin-top:6px}
-.task pre{margin:10px 0 0;white-space:pre-wrap;word-break:break-word;background:transparent;color:var(--text);padding:0}
+.task .meta{color:var(--fg-dim);margin-top:6px}
+.task pre{
+  margin:10px 0 0;white-space:pre-wrap;word-break:break-word;background:rgba(255,255,255,0.03);
+  color:var(--fg-base);padding:10px 12px;border:1px dashed rgba(255,255,255,0.08);border-radius:10px;
+}
 
 .card-actions{margin-top:10px;display:flex;gap:8px}
 
 /* D-day badge */
 .dday{display:inline-block;font-weight:700;font-size:12px;padding:3px 10px;border-radius:999px;margin-left:6px}
-.dday.red{background:rgba(239,68,68,.15);color:#ff7b7b;border:1px solid rgba(239,68,68,.3)}
-.dday.orange{background:rgba(245,158,11,.15);color:#ffd07a;border:1px solid rgba(245,158,11,.35)}
-.dday.yellow{background:rgba(234,179,8,.15);color:#ffe289;border:1px solid rgba(234,179,8,.35)}
-.dday.green{background:rgba(34,197,94,.15);color:#7dffb0;border:1px solid rgba(34,197,94,.35)}
-.dday.gray{background:rgba(107,114,128,.15);color:#c7cbd3;border:1px solid rgba(107,114,128,.35)}
+.dday.red{background:#ef4444;color:#fff}
+.dday.orange{background:#f59e0b;color:#1b1b1b}
+.dday.yellow{background:#fde047;color:#1b1b1b}
+.dday.green{background:#22c55e;color:#0b1720}
+.dday.gray{background:#64748b;color:#fff}
 
-/* 전달사항 카드 색 */
+/* 전달사항 카드 */
 .notice-card{border-radius:12px;border:1px solid var(--border);padding:14px 16px}
 .kind-notice{background:rgba(239,68,68,.12)}
 .kind-info{background:rgba(234,179,8,.12)}
 .kind-alert{background:rgba(34,197,94,.12)}
-.notice-title{font-weight:700}
+.notice-title{font-weight:700;color:var(--fg-strong)}
 .notice-meta{color:var(--muted);font-size:13px;margin-top:6px}
 
 /* toggle switch */
@@ -105,87 +119,3 @@ input:checked + .slider:before{transform:translateX(24px)}
 .modal.hidden{display:none}
 .modal__body{background:#101826;border:1px solid var(--border);border-radius:14px;min-width:320px;max-width:540px;width:92vw;padding:16px;display:flex;flex-direction:column;gap:10px}
 .modal__actions{display:flex;gap:8px;justify-content:flex-end}
-
-/* ===== 폰트 / 기본 대비 리셋 ===== */
-:root{
-  --fg-strong: #e9ecf1;   /* 가장 밝은 본문 */
-  --fg-base:   #cfd6de;   /* 일반 본문 */
-  --fg-dim:    #9aa6b2;   /* 메타/부가 텍스트 */
-  --card-bg:   #0f1720;   /* 카드 내부 배경 (살짝 더 밝게) */
-  --page-bg:   #0b1220;   /* 페이지 배경 */
-}
-
-html, body{
-  font-family: "Noto Sans KR", system-ui, -apple-system, "Segoe UI",
-               Roboto, "Helvetica Neue", Arial, "Apple SD Gothic Neo",
-               "Malgun Gothic", "맑은 고딕", "Noto Sans", sans-serif;
-  color: var(--fg-base);
-  background: var(--page-bg);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* 제목/섹션 헤더는 더 또렷하게 */
-h1, h2, h3, .section-head{
-  color: var(--fg-strong);
-}
-
-/* 카드(항목) 대비 상향 */
-.card, .task{
-  background: var(--card-bg);
-  border: 1px solid rgba(255,255,255,0.06);
-}
-
-/* 항목 제목(과목) + D-day 라인 */
-.task__main > .title,
-.task__main > div:first-child{
-  color: var(--fg-strong);
-  font-weight: 600;
-  font-size: 1.05rem;
-}
-
-/* 본문(내용) */
-.task__main > .body,
-.task__main > div:nth-child(2){
-  color: var(--fg-base);
-  line-height: 1.7;
-  font-size: 1rem;
-}
-
-/* 날짜/교시 등 메타라인 */
-.task__main .meta{
-  color: var(--fg-dim);
-  margin-top: 4px;
-  font-size: 0.95rem;
-}
-
-/* 상세내용(pre)도 가독성 높이기 */
-.task__main pre{
-  white-space: pre-wrap;
-  word-break: break-word;
-  color: var(--fg-base);
-  background: rgba(255,255,255,0.03);
-  border: 1px dashed rgba(255,255,255,0.08);
-  padding: 10px 12px;
-  border-radius: 10px;
-}
-
-/* 버튼 대비 */
-.btn{
-  color: var(--fg-strong);
-  background: rgba(88,130,255,0.15);
-  border: 1px solid rgba(88,130,255,0.25);
-}
-.btn:hover{
-  background: rgba(88,130,255,0.25);
-}
-
-/* D-day 배지 색상도 또렷하게 */
-.dday{ font-weight:700; }
-.dday.red{    background:#ef4444; color:#fff; }
-.dday.orange{ background:#f59e0b; color:#1b1b1b; }
-.dday.yellow{ background:#fde047; color:#1b1b1b; }
-.dday.green{  background:#22c55e; color:#0b1720; }
-.dday.gray{   background:#64748b; color:#fff; }
-
