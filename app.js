@@ -305,4 +305,4 @@ async function deleteNotice(id){
 }
 
 // ===== 13) 초기 1분마다 조용히 새로고침(선택) =====
-setInterval(()=>{ location.reload(); }, 60*1000);
+// setInterval(()=>{ location.reload(); }, 60*1000);
