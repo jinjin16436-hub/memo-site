@@ -10,11 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <!-- favicon (404 방지: SVG 인라인) -->
-  <link rel="icon" type="image/svg+xml"
-        href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text y="50%" x="50%" dy=".35em" text-anchor="middle" font-size="48">📒</text></svg>'>
-
   <link rel="stylesheet" href="style.css" />
+
+  <!-- (선택) 404 피하기용 파비콘 -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📒</text></svg>">
 </head>
 <body>
 <header class="topbar">
@@ -41,7 +40,7 @@
     </div>
 
     <div class="section-body open">
-      <!-- 관리자 전용 추가 폼 (2줄 구성: 제목/종류 -> 본문 -> 추가 버튼) -->
+      <!-- 관리자 전용 추가 폼 -->
       <div id="noticeAddRow" class="add-row col gap-8" style="display:none">
         <input id="nTitle" class="input subj" type="text" placeholder="제목" />
         <select id="nKind" class="select">
@@ -49,12 +48,10 @@
           <option value="info">안내(노랑)</option>
           <option value="alert">알림(초록)</option>
         </select>
-
         <textarea id="nBody" class="detail" rows="4" placeholder="상세 내용 (줄바꿈 가능)"></textarea>
         <button id="nAddBtn" class="btn align-end">+ 추가</button>
       </div>
 
-      <!-- 전달 사항 목록 -->
       <ul id="notice_list" class="task-list" style="margin-top:8px"></ul>
     </div>
   </section>
