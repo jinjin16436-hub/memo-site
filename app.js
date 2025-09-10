@@ -14,11 +14,10 @@ const db   = firebase.firestore();
 
 // ===== 1) 고정값 =====
 const ADMIN_UID  = "vv0bADtWdqQUnqFMy8k01dhO13t2";  // 관리자 UID
-const PUBLIC_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";  // 공개 조회는 같은 UID 사용
+const PUBLIC_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";  // 공개 조회 UID(동일 사용)
 
-// 전달 사항 전용 컬렉션 (항상 관리자 경로)
-const NOTICE_COL = db.collection("users").doc(ADMIN_UID).collection("announces");
-// ON/OFF 설정 문서
+// 전달 사항 컬렉션 & 설정 문서 (항상 관리자 경로 고정)
+const NOTICE_COL   = db.collection("users").doc(ADMIN_UID).collection("announces");
 const SETTINGS_DOC = db.collection("users").doc(ADMIN_UID).collection("settings").doc("app");
 
 // ===== 2) DOM 헬퍼 =====
@@ -27,9 +26,9 @@ const $$ = (q, r=document)=>Array.from(r.querySelectorAll(q));
 
 // ===== 3) 전역 =====
 let currentUser = null;
-let listeners = [];
+let listeners = []; // onSnapshot 해제용
 
-// ===== 4) 도우미 =====
+// ===== 4) 유틸 =====
 function toggleSection(id){ $("#"+id).classList.toggle("open"); }
 function getWeekday(iso){ if(!iso) return ""; const d=new Date(iso+'T00:00:00'); return ["일","월","화","수","목","금","토"][d.getDay()]; }
 function dateSpanText(start,end){
@@ -68,7 +67,7 @@ function col(cat){
   return db.collection("users").doc(uid).collection("tasks").doc(cat).collection("items");
 }
 
-// ===== 6) 항목 렌더 =====
+// ===== 6) 과목/숙제 렌더 =====
 const lists = { exam: $("#list_exam"), perf: $("#list_perf"), home: $("#list_home") };
 
 function taskItemHTML(cat, id, it){
@@ -94,7 +93,9 @@ function renderList(cat, docs){
 }
 
 // ===== 7) 전달 사항 렌더 =====
-const noticeList = $("#notice_list");
+const noticeList   = $("#notice_list");
+const noticeAddRow = $("#noticeAddRow");
+const noticeToggle = $("#noticeToggle");
 function noticeHTML(id, it){
   const cls =
     it.kind==="notice" ? "kind-notice" :
@@ -113,14 +114,16 @@ function noticeHTML(id, it){
 }
 function renderNotices(snap){
   const arr = []; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
-  noticeList.innerHTML = arr.map(it => noticeHTML(it.id, it)).join("") ||
-    `<li class="notice-card">등록된 전달 사항이 없습니다.</li>`;
+  noticeList.innerHTML = arr.length
+    ? arr.map(it => noticeHTML(it.id, it)).join("")
+    : `<li class="notice-card">등록된 전달 사항이 없습니다.</li>`;
 }
 
 // ===== 8) 리스너 =====
 function stopListen(){ listeners.forEach(u=>u&&u()); listeners = []; }
 function startListen(){
   stopListen();
+
   ["exam","perf","home"].forEach(cat=>{
     const un = col(cat).orderBy("start","asc").onSnapshot(snap=>{
       const docs=[]; snap.forEach(d=>docs.push(d));
@@ -132,18 +135,20 @@ function startListen(){
     listeners.push(un);
   });
 
-  // 전달 사항 목록(관리자 경로 고정)
   const un2 = NOTICE_COL.orderBy("createdAt","desc").onSnapshot(renderNotices, err=>{
     console.error(err);
     alert("전달 사항 목록을 불러오지 못했습니다: " + err.message);
   });
   listeners.push(un2);
 
-  // ON/OFF 스위치
+  // ON/OFF: 섹션 전체를 숨기지 말고, 목록/추가폼만 제어!
   SETTINGS_DOC.onSnapshot(doc=>{
     const on = !!(doc.exists ? doc.data().showNotice : false);
-    $("#noticeToggle").checked = on;
-    $("#sec_notice").style.display = on ? "" : "none";
+    if (noticeToggle) noticeToggle.checked = on;
+    // 목록 표시
+    if (noticeList)   noticeList.style.display   = on ? "" : "none";
+    // 추가 폼은 ON + 관리자일 때만
+    if (noticeAddRow) noticeAddRow.style.display = (on && currentUser?.uid===ADMIN_UID) ? "" : "none";
   });
 }
 
@@ -164,7 +169,10 @@ auth.onAuthStateChanged(u=>{
 });
 
 function setAdminVisible(isAdmin){
-  $$(".add-row").forEach(r => r.style.display = isAdmin ? "" : "none");
+  // 과목/숙제 추가 폼
+  $$(".add-row[data-cat]").forEach(r => r.style.display = isAdmin ? "" : "none");
+  // 전달 사항 추가 폼 (ON일 때만 보여주도록 SETTINGS_DOC 스냅샷에서도 제어)
+  if (!isAdmin && noticeAddRow) noticeAddRow.style.display = "none";
 }
 
 // ===== 10) 과목/숙제 추가 =====
@@ -246,8 +254,8 @@ function bindNoticeRow(){
   const body   = $("#nBody");
   if(!addBtn) return;
 
-  // 관리자만 보이기
-  $("#noticeAddRow").style.display = (currentUser?.uid===ADMIN_UID) ? "" : "none";
+  // 관리자에 한해 추가 폼 표시 (ON/OFF는 설정 스냅샷에서 최종 제어)
+  noticeAddRow.style.display = (currentUser?.uid===ADMIN_UID) ? "" : "none";
 
   addBtn.onclick = async ()=>{
     if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 추가할 수 있습니다."); return; }
@@ -262,47 +270,14 @@ function bindNoticeRow(){
     }catch(e){ alert("추가 실패: "+e.message); console.error(e); }
   };
 
-  // ON/OFF 토글 저장
-  $("#noticeToggle").onchange = async (e)=>{
-    try{ await SETTINGS_DOC.set({showNotice:e.target.checked},{merge:true}); }
-    catch(err){ alert("설정 저장 실패: "+err.message); }
-  };
+  // ON/OFF 토글 저장 (스위치는 항상 보임)
+  if (noticeToggle) {
+    noticeToggle.onchange = async (e)=>{
+      try{ await SETTINGS_DOC.set({showNotice:e.target.checked},{merge:true}); }
+      catch(err){ alert("설정 저장 실패: "+err.message); }
+    };
+  }
 }
 
-// 수정 모달
-const nModal=$("#noticeModal");
-const nmTitle=$("#nmTitle"), nmKind=$("#nmKind"), nmBody=$("#nmBody"),
-      nmSave=$("#nmSave");
-let nEditId=null;
-
-function openNoticeEdit(id){
-  if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 수정할 수 있습니다."); return; }
-  nEditId=id;
-  NOTICE_COL.doc(id).get().then(s=>{
-    const it=s.data();
-    nmTitle.value=it.title||"";
-    nmKind.value =it.kind ||"notice";
-    nmBody.value =it.body ||"";
-    nModal.classList.remove("hidden");
-  });
-}
-function closeNoticeEdit(){ nModal.classList.add("hidden"); nEditId=null; }
-nmSave.onclick = async ()=>{
-  if(!nEditId) return;
-  try{
-    await NOTICE_COL.doc(nEditId).update({
-      title:nmTitle.value.trim(),
-      kind:nmKind.value,
-      body:nmBody.value
-    });
-    closeNoticeEdit();
-  }catch(e){ alert("수정 실패: "+e.message); }
-};
-async function deleteNotice(id){
-  if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 삭제할 수 있습니다."); return; }
-  if(!confirm("삭제할까요?")) return;
-  try{ await NOTICE_COL.doc(id).delete(); }catch(e){ alert("삭제 실패: "+e.message); }
-}
-
-// ===== 13) 초기 1분마다 조용히 새로고침(선택) =====
+// ===== 13) 자동 새로고침 (주석 처리: 입력값 보호) =====
 // setInterval(()=>{ location.reload(); }, 60*1000);
