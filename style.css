@@ -53,7 +53,7 @@ body{
 .gap-8{gap:8px}
 .align-end{align-self:flex-end}
 
-/* 관리자 추가 폼 */
+/* 관리자 추가폼 */
 .add-row{background:rgba(255,255,255,.02);border:1px dashed var(--border);padding:12px;border-radius:12px;margin-top:12px}
 .add-row--grid .row{flex-wrap:wrap}
 .input,.select,.btn,textarea{
