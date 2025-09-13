@@ -1,6 +1,6 @@
-/********************  0) Firebase 초기화  ********************/
+// ===== 0) Firebase 초기화 =====
 const firebaseConfig = {
-  // 👉 여기에 본인 프로젝트 설정을 그대로 넣으세요
+  // ⚠️ 여기 본인 프로젝트 키로 교체하세요 (GitHub 공개 저장소면 .env/비공개 처리 권장)
   apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
   authDomain: "my-memo-site.firebaseapp.com",
   projectId: "my-memo-site",
@@ -9,29 +9,36 @@ const firebaseConfig = {
   appId: "1:196036694705:web:8988d12919420130464890",
 };
 firebase.initializeApp(firebaseConfig);
+
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-/********************  1) 상수 / DOM 헬퍼  ********************/
-const ADMIN_UID  = "vv0bADtWdqQUnqFMy8k01dhO13t2"; // 관리자 UID
+// ===== 1) 고정값 =====
+// 관리자/공개 UID
+const ADMIN_UID  = "vv0bADtWdqQUnqFMy8k01dhO13t2";
+const PUBLIC_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
 
+// ===== 2) DOM 헬퍼 =====
 const $  = (q, r=document)=>r.querySelector(q);
 const $$ = (q, r=document)=>Array.from(r.querySelectorAll(q));
 
-let currentUser = null;
-let listeners = [];
+// ===== 3) 전역 =====
+let currentUser = null;        // 로그인 사용자
+let listeners = [];            // onSnapshot 해제용
 
-/********************  2) 공용 유틸  ********************/
+// 섹션 열림/닫힘
 function toggleSection(id){
   const el = document.getElementById(id);
   el.classList.toggle("open");
 }
 
+// 날짜 → 요일 텍스트
 function getWeekday(iso){
   if(!iso) return "";
   const d = new Date(iso+'T00:00:00');
   return ["일","월","화","수","목","금","토"][d.getDay()];
 }
+// YYYY-MM-DD → 표시
 function dateSpanText(start, end){
   if(!start && !end) return "";
   const s = start || end;
@@ -49,18 +56,20 @@ function periodText(pStart, pEnd){
   if(pStart === pEnd)  return `${pStart}교시`;
   return `${pStart}~${pEnd}교시`;
 }
-// D-Day (시작일 기준, 시작~종료 기간은 D-day)
+
+// D-Day 배지: 시작 기준, 시작~종료 기간은 D-day, 색상 규칙
 function renderDday(start, end){
   if(!start) return "";
   const today = new Date(); today.setHours(0,0,0,0);
   const s = new Date(start+'T00:00:00');
   const e = new Date((end||start)+'T00:00:00');
 
-  const diff = Math.floor((s - today) / 86400000);
+  const diff = Math.floor((s - today) / 86400000); // (시작일 - 오늘)
   let label="", cls="";
 
+  // 진행중(오늘이 시작~종료 사이)
   if(today >= s && today <= e){
-    label = "D-day"; cls = "yellow";
+    label = "D-day"; cls = "yellow"; // 진행중은 노랑
   }else if(diff > 0){
     label = `D-${diff}`;
     if(diff === 1) cls = "red";
@@ -74,36 +83,34 @@ function renderDday(start, end){
   }
   return `<span class="dday ${cls}">${label}</span>`;
 }
-// HTML escape
-function escapeHTML(s){
-  return (s||"").replace(/[&<>"]/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[m]));
-}
 
-/********************  3) Firestore 경로  ********************/
-// 과제/시험/수행평가 저장 위치(관리자 문서 아래에 통일)
-function taskCol(cat){
-  return db.collection("users").doc(ADMIN_UID).collection("tasks").doc(cat).collection("items");
+// ===== 4) Firestore 경로 =====
+// 작업(시험/수행/숙제)
+function col(cat){
+  const uid = (currentUser && currentUser.uid === ADMIN_UID) ? ADMIN_UID : PUBLIC_UID;
+  return db.collection("users").doc(uid).collection("tasks").doc(cat).collection("items");
 }
-// 전달 사항(공지) – users/{ADMIN_UID}/announces
+// 전달 사항 컬렉션
 function noticesCol(){
-  return db.collection("users").doc(ADMIN_UID).collection("announces");
+  const uid = (currentUser && currentUser.uid === ADMIN_UID) ? ADMIN_UID : PUBLIC_UID;
+  return db.collection("users").doc(uid).collection("notices");
 }
-// 설정 – users/{ADMIN_UID}/settings/app
+// 앱 설정 (전달사항 ON/OFF)
 function settingsDoc(){
   return db.collection("users").doc(ADMIN_UID).collection("settings").doc("app");
 }
 
-/********************  4) 렌더링(과제/시험/수행)  ********************/
+// ===== 5) 렌더링 =====
 const lists = {
   exam: $("#list_exam"),
   perf: $("#list_perf"),
   home: $("#list_home"),
 };
 
+// 항목 카드 HTML (과목 → 내용 → 상세내용 → 날짜  순)
 function taskItemHTML(cat, id, it){
   const dates = dateSpanText(it.start, it.end);
   const pTxt  = periodText(it.pStart, it.pEnd);
-  // 출력 순서: 과목 → 내용 → 상세 내용 → 날짜(요청사항 적용)
   return `
   <li class="task">
     <div class="task__main">
@@ -119,17 +126,69 @@ function taskItemHTML(cat, id, it){
     </div>
   </li>`;
 }
+
 function renderList(cat, docs){
   const ul = lists[cat];
   ul.innerHTML = docs.map(d => taskItemHTML(cat, d.id, d.data())).join("");
 }
 
-/********************  5) 리스너 시작/정지  ********************/
+// 전달사항 HTML (날짜: “공고일: YYYY-MM-DD (요일)”)
+function noticeItemHTML(id, it){
+  const ymd = (it.createdAt && it.createdAt.toDate) ? it.createdAt.toDate() : null;
+  const iso = ymd ? ymd.toISOString().slice(0,10) : "";
+  const weekday = ymd ? ["일","월","화","수","목","금","토"][ymd.getDay()] : "";
+  const dateLine = iso ? `공고일: ${iso} (${weekday})` : "";
+  const kindClass = it.kind === "notice" ? "kind-notice"
+                   : it.kind === "info"  ? "kind-info"
+                   :                       "kind-alert";
+  const prefix = it.kind === "notice" ? "[공지]" : it.kind === "info" ? "[안내]" : "[알림]";
+
+  return `
+  <li class="notice-card ${kindClass}">
+    <div class="notice-title">${prefix} ${escapeHTML(it.title||"")}</div>
+    ${it.body ? `<pre>${escapeHTML(it.body)}</pre>` : ""}
+    <div class="notice-meta">${dateLine}</div>
+    ${currentUser?.uid===ADMIN_UID ? `
+      <div class="card-actions">
+        <button class="btn" onclick="openNoticeEdit('${id}')">수정</button>
+        <button class="btn" onclick="deleteNotice('${id}')">삭제</button>
+      </div>` : ``}
+  </li>`;
+}
+
+function renderNotices(docs){
+  $("#notice_list").innerHTML = docs.map(d=> noticeItemHTML(d.id, d.data())).join("");
+}
+
+// ===== 6) 구독 시작/해제 =====
 function startListen(){
   stopListen();
+
+  // 전달사항 ON/OFF 상태 반영 + 목록 구독
+  settingsDoc().onSnapshot(snap=>{
+    const data = snap.data() || {};
+    const on = !!data.showNotice;
+    $("#noticeToggle").checked = on;
+
+    // 목록 구독(ON 인 경우에만)
+    listeners.filter(u=>u && u.__type==="noti").forEach(u=>u());
+    listeners = listeners.filter(u=>u.__type!=="noti");
+
+    if(on){
+      const un = noticesCol().orderBy("createdAt","desc").onSnapshot(snap2=>{
+        const arr = []; snap2.forEach(d=>arr.push(d));
+        renderNotices(arr);
+      });
+      un.__type="noti";
+      listeners.push(un);
+    }else{
+      $("#notice_list").innerHTML = "";
+    }
+  });
+
   ["exam","perf","home"].forEach(cat=>{
-    const un = taskCol(cat).orderBy("start","asc").onSnapshot(snap=>{
-      const arr=[]; snap.forEach(d=>arr.push(d));
+    const un = col(cat).orderBy("start","asc").onSnapshot(snap=>{
+      const arr = []; snap.forEach(d=>arr.push(d));
       renderList(cat, arr);
     }, err=>{
       console.error("listener error:", err);
@@ -137,25 +196,16 @@ function startListen(){
     });
     listeners.push(un);
   });
-
-  // 전달 사항 리스너
-  listenNotices();
 }
 function stopListen(){
   listeners.forEach(u=>u&&u()); listeners = [];
 }
 
-/********************  6) 로그인 UI  ********************/
+// ===== 7) 로그인 UI =====
 const loginBtn  = $("#loginBtn");
 const logoutBtn = $("#logoutBtn");
 loginBtn.onclick  = ()=> auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
 logoutBtn.onclick = ()=> auth.signOut();
-
-function setAdminVisible(isAdmin){
-  $$(".add-row").forEach(r=> r.style.display = isAdmin ? "" : "none");
-  const noticeAdd = $("#noticeAddRow");
-  if (noticeAdd) noticeAdd.style.display = isAdmin ? "" : "none";
-}
 
 auth.onAuthStateChanged(u=>{
   currentUser = u || null;
@@ -163,11 +213,18 @@ auth.onAuthStateChanged(u=>{
   logoutBtn.style.display = u ? "" : "none";
   setAdminVisible(!!u && u.uid===ADMIN_UID);
   bindAddRows();
+  bindNoticeAdd();
+  bindNoticeToggle();
   startListen();
-  bindNoticeToggle();   // 스위치 상태 반영
 });
 
-/********************  7) 추가폼(과제/시험/수행)  ********************/
+// 관리자만 추가폼/버튼 보이기
+function setAdminVisible(isAdmin){
+  $$(".add-row").forEach(r=> r.style.display = isAdmin ? "" : "none");
+  $("#noticeAddRow").style.display = isAdmin ? "" : "none";
+}
+
+// ===== 8) 추가폼 바인딩 & 저장 =====
 function bindAddRows(){
   $$(".add-row").forEach(row=>{
     const btn = $(".add", row);
@@ -185,11 +242,13 @@ function bindAddRows(){
       const detail= $(".detail",row).value;
 
       if(!subj || !start){ alert("과목/날짜는 필수입니다."); return; }
+
       try{
-        await taskCol(cat).add({
+        await col(cat).add({
           subj, text, start, end, pStart, pEnd, detail,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        // 입력값 초기화
         $(".subj", row).value = "";
         $(".text", row).value = "";
         $(".date", row).value = "";
@@ -205,7 +264,46 @@ function bindAddRows(){
   });
 }
 
-/********************  8) 수정/삭제(과제/시험/수행)  ********************/
+// 전달사항 추가
+function bindNoticeAdd(){
+  const btn = $("#nAddBtn");
+  if(!btn) return;
+  btn.onclick = async ()=>{
+    if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 추가할 수 있습니다."); return; }
+    const title = $("#nTitle").value.trim();
+    const kind  = $("#nKind").value;
+    const body  = $("#nBody").value;
+
+    if(!title){ alert("제목을 입력하세요."); return; }
+    try{
+      await noticesCol().add({
+        title, kind, body,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      $("#nTitle").value = "";
+      $("#nBody").value  = "";
+    }catch(e){
+      console.error(e);
+      alert("추가 실패: "+e.message);
+    }
+  };
+}
+
+// 전달사항 ON/OFF
+function bindNoticeToggle(){
+  const t = $("#noticeToggle");
+  if(!t) return;
+  t.onchange = async ()=>{
+    try{
+      await settingsDoc().set({ showNotice: t.checked }, { merge: true });
+    }catch(e){
+      console.error(e);
+      alert("설정 저장 실패: "+e.message);
+    }
+  };
+}
+
+// ===== 9) 수정/삭제 =====
 let editCtx = {cat:null, id:null};
 const modal   = $("#editModal");
 const mSubj   = $("#mSubj");
@@ -217,10 +315,10 @@ const mPEnd   = $("#mPEnd");
 const mDetail = $("#mDetail");
 const mSave   = $("#mSave");
 
-window.openEdit = (cat, id)=>{
+function openEdit(cat, id){
   if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 수정할 수 있습니다."); return; }
   editCtx = {cat, id};
-  taskCol(cat).doc(id).get().then(snap=>{
+  col(cat).doc(id).get().then(snap=>{
     const it = snap.data();
     mSubj.value   = it.subj || "";
     mText.value   = it.text || "";
@@ -231,9 +329,11 @@ window.openEdit = (cat, id)=>{
     mDetail.value = it.detail || "";
     modal.classList.remove("hidden");
   });
-};
-window.closeEdit = ()=>{ modal.classList.add("hidden"); editCtx={cat:null,id:null}; };
-
+}
+function closeEdit(){
+  modal.classList.add("hidden");
+  editCtx = {cat:null, id:null};
+}
 mSave.onclick = async ()=>{
   if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 수정할 수 있습니다."); return; }
   const {cat,id} = editCtx; if(!cat||!id) return;
@@ -247,168 +347,69 @@ mSave.onclick = async ()=>{
     detail:mDetail.value
   };
   try{
-    await taskCol(cat).doc(id).update(payload);
+    await col(cat).doc(id).update(payload);
     closeEdit();
   }catch(e){
     alert("수정 실패: "+e.message);
   }
 };
-
-window.doDelete = async (cat, id)=>{
+async function doDelete(cat, id){
   if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 삭제할 수 있습니다."); return; }
   if(!confirm("정말 삭제할까요?")) return;
-  try{ await taskCol(cat).doc(id).delete(); }
-  catch(e){ alert("삭제 실패: "+e.message); }
-};
+  try{
+    await col(cat).doc(id).delete();
+  }catch(e){
+    alert("삭제 실패: "+e.message);
+  }
+}
 
-/********************  9) 전달 사항(announces)  ********************/
-const $noticeList = $("#notice_list");
-const noticeModal = $("#noticeModal");
+// 전달 사항 수정
+let nEditId = null;
+const nModal = $("#noticeModal");
 const nmTitle = $("#nmTitle");
-const nmBody  = $("#nmBody");
 const nmKind  = $("#nmKind");
+const nmBody  = $("#nmBody");
 const nmSave  = $("#nmSave");
-let noticeEditId = null;
-
-// 요일표기 + 날짜(공지일) "YYYY-MM-DD (요일)"
-function weekdayKR(d){ return ["일","월","화","수","목","금","토"][d.getDay()]; }
-function fmtDateKR(ts){
-  if (!ts) return "";
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,"0");
-  const dd= String(d.getDate()).padStart(2,"0");
-  return `${y}-${m}-${dd} (${weekdayKR(d)})`;
-}
-
-function renderNotices(docs){
-  if (!$noticeList) return;
-  if (!docs.length){
-    $noticeList.innerHTML = `<li class="notice-card kind-info"><div>등록된 전달 사항이 없습니다.</div></li>`;
-    return;
-  }
-  $noticeList.innerHTML = docs.map(d=>{
-    const n = d.data();
-    const kindClass =
-      n.kind==="notice" ? "kind-notice" :
-      n.kind==="alert"  ? "kind-alert"  : "kind-info";
-    const title = n.title || "";
-    const body  = (n.body || "").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-    const date  = fmtDateKR(n.createdAt || n.date || n._createdAt);
-
-    return `
-      <li class="notice-card ${kindClass}">
-        <div class="notice-title">[${n.kind==="notice"?"공지":n.kind==="alert"?"알림":"안내"}] ${title}</div>
-        <div class="body" style="white-space:pre-wrap;margin-top:6px">${body}</div>
-        <div class="notice-meta" style="margin-top:10px">게시일: ${date}</div>
-        ${currentUser?.uid===ADMIN_UID?`
-        <div class="card-actions">
-          <button class="btn" onclick="openNoticeEdit('${d.id}')">수정</button>
-          <button class="btn" onclick="deleteNotice('${d.id}')">삭제</button>
-        </div>`:""}
-      </li>`;
-  }).join("");
-}
-
-let unNotice = null;
-function listenNotices(){
-  if (unNotice){ unNotice(); unNotice=null; }
-  unNotice = noticesCol()
-    .orderBy("createdAt","desc")
-    .onSnapshot(snap=>{
-      const arr=[]; snap.forEach(doc=>arr.push(doc));
-      renderNotices(arr);
-    }, err=>{
-      console.error(err);
-      alert("전달 사항 목록을 불러오지 못했습니다: "+err.message);
-    });
-}
-
-// 추가
-const nTitle = $("#nTitle");
-const nBody  = $("#nBody");
-const nKind  = $("#nKind");
-const nAddBtn= $("#nAddBtn");
-if (nAddBtn){
-  nAddBtn.onclick = async ()=>{
-    if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 추가할 수 있습니다."); return; }
-    const title = (nTitle.value||"").trim();
-    const body  = (nBody.value||"").trim();
-    const kind  = nKind.value || "info";
-    if(!title){ alert("제목을 입력해 주세요."); return; }
-    try{
-      await noticesCol().add({
-        title, body, kind,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      nTitle.value=""; nBody.value=""; nKind.value="info";
-    }catch(e){
-      console.error(e); alert("추가 실패: "+e.message);
-    }
-  };
-}
-
-// 수정
-window.openNoticeEdit = async (id)=>{
+function openNoticeEdit(id){
   if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 수정할 수 있습니다."); return; }
-  noticeEditId = id;
-  const snap = await noticesCol().doc(id).get();
-  const n = snap.data();
-  nmTitle.value = n.title || "";
-  nmBody.value  = n.body  || "";
-  nmKind.value  = n.kind  || "info";
-  noticeModal.classList.remove("hidden");
-};
-window.closeNoticeEdit = ()=>{ noticeModal.classList.add("hidden"); noticeEditId=null; };
-
-if(nmSave){
-  nmSave.onclick = async ()=>{
-    if(!noticeEditId) return;
-    try{
-      await noticesCol().doc(noticeEditId).update({
-        title: nmTitle.value.trim(),
-        body : nmBody.value.trim(),
-        kind : nmKind.value
-      });
-      closeNoticeEdit();
-    }catch(e){ console.error(e); alert("수정 실패: "+e.message); }
-  };
-}
-
-// 삭제
-window.deleteNotice = async (id)=>{
-  if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 삭제할 수 있습니다."); return; }
-  if(!confirm("정말 삭제할까요?")) return;
-  try{ await noticesCol().doc(id).delete(); }
-  catch(e){ console.error(e); alert("삭제 실패: "+e.message); }
-};
-
-/********************  10) 전달 사항 ON/OFF (settings/app)  ********************/
-const noticeToggle = $("#noticeToggle");
-const noticeBody   = $("#noticeBody");
-
-function bindNoticeToggle(){
-  // 읽기
-  settingsDoc().get().then(s=>{
-    const show = s.exists ? !!s.data().showNotice : true;
-    noticeToggle.checked = show;
-    noticeBody.style.display = show ? "" : "none";
+  nEditId = id;
+  noticesCol().doc(id).get().then(s=>{
+    const it = s.data();
+    nmTitle.value = it.title || "";
+    nmKind.value  = it.kind  || "notice";
+    nmBody.value  = it.body  || "";
+    nModal.classList.remove("hidden");
   });
-  // 쓰기
-  if (noticeToggle) {
-    noticeToggle.onchange = async ()=>{
-      const show = !!noticeToggle.checked;
-      noticeBody.style.display = show ? "" : "none";
-      try{
-        await settingsDoc().set({ showNotice: show }, { merge:true });
-      }catch(e){
-        console.error(e);
-        alert("설정 저장 실패: "+e.message);
-      }
-    };
+}
+function closeNoticeEdit(){
+  nModal.classList.add("hidden");
+  nEditId = null;
+}
+nmSave.onclick = async ()=>{
+  if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 수정할 수 있습니다."); return; }
+  if(!nEditId) return;
+  try{
+    await noticesCol().doc(nEditId).update({
+      title: nmTitle.value.trim(),
+      kind:  nmKind.value,
+      body:  nmBody.value
+    });
+    closeNoticeEdit();
+  }catch(e){
+    alert("수정 실패: "+e.message);
+  }
+};
+async function deleteNotice(id){
+  if(currentUser?.uid !== ADMIN_UID){ alert("관리자만 삭제할 수 있습니다."); return; }
+  if(!confirm("삭제할까요?")) return;
+  try{
+    await noticesCol().doc(id).delete();
+  }catch(e){
+    alert("삭제 실패: "+e.message);
   }
 }
 
-/********************  (선택) 자동 새로고침 비활성
-// setInterval(()=> location.reload(), 60_000);
-************************************************************/
+// ===== 10) 유틸 =====
+function escapeHTML(s){
+  return (s||"").replace(/[&<>"]/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[m]));
+}
