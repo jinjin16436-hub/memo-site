@@ -71,7 +71,7 @@ html, body{
 
 .task-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .task{
-  /* 본문 테두리 제거(요청사항) */
+  /* 본문 테두리 제거(요청사항)  */
   border:0;
   border-radius:12px;background:#0f1824;
   padding:14px 16px;
