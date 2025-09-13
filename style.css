@@ -136,3 +136,40 @@ input:checked + .slider:before{transform:translateX(24px)}
   border: none;
 }
 
+/* ===== 입력 폼 스타일 개선 ===== */
+.input, .select, textarea {
+  background: #1a2535;             /* 어두운 배경 */
+  border: 1px solid var(--border); /* 기존 경계색 */
+  color: var(--text);              /* 글자색 */
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+/* 포커스(클릭)했을 때 효과 */
+.input:focus, .select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.4);
+  background: #202c3d;
+}
+
+/* select (드롭다운) 화살표도 다크 스타일 */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23cfd6de' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  padding-right: 32px;
+}
+
+/* textarea 줄바꿈 영역 */
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.6;
+}
