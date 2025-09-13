@@ -86,7 +86,7 @@ body{
 }
 .card-actions{margin-top:10px;display:flex;gap:8px}
 
-/* D- day 배지 */
+/* D-day 배지 */
 .dday{display:inline-block;font-weight:700;font-size:12px;padding:3px 10px;border-radius:999px;margin-left:6px}
 .dday.red{background:#ef4444;color:#fff}
 .dday.orange{background:#f59e0b;color:#1b1b1b}
