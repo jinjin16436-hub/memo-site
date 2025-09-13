@@ -1,4 +1,4 @@
-// ===== 0) Firebase 초기화 =====
+// ===== 0) Firebase 초기화  =====
 const firebaseConfig = {
   // ⚠️ 여기 본인 프로젝트 키로 교체하세요 (GitHub 공개 저장소면 .env/비공개 처리 권장)
   apiKey: "AIzaSyBbThwhLWHJz8mBHGvhpWOL88cP9C7Nxio",
