@@ -299,8 +299,8 @@ function renderNotices(docs){
     return `
       <li class="notice-card ${kindClass}">
         <div class="notice-title">[${n.kind==="notice"?"공지":n.kind==="alert"?"알림":"안내"}] ${title}</div>
-        <div class="body" style="white-space:pre-wrap;margin-top:6px">게시일: ${body}</div>
-        <div class="notice-meta" style="margin-top:10px">${date}</div>
+        <div class="body" style="white-space:pre-wrap;margin-top:6px">${body}</div>
+        <div class="notice-meta" style="margin-top:10px">게시일: ${date}</div>
         ${currentUser?.uid===ADMIN_UID?`
         <div class="card-actions">
           <button class="btn" onclick="openNoticeEdit('${d.id}')">수정</button>
