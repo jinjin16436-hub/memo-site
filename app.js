@@ -12,7 +12,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-/********************  1) 상수/DOM 헬퍼  ********************/
+/********************  1) 상수 / DOM 헬퍼  ********************/
 const ADMIN_UID  = "vv0bADtWdqQUnqFMy8k01dhO13t2"; // 관리자 UID
 
 const $  = (q, r=document)=>r.querySelector(q);
