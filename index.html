@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>부광고 1-1 숙제 & 수행평가</title>
 
-  <!-- Google Fonts: Noto Sans KR (400/500/700)  -->
+  <!-- Google Fonts: Noto Sans KR -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -30,7 +30,8 @@
         <span style="font-size:20px">📢</span>
         <span>중요 전달 사항</span>
       </div>
-      <!-- 꺼도 스위치는 계속 보이도록 별도 배치 -->
+
+      <!-- ON/OFF 스위치 (항상 보이도록 수정) -->
       <label class="switch">
         <input id="noticeToggle" type="checkbox">
         <span class="slider round"></span>
@@ -62,16 +63,16 @@
 
       <!-- 관리자 전용 추가 폼 -->
       <div class="add-row" data-cat="exam" style="display:none">
-        <input class="input subj" type="text" placeholder="과목" />
-        <input class="input text" type="text" placeholder="내용" />
-        <input class="input date"  type="date" />
-        <input class="input date2" type="date" />
-        <select class="select pStart">
+        <input class="subj" type="text" placeholder="과목" />
+        <input class="text" type="text" placeholder="내용" />
+        <input class="date"  type="date" />
+        <input class="date2" type="date" />
+        <select class="pStart">
           <option value="">시작 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
         </select>
-        <select class="select pEnd">
+        <select class="pEnd">
           <option value="">끝 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
@@ -89,16 +90,16 @@
       <ul id="list_perf" class="task-list"></ul>
 
       <div class="add-row" data-cat="perf" style="display:none">
-        <input class="input subj" type="text" placeholder="과목" />
-        <input class="input text" type="text" placeholder="내용" />
-        <input class="input date"  type="date" />
-        <input class="input date2" type="date" />
-        <select class="select pStart">
+        <input class="subj" type="text" placeholder="과목" />
+        <input class="text" type="text" placeholder="내용" />
+        <input class="date"  type="date" />
+        <input class="date2" type="date" />
+        <select class="pStart">
           <option value="">시작 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
         </select>
-        <select class="select pEnd">
+        <select class="pEnd">
           <option value="">끝 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
@@ -116,16 +117,16 @@
       <ul id="list_home" class="task-list"></ul>
 
       <div class="add-row" data-cat="home" style="display:none">
-        <input class="input subj" type="text" placeholder="과목" />
-        <input class="input text" type="text" placeholder="내용" />
-        <input class="input date"  type="date" />
-        <input class="input date2" type="date" />
-        <select class="select pStart">
+        <input class="subj" type="text" placeholder="과목" />
+        <input class="text" type="text" placeholder="내용" />
+        <input class="date"  type="date" />
+        <input class="date2" type="date" />
+        <select class="pStart">
           <option value="">시작 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
         </select>
-        <select class="select pEnd">
+        <select class="pEnd">
           <option value="">끝 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
