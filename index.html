@@ -30,15 +30,14 @@
         <span style="font-size:20px">📢</span>
         <span>중요 전달 사항</span>
       </div>
-
-      <!-- 항상 보이는 ON/OFF 스위치 (본문만 숨김) -->
+      <!-- 꺼도 스위치는 계속 보이도록 별도 배치 -->
       <label class="switch">
         <input id="noticeToggle" type="checkbox">
         <span class="slider round"></span>
       </label>
     </div>
 
-    <div id="noticeBody" class="section-body open">
+    <div class="section-body open">
       <!-- 관리자 전용 추가 폼 -->
       <div id="noticeAddRow" class="add-row col gap-8" style="display:none">
         <input id="nTitle" class="input subj" type="text" placeholder="제목" />
@@ -63,16 +62,16 @@
 
       <!-- 관리자 전용 추가 폼 -->
       <div class="add-row" data-cat="exam" style="display:none">
-        <input class="subj" type="text" placeholder="과목" />
-        <input class="text" type="text" placeholder="내용" />
-        <input class="date"  type="date" />
-        <input class="date2" type="date" />
-        <select class="pStart">
+        <input class="input subj" type="text" placeholder="과목" />
+        <input class="input text" type="text" placeholder="내용" />
+        <input class="input date"  type="date" />
+        <input class="input date2" type="date" />
+        <select class="select pStart">
           <option value="">시작 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
         </select>
-        <select class="pEnd">
+        <select class="select pEnd">
           <option value="">끝 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
@@ -90,16 +89,16 @@
       <ul id="list_perf" class="task-list"></ul>
 
       <div class="add-row" data-cat="perf" style="display:none">
-        <input class="subj" type="text" placeholder="과목" />
-        <input class="text" type="text" placeholder="내용" />
-        <input class="date"  type="date" />
-        <input class="date2" type="date" />
-        <select class="pStart">
+        <input class="input subj" type="text" placeholder="과목" />
+        <input class="input text" type="text" placeholder="내용" />
+        <input class="input date"  type="date" />
+        <input class="input date2" type="date" />
+        <select class="select pStart">
           <option value="">시작 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
         </select>
-        <select class="pEnd">
+        <select class="select pEnd">
           <option value="">끝 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
@@ -117,16 +116,16 @@
       <ul id="list_home" class="task-list"></ul>
 
       <div class="add-row" data-cat="home" style="display:none">
-        <input class="subj" type="text" placeholder="과목" />
-        <input class="text" type="text" placeholder="내용" />
-        <input class="date"  type="date" />
-        <input class="date2" type="date" />
-        <select class="pStart">
+        <input class="input subj" type="text" placeholder="과목" />
+        <input class="input text" type="text" placeholder="내용" />
+        <input class="input date"  type="date" />
+        <input class="input date2" type="date" />
+        <select class="select pStart">
           <option value="">시작 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
         </select>
-        <select class="pEnd">
+        <select class="select pEnd">
           <option value="">끝 교시</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
