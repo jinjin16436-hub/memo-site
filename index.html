@@ -1,15 +1,9 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>부광고 1-1 숙제 & 수행평가</title>
-
-  <!-- Google Fonts: Noto Sans KR  -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>숙제 & 수행평가</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -22,18 +16,15 @@
 </header>
 
 <main class="container">
-
   <!-- ===== 중요 전달 사항 ===== -->
-  <section id="sec_notice" class="sec">
+  <section class="sec">
     <div class="section-head row-between">
       <div class="row gap-8">
         <span style="font-size:20px">📢</span>
         <span>중요 전달 사항</span>
       </div>
-
-      <!-- ON/OFF 스위치 (항상 보이도록 수정) -->
       <label class="switch">
-        <input id="noticeToggle" type="checkbox">
+        <input id="noticeToggle" type="checkbox" />
         <span class="slider round"></span>
       </label>
     </div>
@@ -51,6 +42,7 @@
         <button id="nAddBtn" class="btn align-end">+ 추가</button>
       </div>
 
+      <!-- 전달 사항 목록 -->
       <ul id="notice_list" class="task-list" style="margin-top:8px"></ul>
     </div>
   </section>
@@ -60,21 +52,17 @@
     <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
     <div id="sec_exam" class="section-body open">
       <ul id="list_exam" class="task-list"></ul>
-
-      <!-- 관리자 전용 추가 폼 -->
       <div class="add-row" data-cat="exam" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
         <input class="date"  type="date" />
         <input class="date2" type="date" />
         <select class="pStart">
-          <option value="">시작 교시</option>
-          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option value="">시작 교시</option><option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
         </select>
         <select class="pEnd">
-          <option value="">끝 교시</option>
-          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option value="">끝 교시</option><option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
         </select>
         <textarea class="detail" rows="4" placeholder="상세 내용 (선택)"></textarea>
@@ -88,22 +76,13 @@
     <button class="section-head" onclick="toggleSection('sec_perf')">📝 수행평가 ▾</button>
     <div id="sec_perf" class="section-body open">
       <ul id="list_perf" class="task-list"></ul>
-
       <div class="add-row" data-cat="perf" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
         <input class="date"  type="date" />
         <input class="date2" type="date" />
-        <select class="pStart">
-          <option value="">시작 교시</option>
-          <option>1</option><option>2</option><option>3</option><option>4</option>
-          <option>5</option><option>6</option><option>7</option><option>8</option>
-        </select>
-        <select class="pEnd">
-          <option value="">끝 교시</option>
-          <option>1</option><option>2</option><option>3</option><option>4</option>
-          <option>5</option><option>6</option><option>7</option><option>8</option>
-        </select>
+        <select class="pStart"><option value="">시작 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+        <select class="pEnd"><option value="">끝 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
         <textarea class="detail" rows="4" placeholder="상세 내용 (선택)"></textarea>
         <button class="btn add align-end">+ 추가</button>
       </div>
@@ -115,22 +94,13 @@
     <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
     <div id="sec_home" class="section-body open">
       <ul id="list_home" class="task-list"></ul>
-
       <div class="add-row" data-cat="home" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
         <input class="date"  type="date" />
         <input class="date2" type="date" />
-        <select class="pStart">
-          <option value="">시작 교시</option>
-          <option>1</option><option>2</option><option>3</option><option>4</option>
-          <option>5</option><option>6</option><option>7</option><option>8</option>
-        </select>
-        <select class="pEnd">
-          <option value="">끝 교시</option>
-          <option>1</option><option>2</option><option>3</option><option>4</option>
-          <option>5</option><option>6</option><option>7</option><option>8</option>
-        </select>
+        <select class="pStart"><option value="">시작 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+        <select class="pEnd"><option value="">끝 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
         <textarea class="detail" rows="4" placeholder="상세 내용 (선택)"></textarea>
         <button class="btn add align-end">+ 추가</button>
       </div>
@@ -149,16 +119,8 @@
       <input id="mEnd" class="input" type="date" />
     </div>
     <div class="row gap-8">
-      <select id="mPStart" class="select">
-        <option value="">시작 교시</option>
-        <option>1</option><option>2</option><option>3</option><option>4</option>
-        <option>5</option><option>6</option><option>7</option><option>8</option>
-      </select>
-      <select id="mPEnd" class="select">
-        <option value="">끝 교시</option>
-        <option>1</option><option>2</option><option>3</option><option>4</option>
-        <option>5</option><option>6</option><option>7</option><option>8</option>
-      </select>
+      <select id="mPStart" class="select"><option value="">시작 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+      <select id="mPEnd" class="select"><option value="">끝 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
     </div>
     <textarea id="mDetail" class="detail" rows="6" placeholder="상세 내용 (줄바꿈)"></textarea>
     <div class="modal__actions">
@@ -168,30 +130,7 @@
   </div>
 </div>
 
-<!-- ===== 전달 사항 수정 모달 ===== -->
-<div id="noticeModal" class="modal hidden">
-  <div class="modal__body">
-    <h3>전달 사항 수정</h3>
-    <input id="nmTitle" class="input" placeholder="제목" />
-    <select id="nmKind" class="select" style="margin-top:8px">
-      <option value="notice">공지(빨강)</option>
-      <option value="info">안내(노랑)</option>
-      <option value="alert">알림(초록)</option>
-    </select>
-    <textarea id="nmBody" class="detail" rows="6" placeholder="상세 내용 (줄바꿈)"></textarea>
-    <div class="modal__actions">
-      <button id="nmSave" class="btn">저장</button>
-      <button id="nmClose" class="btn" onclick="closeNoticeEdit()">취소</button>
-    </div>
-  </div>
-</div>
-
-<!-- Firebase (compat) -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-<!-- App -->
-<script src="app.js"></script>
+<!-- ✅ 모듈로 로드 -->
+<script type="module" src="./app.js"></script>
 </body>
 </html>
