@@ -1,5 +1,5 @@
 /* ===============================
-   app.js  (Firebase compat v9)
+   app.js (Firebase compat v9)
    =============================== */
 
 if (!window.ENV || !window.ENV.FIREBASE) {
@@ -35,7 +35,7 @@ const lists = {
   home: document.getElementById('list_home'),
 };
 
-// 섹션별 관리자 입력 폼 컨테이너
+// 섹션별 관리자 입력 폼
 const addRows = Array.from(document.querySelectorAll('.add-row[data-cat]'));
 
 // 헤더에 로그인 정보 표시용
@@ -49,7 +49,7 @@ function isAdminUser(user){
   if (!user) return false;
   return (ADMIN_UIDS.includes(user.uid)) || (user.email && ADMIN_EMAILS.includes(user.email));
 }
-// 'YYYY-MM-DD' 또는 Timestamp → 'YYYY-MM-DD (월)'로
+// 날짜 포맷 (YYYY-MM-DD (요일))
 function fmtDateK(d) {
   if (!d) return '';
   let dt;
@@ -105,7 +105,7 @@ auth.onAuthStateChanged(async (user)=>{
   if (loginBtn)  loginBtn.style.display  = user ? 'none' : '';
   if (logoutBtn) logoutBtn.style.display = user ? '' : 'none';
 
-  // 관리자에게만 추가 폼 보이기
+  // 관리자만 입력폼 보이기
   addRows.forEach(row => row.style.display = admin ? 'grid' : 'none');
   if (noticeAddRow) noticeAddRow.style.display = admin ? 'grid' : 'none';
 
@@ -216,8 +216,6 @@ if (noticeToggle) {
 }
 
 /* ====== 시험/수행/숙제 ====== */
-/* 저장 필드: subj(과목) text(내용) detail(상세) date(YYYY-MM-DD) dateAt(Timestamp) createdAt/updatedAt */
-
 function renderTaskList(cat, docs){
   const ul = lists[cat]; if (!ul) return;
   ul.innerHTML = '';
@@ -228,8 +226,8 @@ function renderTaskList(cat, docs){
 
     // 표시 순서: 과목 → 내용 → 상세 → 날짜(요일)
     const subjLine   = el('div','title', it.subj || '(과목 없음)');
-    const contentLine= el('div','meta', it.text || '');
-    const detail     = it.detail ? el('pre', null, it.detail) : null;
+    const contentLine= el('div','content', it.text || '');
+    const detail     = it.detail ? el('pre','detail', it.detail) : null;
     const whenStr    = it.date ? fmtDateK(it.date) : (it.dateAt ? fmtDateK(it.dateAt) : '');
     const dateLine   = whenStr ? el('div','meta', whenStr) : null;
 
@@ -286,7 +284,6 @@ function renderTaskList(cat, docs){
 }
 
 function listenTask(cat){
-  // 필요하면 dateAt 기준 정렬로 바꿔도 됨: orderBy('dateAt','asc')
   colTask(cat).orderBy('createdAt','asc').onSnapshot(
     (snap)=>{
       const arr=[]; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
@@ -299,7 +296,7 @@ function listenTask(cat){
 // 섹션 입력폼 “+추가” 동작 연결
 function wireAddButtons(){
   addRows.forEach(row=>{
-    const cat = row.getAttribute('data-cat'); // exam/perf/home
+    const cat = row.getAttribute('data-cat');
     const subjEl   = $('.subj', row);
     const textEl   = $('.text', row);
     const dateEl   = $('.date', row);
@@ -322,8 +319,8 @@ function wireAddButtons(){
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
       if (dateStr) {
-        payload.date   = dateStr;                    // 'YYYY-MM-DD'
-        payload.dateAt = toTsFromDateInput(dateStr); // Timestamp
+        payload.date   = dateStr;
+        payload.dateAt = toTsFromDateInput(dateStr);
       }
 
       try{
