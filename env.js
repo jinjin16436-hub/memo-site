@@ -1,6 +1,6 @@
 // env.js
 window.ENV = {
-  // ✅ Firebase Web App 설정 (네가 준 값 그대로)
+  // Firebase Web App 설정 (요청한 값 그대로)
   FIREBASE: {
     apiKey: "AIzaSyA10dRuTxDs0Ymz0AC1hf7dhn678n4SVs4",
     authDomain: "my-memo-site.firebaseapp.com",
@@ -10,14 +10,10 @@ window.ENV = {
     appId: "1:196036694705:web:8988d12919420130464890"
   },
 
-  // ✅ 읽기 전용 데이터 주인 UID
+  // 읽기 전용 데이터 주인 UID
   PUBLIC_UID: "vv0bADtWdqQUnqFMy8k01dhO13t2",
 
-  // ✅ 관리자 계정 (UID 또는 이메일로 판정)
-  ADMIN_UIDS: [
-    "vv0bADtWdqQUnqFMy8k01dhO13t2"   // 여기에 실제 관리자 UID 추가
-  ],
-  ADMIN_EMAILS: [
-    "jinjin16436@gmail.com"            // 필요하면 관리자 이메일 추가
-  ]
+  // 관리자 식별 (여러 명 가능)
+  ADMIN_UIDS: ["vv0bADtWdqQUnqFMy8k01dhO13t2"],
+  ADMIN_EMAILS: [""] // 필요 없으면 비워도 됨
 };
