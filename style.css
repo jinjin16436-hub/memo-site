@@ -1,53 +1,55 @@
-/* ===== 색 / 변수 ===== */
 :root{
-  --bg:#0b1220;          /* 페이지 배경 */
-  --card:#0f1720;        /* 카드/섹션 배경 */
-  --border:#223041;      /* 경계선 */
-  --text:#e6edf3;        /* 본문 */
-  --muted:#9aa6b2;       /* 보조 텍스트 */
-  --blue:#5882ff;
+  --bg:#0f1620;
+  --card:#121a25;
+  --muted:#8ea3b0;
+  --text:#e6edf3;
+  --blue:#3b82f6;
   --red:#ef4444;
-  --yellow:#fde047;
+  --orange:#f59e0b;
+  --yellow:#eab308;
   --green:#22c55e;
-  --input-bg:#0f1625;    /* 입력 배경 */
+  --gray:#6b7280;
+  --border:#223041;
+
+  /* 가독성 상향 */
+  --fg-strong:#e9ecf1;
+  --fg-base:#cfd6de;
+  --fg-dim:#9aa6b2;
+  --card-bg:#0f1720;
+  --page-bg:#0b1220;
 }
 
-/* ===== 기본 ===== */
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
   margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Noto Sans KR", system-ui, -apple-system, "Segoe UI",
-              Roboto, "Helvetica Neue", Arial, "Apple SD Gothic Neo",
-              "Malgun Gothic", "맑은 고딕", "Noto Sans", sans-serif;
+  color:var(--fg-base);
+  background:var(--page-bg);
+  font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",
+    Roboto,"Helvetica Neue",Arial,"Apple SD Gothic Neo",
+    "Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
   line-height:1.6;
 }
 
-/* ===== 레이아웃 ===== */
 .container{max-width:1100px;margin:24px auto;padding:0 16px}
-
 .topbar{
   position:sticky;top:0;z-index:3;
-  background:rgba(11,18,32,.9);
-  backdrop-filter:saturate(180%) blur(8px);
+  background:rgba(15,22,32,.9);backdrop-filter:saturate(180%) blur(8px);
   border-bottom:1px solid var(--border);
   padding:12px 16px;
-  display:flex;align-items:center;justify-content:space-between
+  display:flex;align-items:center;justify-content:space-between;
 }
 .topbar h1{margin:0;font-size:20px}
 .auth .btn{margin-left:8px}
 
-/* ===== 섹션 ===== */
 .sec{margin:20px 0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--card)}
 .section-head{
   width:100%;text-align:left;
   background:rgba(255,255,255,0.03);
   border-bottom:1px dashed var(--border);
-  padding:14px 16px;font-weight:700;
+  padding:14px 16px;font-weight:700;color:var(--fg-strong);
   display:flex;align-items:center;gap:8px
 }
 .section-body{padding:16px}
@@ -57,93 +59,49 @@ body{
 .gap-8{gap:8px}
 .align-end{align-self:flex-end}
 
-/* ===== 추가 폼 ===== */
 .add-row{
-  display:grid;
-  grid-template-columns:1fr 1fr 160px 160px 130px 130px;
-  gap:8px;
-  background:rgba(255,255,255,.02);
-  border:1px dashed var(--border);
-  padding:12px;border-radius:12px;margin-top:12px
+  display:grid;grid-template-columns:1fr 1fr 160px 160px 130px 130px;gap:8px;
+  background:rgba(255,255,255,.02);border:1px dashed var(--border);padding:12px;border-radius:12px;margin-top:12px
 }
 .add-row textarea{grid-column:1/-1}
 .add-row .btn.add{grid-column:1/-1;justify-self:end}
 
-/* 작은 화면에서 버튼 잘림 방지 */
-@media (max-width: 720px){
-  .add-row{grid-template-columns:1fr}
-  .add-row .btn.add{justify-self:stretch}
-}
-
-/* ===== 폼/버튼 ===== */
 .input,.select,.btn,textarea{
-  border:1px solid var(--border);
-  background:var(--input-bg);
-  color:var(--text);
-  border-radius:10px;
-  padding:10px 12px;
-  font-size:14px;
+  border:1px solid var(--border);background:#0e1520;color:var(--text);
+  border-radius:10px;padding:10px 12px;font-size:14px
 }
 .select{padding:9px 10px}
-textarea{resize:vertical}
-.btn{
-  cursor:pointer;
-  background:rgba(88,130,255,0.15);
-  border:1px solid rgba(88,130,255,0.25)
-}
-.btn:hover{background:rgba(88,130,255,0.25)}
+.btn{cursor:pointer;background:#1e293b;border-color:#2b3a52}
+.btn:hover{background:#263547}
 .btn:active{transform:translateY(1px)}
 
-/* ===== 리스트/카드 ===== */
 .task-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .task{
-  border:1px solid var(--border);
-  border-radius:12px;background:#0f1722;
-  padding:14px 16px
+  border:1px solid var(--border);border-radius:12px;background:#0f1722;
+  padding:14px 16px;
 }
 .task .meta{color:var(--muted);margin-top:6px}
-.task__main > .title,
-.task__main > div:first-child{
-  color:var(--text);font-weight:700;font-size:1.05rem
+.task pre{
+  margin:10px 0 0;white-space:pre-wrap;word-break:break-word;background:transparent;color:var(--text);padding:0
 }
 
-/* 상세 내용(pre) 폰트/크기 변경 (가독성 높게) */
-.task pre,
-.notice-card pre{
-  font-family: "Noto Sans KR", system-ui, -apple-system, "Segoe UI",
-               Roboto, "Helvetica Neue", Arial, "Apple SD Gothic Neo",
-               "Malgun Gothic", "맑은 고딕", "Noto Sans", sans-serif;
-  font-size: 0.95rem;
-  line-height: 1.8;
-  color: var(--text);
-  white-space: pre-wrap;
-  word-break: break-word;
-  background: transparent;
-  padding: 0;
-  border: none;
-  margin: 10px 0 0;
-}
-
-/* 액션 버튼 묶음 */
-.card-actions{margin-top:10px;display:flex;gap:8px}
-
-/* ===== D-day 배지 ===== */
+/* D-day badge */
 .dday{display:inline-block;font-weight:700;font-size:12px;padding:3px 10px;border-radius:999px;margin-left:6px}
-.dday.red{    background:#ef4444;color:#fff}
-.dday.orange{ background:#f59e0b;color:#1b1b1b}
-.dday.yellow{ background:#fde047;color:#1b1b1b}
-.dday.green{  background:#22c55e;color:#0b1720}
-.dday.gray{   background:#64748b;color:#fff}
+.dday.red{background:#ef4444;color:#fff}
+.dday.orange{background:#f59e0b;color:#1b1b1b}
+.dday.yellow{background:#fde047;color:#1b1b1b}
+.dday.green{background:#22c55e;color:#0b1720}
+.dday.gray{background:#64748b;color:#fff}
 
-/* ===== 전달사항 카드 ===== */
+/* 전달사항 카드 색 */
 .notice-card{border-radius:12px;border:1px solid var(--border);padding:14px 16px}
 .kind-notice{background:rgba(239,68,68,.12)}
-.kind-info{  background:rgba(234,179,8,.12)}
-.kind-alert{ background:rgba(34,197,94,.12)}
-.notice-title{font-weight:700}
+.kind-info{background:rgba(234,179,8,.12)}
+.kind-alert{background:rgba(34,197,94,.12)}
+.notice-title{font-weight:700;color:var(--fg-strong)}
 .notice-meta{color:var(--muted);font-size:13px;margin-top:6px}
 
-/* ===== 토글 스위치 ===== */
+/* toggle switch */
 .switch{position:relative;display:inline-block;width:54px;height:30px}
 .switch input{opacity:0;width:0;height:0}
 .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#3b556e;transition:.2s;border-radius:999px}
@@ -152,12 +110,14 @@ input:checked + .slider{background:#41b36a}
 input:checked + .slider:before{transform:translateX(24px)}
 .slider.round{border-radius:999px}
 
-/* ===== 모달 ===== */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:50}
-.modal.hidden{display:none}
-.modal__body{
-  background:#101826;border:1px solid var(--border);border-radius:14px;
-  min-width:320px;max-width:540px;width:92vw;padding:16px;
-  display:flex;flex-direction:column;gap:10px
+/* 상세내용(pre) 폰트/크기 */
+.task pre,
+.notice-card pre{
+  font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",
+    Roboto,"Helvetica Neue",Arial,"Apple SD Gothic Neo",
+    "Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;
+  font-size:0.95rem; line-height:1.8;
+  color:var(--text);
+  white-space:pre-wrap; word-break:break-word;
+  background:transparent; padding:0; border:none;
 }
-.modal__actions{display:flex;gap:8px;justify-content:flex-end}
