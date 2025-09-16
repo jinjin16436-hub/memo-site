@@ -59,17 +59,17 @@ body{
 .align-end{align-self:flex-end}
 
 .add-row{
-  display:grid;grid-template-columns:1fr 1fr 160px 160px 130px 130px;gap:8px;
-  background:rgba(255,255,255,.02);border:1px dashed var(--border);padding:12px;border-radius:12px;margin-top:12px
+  display:grid;grid-template-columns:1fr 1fr 180px;gap:8px;
+  background:rgba(255,255,255,.02);border:1px dashed var(--border);
+  padding:12px;border-radius:12px;margin-top:12px
 }
 .add-row textarea{grid-column:1/-1}
 .add-row .btn.add{grid-column:1/-1;justify-self:end}
 
-.input,.select,.btn,textarea{
+.input,.select,.btn,textarea,.date{
   border:1px solid var(--border);background:#0e1520;color:var(--text);
   border-radius:10px;padding:10px 12px;font-size:14px
 }
-.select{padding:9px 10px}
 .btn{cursor:pointer;background:#1e293b;border-color:#2b3a52}
 .btn:hover{background:#263547}
 .btn:active{transform:translateY(1px)}
@@ -79,18 +79,11 @@ body{
   border:1px solid var(--border);border-radius:12px;background:#0f1722;
   padding:14px 16px;
 }
+.task .title{font-weight:700;color:var(--fg-strong)}
 .task .meta{color:var(--muted);margin-top:6px}
 .task pre{
   margin:10px 0 0;white-space:pre-wrap;word-break:break-word;background:transparent;color:var(--text);padding:0
 }
-
-/* D-day badge */
-.dday{display:inline-block;font-weight:700;font-size:12px;padding:3px 10px;border-radius:999px;margin-left:6px}
-.dday.red{background:#ef4444;color:#fff}
-.dday.orange{background:#f59e0b;color:#1b1b1b}
-.dday.yellow{background:#fde047;color:#1b1b1b}
-.dday.green{background:#22c55e;color:#0b1720}
-.dday.gray{background:#64748b;color:#fff}
 
 /* 전달사항 카드 색 */
 .notice-card{border-radius:12px;border:1px solid var(--border);padding:14px 16px}
@@ -108,15 +101,3 @@ body{
 input:checked + .slider{background:#41b36a}
 input:checked + .slider:before{transform:translateX(24px)}
 .slider.round{border-radius:999px}
-
-/* 상세내용(pre) */
-.task pre,
-.notice-card pre{
-  font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",
-    Roboto,"Helvetica Neue",Arial,"Apple SD Gothic Neo",
-    "Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;
-  font-size:0.95rem; line-height:1.8;
-  color:var(--text);
-  white-space:pre-wrap; word-break:break-word;
-  background:transparent; padding:0; border:none;
-}
