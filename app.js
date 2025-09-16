@@ -1,5 +1,5 @@
 /* ===============================
-   app.js  (Firebase compat 버전)
+   app.js  (Firebase compat v9)
    =============================== */
 
 /* ====== 0) 환경값 체크 ====== */
@@ -13,30 +13,26 @@ const auth = firebase.auth();
 const db   = firebase.firestore();
 
 /* ====== 2) 상수/상태 ====== */
-const ADMIN_UID  = window.ENV.ADMIN_UID;    // 관리자 UID
-const PUBLIC_UID = window.ENV.PUBLIC_UID || ADMIN_UID; // 공개 읽기용 UID(없으면 관리자 UID 재사용)
+const ADMIN_UID  = window.ENV.ADMIN_UID;                        // 관리자 UID
+const PUBLIC_UID = window.ENV.PUBLIC_UID || window.ENV.ADMIN_UID; // 읽기 공개 UID
 
 let currentUser = null;
 let isAdmin     = false;
 
-/* ====== 3) DOM 캐시 ====== */
-// 공통
+/* ====== 3) DOM ====== */
 const loginBtn  = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 
-// ===== 전달 사항 =====
 const $noticeSection  = document.getElementById('sec_notice') || document.querySelector('#sec_notice, [data-sec="notice"]');
 const noticeToggle    = document.getElementById('noticeToggle');
 const noticeAddRow    = document.getElementById('noticeAddRow');
 const noticeList      = document.getElementById('notice_list');
 
-// 관리자 입력 폼(전달 사항)
 const nTitle   = document.getElementById('nTitle');
 const nKind    = document.getElementById('nKind');
 const nBody    = document.getElementById('nBody');
 const nAddBtn  = document.getElementById('nAddBtn');
 
-// ===== 각 카테고리 =====
 const lists = {
   exam: document.getElementById('list_exam'),
   perf: document.getElementById('list_perf'),
@@ -44,39 +40,33 @@ const lists = {
 };
 
 /* ====== 4) 유틸 ====== */
-function $(sel, root = document) {
-  return root.querySelector(sel);
-}
-function fmtDate(d) {
-  if (!d) return '';
-  const dt = d.toDate ? d.toDate() : new Date(d);
-  const y = dt.getFullYear();
-  const m = String(dt.getMonth() + 1).padStart(2, '0');
-  const day = String(dt.getDate()).padStart(2, '0');
-  const wNames = ['일', '월', '화', '수', '목', '금', '토'];
-  const w = wNames[dt.getDay()];
-  return `${y}-${m}-${day} (${w})`;
-}
+function $(sel, root = document) { return root.querySelector(sel); }
 function el(tag, cls, html) {
   const node = document.createElement(tag);
   if (cls) node.className = cls;
   if (html != null) node.innerHTML = html;
   return node;
 }
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = d.toDate ? d.toDate() : new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,'0');
+  const day = String(dt.getDate()).padStart(2,'0');
+  const w = ['일','월','화','수','목','금','토'][dt.getDay()];
+  return `${y}-${m}-${day} (${w})`;
+}
 
-/* ====== 5) Firestore Ref ====== */
-// 전달 사항 컬렉션: users/{uid}/notices
+/* ====== 5) Firestore 참조 ====== */
+// ✅ 전달 사항: users/{uid}/notices  (items 같은 하위 컬렉션 사용 금지!)
 function colNotices(uid = PUBLIC_UID) {
   return db.collection('users').doc(uid).collection('notices');
 }
-
-// tasks/{cat}/items: users/{uid}/tasks/{cat}/items
+// 과제: users/{uid}/tasks/{cat}/items
 function colTask(cat, uid = PUBLIC_UID) {
-  // ❗중요: 컬렉션/문서/컬렉션 순서로 체이닝
   return db.collection('users').doc(uid).collection('tasks').doc(cat).collection('items');
 }
-
-// 앱 설정: users/{uid}/settings/app (문서)
+// 앱 설정: users/{uid}/settings/app
 function docAppSettings(uid = ADMIN_UID) {
   return db.collection('users').doc(uid).collection('settings').doc('app');
 }
@@ -91,32 +81,24 @@ async function signIn() {
     alert('로그인 실패: ' + e.message);
   }
 }
-async function signOut() {
-  await auth.signOut();
-}
+async function signOut() { await auth.signOut(); }
 
 auth.onAuthStateChanged(async (user) => {
   currentUser = user || null;
   isAdmin = !!(currentUser && currentUser.uid === ADMIN_UID);
 
-  // 버튼 표시
   if (loginBtn)  loginBtn.style.display  = currentUser ? 'none' : '';
   if (logoutBtn) logoutBtn.style.display = currentUser ? '' : 'none';
-
-  // 전달 사항 입력폼(관리자만)
   if (noticeAddRow) noticeAddRow.style.display = isAdmin ? 'grid' : 'none';
 
-  // 설정 동기화
   await pullNoticeToggle();
-
-  // 리스너 시작
   startListeners();
 });
 
 if (loginBtn)  loginBtn.addEventListener('click', signIn);
 if (logoutBtn) logoutBtn.addEventListener('click', signOut);
 
-/* ====== 7) 전달 사항 (공지/안내/알림) ====== */
+/* ====== 7) 전달 사항 ====== */
 function renderNoticeList(items) {
   if (!noticeList) return;
   noticeList.innerHTML = '';
@@ -127,37 +109,31 @@ function renderNoticeList(items) {
     const title = el('div', 'notice-title', it.title || '(제목 없음)');
     const meta  = el('div', 'notice-meta', it.createdAt ? fmtDate(it.createdAt) : '');
     const pre   = el('pre', null, it.body || '');
-    li.appendChild(title);
-    li.appendChild(meta);
-    if (it.body) li.appendChild(pre);
+    li.append(title, meta);
+    if (it.body) li.append(pre);
 
     if (isAdmin) {
       const actions = el('div', 'card-actions');
       const btnDel = el('button', 'btn', '삭제');
       btnDel.addEventListener('click', async () => {
         if (!confirm('삭제할까요?')) return;
-        try {
-          await colNotices().doc(it.id).delete();
-        } catch (e) {
-          alert('삭제 실패: ' + e.message);
-        }
+        try { await colNotices().doc(it.id).delete(); }
+        catch (e) { alert('삭제 실패: ' + e.message); }
       });
       actions.appendChild(btnDel);
       li.appendChild(actions);
     }
-
     noticeList.appendChild(li);
   });
 }
 
 function listenNotices() {
-  // 최신순
   colNotices()
     .orderBy('createdAt', 'desc')
     .onSnapshot(
       (snap) => {
         const arr = [];
-        snap.forEach((doc) => arr.push({ id: doc.id, ...doc.data() }));
+        snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
         renderNoticeList(arr);
       },
       (err) => {
@@ -170,9 +146,8 @@ function listenNotices() {
 async function addNotice() {
   if (!isAdmin) return alert('관리자만 추가할 수 있습니다.');
   const title = (nTitle && nTitle.value.trim()) || '';
-  const kind  = (nKind && nKind.value) || 'notice'; // notice/info/alert
+  const kind  = (nKind && nKind.value) || 'notice';
   const body  = (nBody && nBody.value.trim()) || '';
-
   if (!title) return alert('제목을 입력하세요.');
 
   try {
@@ -196,22 +171,14 @@ async function pullNoticeToggle() {
     const snap = await docAppSettings().get();
     const show = snap.exists ? !!snap.data().showNotice : true;
     noticeToggle.checked = show;
-
-    // 섹션 show/hide
-    if ($noticeSection) {
-      $noticeSection.style.display = show ? '' : 'none';
-    }
-  } catch (e) {
-    console.error(e);
-  }
+    if ($noticeSection) $noticeSection.style.display = show ? '' : 'none';
+  } catch (e) { console.error(e); }
 }
 
 if (noticeToggle) {
   noticeToggle.addEventListener('change', async (e) => {
     const checked = !!e.target.checked;
-    // 관리자만 변경 가능
     if (!isAdmin) {
-      // 비관리자는 토글을 건드리지 못하게 되돌림
       await pullNoticeToggle();
       return alert('관리자만 변경할 수 있습니다.');
     }
@@ -233,45 +200,24 @@ function renderTaskList(cat, docs) {
 
   docs.forEach((it) => {
     const li = el('li', 'task');
-
-    // 상단 제목/디데이
     const head = el('div', 'task__main');
     const t1 = el('div', 'title', (it.subj || '(과목 없음)') + (it.text ? ` · ${it.text}` : ''));
-    head.appendChild(t1);
-
-    // 날짜 구간
-    const dateLine = el(
-      'div',
-      'meta',
-      (it.start ? fmtDate(it.start) : '') +
-        (it.end ? ' ~ ' + fmtDate(it.end) : '')
-    );
-    head.appendChild(dateLine);
-
-    // 상세
-    if (it.detail) {
-      const pre = el('pre', null, it.detail);
-      head.appendChild(pre);
-    }
-
+    const dateLine = el('div', 'meta', (it.start ? fmtDate(it.start) : '') + (it.end ? ' ~ ' + fmtDate(it.end) : ''));
+    head.append(t1, dateLine);
+    if (it.detail) head.append(el('pre', null, it.detail));
     li.appendChild(head);
 
-    // 관리자 버튼
     if (isAdmin) {
       const actions = el('div', 'card-actions');
       const delBtn  = el('button', 'btn', '삭제');
       delBtn.addEventListener('click', async () => {
         if (!confirm('삭제할까요?')) return;
-        try {
-          await colTask(cat).doc(it.id).delete();
-        } catch (e) {
-          alert('삭제 실패: ' + e.message);
-        }
+        try { await colTask(cat).doc(it.id).delete(); }
+        catch (e) { alert('삭제 실패: ' + e.message); }
       });
       actions.appendChild(delBtn);
       li.appendChild(actions);
     }
-
     ul.appendChild(li);
   });
 }
@@ -295,19 +241,14 @@ function listenTask(cat) {
 /* ====== 10) 리스너 시작 ====== */
 let started = false;
 function startListeners() {
-  if (started) return;
-  started = true;
-
-  // 전달 사항
+  if (started) return; started = true;
   listenNotices();
-
-  // 시험/수행/숙제
   listenTask('exam');
   listenTask('perf');
   listenTask('home');
 }
 
-/* ====== 11) (선택) 섹션 토글 버튼 ====== */
+/* ====== 11) 섹션 토글 ====== */
 window.toggleSection = function(id) {
   const box = document.getElementById(id);
   if (!box) return;
