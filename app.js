@@ -11,7 +11,7 @@ const auth = firebase.auth();
 const db   = firebase.firestore();
 
 /* ====== 관리자/공개 설정 ====== */
-const ADMIN_UIDS   = Array.isArray(window.ENV.ADMIN_UIDS) ? window.ENV.ADMIN_UIDS : [window.ENV.ADMIN_UID].filter(Boolean);
+const ADMIN_UIDS   = Array.isArray(window.ENV.ADMIN_UIDS) ? window.ENV.ADMIN_UIDS : [];
 const ADMIN_EMAILS = Array.isArray(window.ENV.ADMIN_EMAILS) ? window.ENV.ADMIN_EMAILS : [];
 const PUBLIC_UID   = window.ENV.PUBLIC_UID || (ADMIN_UIDS[0] ?? null);
 
@@ -35,24 +35,41 @@ const lists = {
   home: document.getElementById('list_home'),
 };
 
-/* 관리자용 입력 폼 컨테이너들 */
+// 섹션별 관리자 입력 폼 컨테이너
 const addRows = Array.from(document.querySelectorAll('.add-row[data-cat]'));
 
+// 헤더에 로그인 정보 표시용
 const userInfoBox = document.createElement('div');
 userInfoBox.className = 'muted';
 
 /* ====== 유틸 ====== */
 const $ = (s, r=document) => r.querySelector(s);
 const el = (t,c,h)=>{const n=document.createElement(t); if(c)n.className=c; if(h!=null)n.innerHTML=h; return n;};
-const fmtDate = (d)=>{ if(!d)return''; const dt=d.toDate?d.toDate():new Date(d);
-  const y=dt.getFullYear(), m=String(dt.getMonth()+1).padStart(2,'0'), day=String(dt.getDate()).padStart(2,'0');
-  const w=['일','월','화','수','목','금','토'][dt.getDay()]; return `${y}-${m}-${day} (${w})`;
-};
-const isAdminUser = (user)=>{
-  if(!user) return false;
-  return (ADMIN_UIDS && ADMIN_UIDS.includes(user.uid)) ||
-         (user.email && ADMIN_EMAILS && ADMIN_EMAILS.includes(user.email));
-};
+function isAdminUser(user){
+  if (!user) return false;
+  return (ADMIN_UIDS.includes(user.uid)) || (user.email && ADMIN_EMAILS.includes(user.email));
+}
+// 'YYYY-MM-DD' 또는 Timestamp → 'YYYY-MM-DD (월)'로
+function fmtDateK(d) {
+  if (!d) return '';
+  let dt;
+  if (d.toDate) dt = d.toDate();              // Firestore Timestamp
+  else if (typeof d === 'string') dt = new Date(d);
+  else dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return '';
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const day = String(dt.getDate()).padStart(2, '0');
+  const wk = ['일','월','화','수','목','금','토'][dt.getDay()];
+  return `${y}-${m}-${day} (${wk})`;
+}
+// date input → Firestore Timestamp
+function toTsFromDateInput(dateStr) {
+  if (!dateStr) return null;
+  const dt = new Date(dateStr + 'T00:00:00');
+  if (Number.isNaN(dt.getTime())) return null;
+  return firebase.firestore.Timestamp.fromDate(dt);
+}
 
 /* ====== Firestore refs ====== */
 // 공지: users/{uid}/notices
@@ -70,14 +87,13 @@ async function signIn(){
   }catch(e){ console.error(e); alert('로그인 실패: '+e.message); }
 }
 async function signOut(){ await auth.signOut(); }
-
 if (loginBtn)  loginBtn.addEventListener('click', signIn);
 if (logoutBtn) logoutBtn.addEventListener('click', signOut);
 
 auth.onAuthStateChanged(async (user)=>{
   const admin = isAdminUser(user);
 
-  // 헤더에 로그인 정보 표시
+  // 헤더에 현재 로그인 정보 표시
   const authBox = document.querySelector('.auth');
   if (authBox) {
     userInfoBox.textContent = user
@@ -89,7 +105,7 @@ auth.onAuthStateChanged(async (user)=>{
   if (loginBtn)  loginBtn.style.display  = user ? 'none' : '';
   if (logoutBtn) logoutBtn.style.display = user ? '' : 'none';
 
-  // ✅ 관리자에게만 각 섹션의 추가 폼 보이기
+  // 관리자에게만 추가 폼 보이기
   addRows.forEach(row => row.style.display = admin ? 'grid' : 'none');
   if (noticeAddRow) noticeAddRow.style.display = admin ? 'grid' : 'none';
 
@@ -108,7 +124,7 @@ function renderNoticeList(items){
   items.forEach((it)=>{
     const li    = el('li', 'notice-card ' + (it.kind?`kind-${it.kind}`:''));
     const title = el('div','notice-title', it.title || '(제목 없음)');
-    const meta  = el('div','notice-meta', it.createdAt ? fmtDate(it.createdAt) : '');
+    const meta  = el('div','notice-meta', it.createdAt ? fmtDateK(it.createdAt) : '');
     if (it.body) li.append(title, meta, el('pre', null, it.body));
     else li.append(title, meta);
 
@@ -200,7 +216,7 @@ if (noticeToggle) {
 }
 
 /* ====== 시험/수행/숙제 ====== */
-/* 저장 필드: subj(과목) text(내용) detail(상세 내용) day(요일 문자열) createdAt/updatedAt */
+/* 저장 필드: subj(과목) text(내용) detail(상세) date(YYYY-MM-DD) dateAt(Timestamp) createdAt/updatedAt */
 
 function renderTaskList(cat, docs){
   const ul = lists[cat]; if (!ul) return;
@@ -210,14 +226,18 @@ function renderTaskList(cat, docs){
   docs.forEach((it)=>{
     const li = el('li','task');
 
-    const head = el('div','task__main');
-    const titleLine = (it.subj || '(과목 없음)') + (it.text ? ` · ${it.text}` : '');
-    head.append(
-      el('div','title', titleLine),
-      el('div','meta', it.day ? `요일: ${it.day}` : '')
-    );
-    if (it.detail) head.append(el('pre', null, it.detail));
-    li.appendChild(head);
+    // 표시 순서: 과목 → 내용 → 상세 → 날짜(요일)
+    const subjLine   = el('div','title', it.subj || '(과목 없음)');
+    const contentLine= el('div','meta', it.text || '');
+    const detail     = it.detail ? el('pre', null, it.detail) : null;
+    const whenStr    = it.date ? fmtDateK(it.date) : (it.dateAt ? fmtDateK(it.dateAt) : '');
+    const dateLine   = whenStr ? el('div','meta', whenStr) : null;
+
+    const wrap = el('div','task__main');
+    wrap.append(subjLine, contentLine);
+    if (detail) wrap.append(detail);
+    if (dateLine) wrap.append(dateLine);
+    li.appendChild(wrap);
 
     if (admin) {
       const actions = el('div','card-actions');
@@ -225,21 +245,29 @@ function renderTaskList(cat, docs){
       const delBtn  = el('button','btn','삭제');
 
       editBtn.addEventListener('click', async ()=>{
-        const subj  = prompt('과목', it.subj || '') ?? it.subj;
-        const text  = prompt('내용', it.text || '') ?? it.text;
-        const day   = prompt('요일(월/화/수/목/금/토/일)', it.day || '') ?? it.day;
-        const detail= prompt('상세 내용', it.detail || '') ?? it.detail;
+        const subj   = prompt('과목', it.subj || '') ?? it.subj;
+        const text   = prompt('내용', it.text || '') ?? it.text;
+        const detail = prompt('상세 내용', it.detail || '') ?? it.detail;
+        const curDateStr = it.date
+          ? (typeof it.date === 'string' ? it.date : '')
+          : (it.dateAt && it.dateAt.toDate ? it.dateAt.toDate().toISOString().slice(0,10) : '');
+        const dateStr = prompt('날짜 (YYYY-MM-DD)', curDateStr) ?? curDateStr;
+
         try{
-          await colTask(cat).doc(it.id).set(
-            {
-              subj: (subj??'').trim(),
-              text: (text??'').trim(),
-              day:  (day??'').trim(),
-              detail: (detail??'').trim(),
-              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            },
-            { merge:true }
-          );
+          const payload = {
+            subj: (subj??'').trim(),
+            text: (text??'').trim(),
+            detail: (detail??'').trim(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          if (dateStr) {
+            payload.date   = dateStr.trim();
+            payload.dateAt = toTsFromDateInput(dateStr);
+          } else {
+            payload.date   = firebase.firestore.FieldValue.delete();
+            payload.dateAt = firebase.firestore.FieldValue.delete();
+          }
+          await colTask(cat).doc(it.id).set(payload, { merge:true });
         }catch(e){ alert('수정 실패: '+e.message); }
       });
 
@@ -258,6 +286,7 @@ function renderTaskList(cat, docs){
 }
 
 function listenTask(cat){
+  // 필요하면 dateAt 기준 정렬로 바꿔도 됨: orderBy('dateAt','asc')
   colTask(cat).orderBy('createdAt','asc').onSnapshot(
     (snap)=>{
       const arr=[]; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
@@ -267,35 +296,42 @@ function listenTask(cat){
   );
 }
 
-/* ✅ 섹션별 "추가" 버튼 동작: 과목/내용/상세/요일 저장 */
+// 섹션 입력폼 “+추가” 동작 연결
 function wireAddButtons(){
   addRows.forEach(row=>{
     const cat = row.getAttribute('data-cat'); // exam/perf/home
     const subjEl   = $('.subj', row);
     const textEl   = $('.text', row);
+    const dateEl   = $('.date', row);
     const detailEl = $('.detail', row);
-    const dowEl    = $('.dow', row);       // 요일 select
     const addBtn   = $('.add', row);
 
     if (!addBtn) return;
     addBtn.addEventListener('click', async ()=>{
       const user = auth.currentUser;
       if (!isAdminUser(user)) return alert('관리자만 추가할 수 있습니다.');
-      const subj  = (subjEl?.value ?? '').trim();
-      const text  = (textEl?.value ?? '').trim();
-      const detail= (detailEl?.value ?? '').trim();
-      const day   = (dowEl?.value ?? '').trim();
 
+      const subj   = (subjEl?.value ?? '').trim();
+      const text   = (textEl?.value ?? '').trim();
+      const detail = (detailEl?.value ?? '').trim();
+      const dateStr= (dateEl?.value ?? '').trim();
       if (!subj) return alert('과목을 입력하세요.');
+
+      const payload = {
+        subj, text, detail,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      if (dateStr) {
+        payload.date   = dateStr;                    // 'YYYY-MM-DD'
+        payload.dateAt = toTsFromDateInput(dateStr); // Timestamp
+      }
+
       try{
-        await colTask(cat).add({
-          subj, text, detail, day,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        await colTask(cat).add(payload);
         if (subjEl) subjEl.value = '';
         if (textEl) textEl.value = '';
         if (detailEl) detailEl.value = '';
-        if (dowEl) dowEl.value = '';
+        if (dateEl) dateEl.value = '';
       }catch(e){ console.error(e); alert('추가 실패: '+e.message); }
     });
   });
