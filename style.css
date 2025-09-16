@@ -11,7 +11,6 @@
   --gray:#6b7280;
   --border:#223041;
 
-  /* 가독성 상향 */
   --fg-strong:#e9ecf1;
   --fg-base:#cfd6de;
   --fg-dim:#9aa6b2;
@@ -110,7 +109,7 @@ input:checked + .slider{background:#41b36a}
 input:checked + .slider:before{transform:translateX(24px)}
 .slider.round{border-radius:999px}
 
-/* 상세내용(pre) 폰트/크기 */
+/* 상세내용(pre) */
 .task pre,
 .notice-card pre{
   font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",
