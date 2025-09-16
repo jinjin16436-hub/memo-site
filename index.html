@@ -4,9 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>숙제 & 수행평가</title>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="icon" href="data:,"><!-- 파비콘 404 방지 -->
+  <link rel="stylesheet" href="style.css?v=4" />
 
-  <!-- Google Fonts (가독성) -->
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -28,7 +29,7 @@
 <main class="container">
 
   <!-- ===== 중요 전달 사항 ===== -->
-  <section id="sec_notice" class="sec">
+  <section id="sec_notice" class="sec" data-sec="notice">
     <div class="section-head row-between">
       <div class="row gap-8">
         <span style="font-size:20px">📢</span>
@@ -63,7 +64,6 @@
     <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
     <div id="sec_exam" class="section-body open">
       <ul id="list_exam" class="task-list"></ul>
-
       <div class="add-row" data-cat="exam" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
@@ -90,7 +90,6 @@
     <button class="section-head" onclick="toggleSection('sec_perf')">📝 수행평가 ▾</button>
     <div id="sec_perf" class="section-body open">
       <ul id="list_perf" class="task-list"></ul>
-
       <div class="add-row" data-cat="perf" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
@@ -117,7 +116,6 @@
     <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
     <div id="sec_home" class="section-body open">
       <ul id="list_home" class="task-list"></ul>
-
       <div class="add-row" data-cat="home" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
@@ -140,8 +138,8 @@
   </section>
 </main>
 
-<!-- (순서 엄수) 환경변수 → 앱 코드. 캐시 무력화를 위해 v=숫자 붙이기 -->
-<script src="env.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<!-- (순서 엄수) 환경변수 → 앱 코드. 캐시 무효화를 위해 v=숫자 붙이기 -->
+<script src="env.js?v=4"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
