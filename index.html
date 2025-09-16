@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>숙제 & 수행평가</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=9" />
+  <link rel="stylesheet" href="style.css?v=10" />
+
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -56,14 +58,11 @@
     <div id="sec_exam" class="section-body open">
       <ul id="list_exam" class="task-list"></ul>
 
-      <!-- ✅ 관리자용 입력 폼 (과목/내용/상세 내용/요일) -->
+      <!-- 관리자용 입력 폼: 과목/내용/날짜/상세 내용 -->
       <div class="add-row" data-cat="exam" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
-        <select class="dow">
-          <option value="">요일 선택</option>
-          <option>월</option><option>화</option><option>수</option><option>목</option><option>금</option><option>토</option><option>일</option>
-        </select>
+        <input class="date" type="date" />
         <textarea class="detail" rows="4" placeholder="상세 내용"></textarea>
         <button class="btn add align-end">+ 추가</button>
       </div>
@@ -79,10 +78,7 @@
       <div class="add-row" data-cat="perf" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
-        <select class="dow">
-          <option value="">요일 선택</option>
-          <option>월</option><option>화</option><option>수</option><option>목</option><option>금</option><option>토</option><option>일</option>
-        </select>
+        <input class="date" type="date" />
         <textarea class="detail" rows="4" placeholder="상세 내용"></textarea>
         <button class="btn add align-end">+ 추가</button>
       </div>
@@ -98,10 +94,7 @@
       <div class="add-row" data-cat="home" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
-        <select class="dow">
-          <option value="">요일 선택</option>
-          <option>월</option><option>화</option><option>수</option><option>목</option><option>금</option><option>토</option><option>일</option>
-        </select>
+        <input class="date" type="date" />
         <textarea class="detail" rows="4" placeholder="상세 내용"></textarea>
         <button class="btn add align-end">+ 추가</button>
       </div>
@@ -109,7 +102,8 @@
   </section>
 </main>
 
-<script src="env.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<!-- 순서: env.js → app.js -->
+<script src="env.js?v=10"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>
