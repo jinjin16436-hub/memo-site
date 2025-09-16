@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>부광고 1-1 숙제 & 수행평가</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=11" />
+  <link rel="stylesheet" href="style.css?v=12" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,7 +28,7 @@
 
 <main class="container">
 
-  <!-- 전달사항 -->
+  <!-- ===== 중요 전달 사항 ===== -->
   <section id="sec_notice" class="sec" data-sec="notice">
     <div class="section-head row-between">
       <div class="row gap-8"><span style="font-size:20px">📢</span><span>중요 전달 사항</span></div>
@@ -51,7 +51,7 @@
     </div>
   </section>
 
-  <!-- 시험 -->
+  <!-- ===== 시험 ===== -->
   <section class="sec">
     <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
     <div id="sec_exam" class="section-body open">
@@ -66,7 +66,7 @@
     </div>
   </section>
 
-  <!-- 수행평가 -->
+  <!-- ===== 수행평가 ===== -->
   <section class="sec">
     <button class="section-head" onclick="toggleSection('sec_perf')">📝 수행평가 ▾</button>
     <div id="sec_perf" class="section-body open">
@@ -81,7 +81,7 @@
     </div>
   </section>
 
-  <!-- 숙제 -->
+  <!-- ===== 숙제 ===== -->
   <section class="sec">
     <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
     <div id="sec_home" class="section-body open">
@@ -97,7 +97,29 @@
   </section>
 </main>
 
-<script src="env.js?v=11"></script>
-<script src="app.js?v=11"></script>
+<!-- ===== 수정 모달 ===== -->
+<div id="editModal" class="modal">
+  <div class="modal__dialog">
+    <div class="modal__head">
+      <strong>항목 수정</strong>
+      <button class="modal__close" id="editClose">×</button>
+    </div>
+    <div class="modal__body">
+      <div class="form-grid">
+        <label>과목<input id="mSubj" type="text" /></label>
+        <label>내용<input id="mText" type="text" /></label>
+        <label>날짜<input id="mDate" type="date" /></label>
+        <label class="full">상세 내용<textarea id="mDetail" rows="6"></textarea></label>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button id="editSave" class="btn">저장</button>
+      <button id="editCancel" class="btn btn--ghost">취소</button>
+    </div>
+  </div>
+</div>
+
+<script src="env.js?v=12"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>
