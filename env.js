@@ -1,7 +1,7 @@
-// ===== 환경 변수(배포 전 본인 값으로 교체) =====
+// 배포 전 실제 프로젝트 값으로 교체하세요.
 window.ENV = {
-  // Firebase Web App Config
-  FIREBASE_CONFIG: {
+  // Firebase Web App Config  (app.js는 window.ENV.FIREBASE 를 참조)
+  FIREBASE: {
     apiKey:      "AIzaSyA10dRuTxDs0Ymz0AC1hf7dhn678n4SVs4",
     authDomain:  "my-memo-site.firebaseapp.com",
     projectId:   "my-memo-site",
