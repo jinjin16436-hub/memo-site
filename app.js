@@ -77,11 +77,26 @@ function calcDDay(dateLike){
 }
 function ddayBadge(diff){
   if (diff == null) return null;
-  let label = diff > 0 ? `D-${diff}` : (diff === 0 ? 'D-day' : `D+${Math.abs(diff)}`);
-  let cls   = diff < 0 ? 'red' : diff === 0 ? 'orange' : diff <= 7 ? 'yellow' : 'green';
-  const span = el('span', `dday ${cls}`, label);
-  return span;
+
+  // 라벨은 기존과 동일: 미래는 D-N, 오늘 D-day, 과거는 D+N
+  const label = diff > 0 ? `D-${diff}` : (diff === 0 ? 'D-day' : `D+${Math.abs(diff)}`);
+
+  // ✅ 색상 규칙
+  // 지난 일정: 회색
+  // 당일: 빨강
+  // 1~2일 전: 주황
+  // 3~7일 전: 노랑
+  // 8일 이상: 초록
+  let cls;
+  if (diff < 0)       cls = 'gray';
+  else if (diff === 0) cls = 'red';
+  else if (diff <= 2)  cls = 'orange';
+  else if (diff <= 7)  cls = 'yellow';
+  else                 cls = 'green';
+
+  return el('span', `dday ${cls}`, label);
 }
+
 
 /* ====== Firestore refs ====== */
 const colNotices = (uid=PUBLIC_UID)=> db.collection('users').doc(uid).collection('notices');
