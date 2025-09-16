@@ -4,7 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>숙제 & 수행평가</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=3" />
+
+  <!-- Google Fonts (가독성) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Firebase compat (v9) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <header class="topbar">
@@ -16,15 +26,16 @@
 </header>
 
 <main class="container">
+
   <!-- ===== 중요 전달 사항 ===== -->
-  <section class="sec">
+  <section id="sec_notice" class="sec">
     <div class="section-head row-between">
       <div class="row gap-8">
         <span style="font-size:20px">📢</span>
         <span>중요 전달 사항</span>
       </div>
       <label class="switch">
-        <input id="noticeToggle" type="checkbox" />
+        <input id="noticeToggle" type="checkbox">
         <span class="slider round"></span>
       </label>
     </div>
@@ -52,17 +63,20 @@
     <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
     <div id="sec_exam" class="section-body open">
       <ul id="list_exam" class="task-list"></ul>
+
       <div class="add-row" data-cat="exam" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
         <input class="date"  type="date" />
         <input class="date2" type="date" />
         <select class="pStart">
-          <option value="">시작 교시</option><option>1</option><option>2</option><option>3</option><option>4</option>
+          <option value="">시작 교시</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
         </select>
         <select class="pEnd">
-          <option value="">끝 교시</option><option>1</option><option>2</option><option>3</option><option>4</option>
+          <option value="">끝 교시</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option><option>8</option>
         </select>
         <textarea class="detail" rows="4" placeholder="상세 내용 (선택)"></textarea>
@@ -76,13 +90,22 @@
     <button class="section-head" onclick="toggleSection('sec_perf')">📝 수행평가 ▾</button>
     <div id="sec_perf" class="section-body open">
       <ul id="list_perf" class="task-list"></ul>
+
       <div class="add-row" data-cat="perf" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
         <input class="date"  type="date" />
         <input class="date2" type="date" />
-        <select class="pStart"><option value="">시작 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-        <select class="pEnd"><option value="">끝 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+        <select class="pStart">
+          <option value="">시작 교시</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+        </select>
+        <select class="pEnd">
+          <option value="">끝 교시</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+        </select>
         <textarea class="detail" rows="4" placeholder="상세 내용 (선택)"></textarea>
         <button class="btn add align-end">+ 추가</button>
       </div>
@@ -94,13 +117,22 @@
     <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
     <div id="sec_home" class="section-body open">
       <ul id="list_home" class="task-list"></ul>
+
       <div class="add-row" data-cat="home" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
         <input class="date"  type="date" />
         <input class="date2" type="date" />
-        <select class="pStart"><option value="">시작 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-        <select class="pEnd"><option value="">끝 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+        <select class="pStart">
+          <option value="">시작 교시</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+        </select>
+        <select class="pEnd">
+          <option value="">끝 교시</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+        </select>
         <textarea class="detail" rows="4" placeholder="상세 내용 (선택)"></textarea>
         <button class="btn add align-end">+ 추가</button>
       </div>
@@ -108,29 +140,8 @@
   </section>
 </main>
 
-<!-- ===== 항목 수정 모달 ===== -->
-<div id="editModal" class="modal hidden">
-  <div class="modal__body">
-    <h3>항목 수정</h3>
-    <input id="mSubj" class="input" placeholder="과목" />
-    <input id="mText" class="input" placeholder="내용" />
-    <div class="row gap-8">
-      <input id="mStart" class="input" type="date" />
-      <input id="mEnd" class="input" type="date" />
-    </div>
-    <div class="row gap-8">
-      <select id="mPStart" class="select"><option value="">시작 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-      <select id="mPEnd" class="select"><option value="">끝 교시</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-    </div>
-    <textarea id="mDetail" class="detail" rows="6" placeholder="상세 내용 (줄바꿈)"></textarea>
-    <div class="modal__actions">
-      <button id="mSave" class="btn">저장</button>
-      <button class="btn" onclick="closeEdit()">취소</button>
-    </div>
-  </div>
-</div>
-
-<!-- ✅ 모듈로 로드 -->
-<script type="module" src="./app.js"></script>
+<!-- (순서 엄수) 환경변수 → 앱 코드. 캐시 무력화를 위해 v=숫자 붙이기 -->
+<script src="env.js?v=3"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
