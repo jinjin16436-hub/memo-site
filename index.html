@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>숙제 & 수행평가</title>
+  <title>부광고 1-1 숙제 & 수행평가</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=10" />
+  <link rel="stylesheet" href="style.css?v=11" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <!-- Firebase compat (v9) -->
+  <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -28,7 +28,7 @@
 
 <main class="container">
 
-  <!-- ===== 중요 전달 사항 ===== -->
+  <!-- 전달사항 -->
   <section id="sec_notice" class="sec" data-sec="notice">
     <div class="section-head row-between">
       <div class="row gap-8"><span style="font-size:20px">📢</span><span>중요 전달 사항</span></div>
@@ -37,7 +37,6 @@
       </label>
     </div>
     <div class="section-body open">
-      <!-- 관리자 전용 추가 폼 -->
       <div id="noticeAddRow" class="add-row col gap-8" style="display:none">
         <input id="nTitle" class="input subj" type="text" placeholder="제목" />
         <select id="nKind" class="select">
@@ -52,13 +51,11 @@
     </div>
   </section>
 
-  <!-- ===== 시험 ===== -->
+  <!-- 시험 -->
   <section class="sec">
     <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
     <div id="sec_exam" class="section-body open">
       <ul id="list_exam" class="task-list"></ul>
-
-      <!-- 관리자용 입력 폼: 과목/내용/날짜/상세 내용 -->
       <div class="add-row" data-cat="exam" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
@@ -69,12 +66,11 @@
     </div>
   </section>
 
-  <!-- ===== 수행평가 ===== -->
+  <!-- 수행평가 -->
   <section class="sec">
     <button class="section-head" onclick="toggleSection('sec_perf')">📝 수행평가 ▾</button>
     <div id="sec_perf" class="section-body open">
       <ul id="list_perf" class="task-list"></ul>
-
       <div class="add-row" data-cat="perf" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
@@ -85,12 +81,11 @@
     </div>
   </section>
 
-  <!-- ===== 숙제 ===== -->
+  <!-- 숙제 -->
   <section class="sec">
     <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
     <div id="sec_home" class="section-body open">
       <ul id="list_home" class="task-list"></ul>
-
       <div class="add-row" data-cat="home" style="display:none">
         <input class="subj" type="text" placeholder="과목" />
         <input class="text" type="text" placeholder="내용" />
@@ -102,8 +97,7 @@
   </section>
 </main>
 
-<!-- 순서: env.js → app.js -->
-<script src="env.js?v=10"></script>
-<script src="app.js?v=10"></script>
+<script src="env.js?v=11"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>
