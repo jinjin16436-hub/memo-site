@@ -1,7 +1,9 @@
+
 /* ===============================
    app.js (Firebase compat v9)
    - 단일 날짜 + 기간(시작~종료) 모두 지원
    - 오늘이 기간 내면 D-day
+   - D-day 순 정렬
    =============================== */
 
 if (!window.ENV || !window.ENV.FIREBASE) {
@@ -51,7 +53,7 @@ function isAdminUser(user){
 function fmtDateK(d) {
   if (!d) return '';
   let dt;
-  if (d?.toDate) dt = d.toDate();          // Firestore Timestamp
+  if (d?.toDate) dt = d.toDate();
   else if (typeof d === 'string') dt = new Date(d);
   else dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return '';
@@ -69,15 +71,7 @@ function toTsFromDateInput(dateStr) {
 }
 function startOfDay(d){ const t = new Date(d); t.setHours(0,0,0,0); return t; }
 
-/* ====== D-day 계산 (단일/범위 지원) ======
-   - 입력: startLike, endLike (둘 다 optional)
-   - 반환: { label, cls, diffRef }
-     * 기간 이전: 남은 일수(D-N) 기준 diffRef>0
-     * 기간 중:   D-day, cls='red'
-     * 기간 이후: 지난 일수(D+N), cls='gray'
-   색 규칙(요청 반영):
-     지난(과거)=gray, 당일/기간중=red, 1~2일 전=orange, 3~7일 전=yellow, 8일 이상=green
-*/
+/* ====== D-day 계산 (단일/범위 지원) ====== */
 function evalDDay(startLike, endLike){
   const today = startOfDay(new Date());
 
@@ -92,7 +86,7 @@ function evalDDay(startLike, endLike){
   const s = asDate(startLike);
   const e = asDate(endLike);
 
-  // 단일 일정만 있는 경우(기존 호환: date/dateAt)
+  // 단일 일정
   if (s && !e){
     const diff = Math.round((s - today) / (24*60*60*1000));
     if (diff < 0) return { label:`D+${Math.abs(diff)}`, cls:'gray',   diffRef:diff };
@@ -102,7 +96,7 @@ function evalDDay(startLike, endLike){
     return            { label:`D-${diff}`,             cls:'green',  diffRef:diff };
   }
 
-  // 기간 일정인 경우 (시작/종료 둘 다 있으면)
+  // 기간 일정
   if (s && e){
     if (today < s){
       const diff = Math.round((s - today) / (24*60*60*1000));
@@ -114,12 +108,31 @@ function evalDDay(startLike, endLike){
       const diffPast = Math.round((today - e) / (24*60*60*1000));
       return { label:`D+${diffPast}`, cls:'gray', diffRef:-diffPast };
     }
-    // 기간 안(시작 ≤ 오늘 ≤ 종료): D-day(빨강)
+    // 기간 안: 오늘
     return { label:'D-day', cls:'red', diffRef:0 };
   }
 
-  // 날짜 정보가 전혀 없음
   return null;
+}
+
+/* ====== D-day 정렬용 유틸 ====== */
+function _getStartMillis(it){
+  const ts =
+    it.startAt?.toDate?.() ? it.startAt.toDate() :
+    it.dateAt?.toDate?.()  ? it.dateAt.toDate()  : null;
+  if (ts) return ts.getTime?.() ?? new Date(ts).getTime();
+  if (it.startDate) return new Date(it.startDate + 'T00:00:00').getTime();
+  if (it.date)      return new Date(it.date      + 'T00:00:00').getTime();
+  const c = it.createdAt?.toDate?.() ? it.createdAt.toDate() : null;
+  return c ? c.getTime() : 0;
+}
+function _makeSortKey(it){
+  const dd = evalDDay(it.startDate || it.startAt || it.date || it.dateAt,
+                      it.endDate   || it.endAt);
+  if (!dd) return { group: 3, key: Number.MAX_SAFE_INTEGER, tiebreak: _getStartMillis(it) };
+  if (dd.diffRef === 0) return { group: 0, key: 0, tiebreak: _getStartMillis(it) }; // 기간중/오늘
+  if (dd.diffRef > 0)   return { group: 1, key: dd.diffRef, tiebreak: _getStartMillis(it) }; // 미래
+  return { group: 2, key: Math.abs(dd.diffRef), tiebreak: _getStartMillis(it) }; // 과거
 }
 
 /* ====== Firestore refs ====== */
@@ -140,7 +153,6 @@ if (logoutBtn) logoutBtn.addEventListener('click', signOut);
 
 auth.onAuthStateChanged(async (user)=>{
   const admin = isAdminUser(user);
-
   const authBox = document.querySelector('.auth');
   if (authBox) {
     userInfoBox.textContent = user
@@ -148,13 +160,10 @@ auth.onAuthStateChanged(async (user)=>{
       : '로그인 필요';
     authBox.prepend(userInfoBox);
   }
-
   if (loginBtn)  loginBtn.style.display  = user ? 'none' : '';
   if (logoutBtn) logoutBtn.style.display = user ? '' : 'none';
-
   addRows.forEach(row => row.style.display = admin ? 'grid' : 'none');
   if (noticeAddRow) noticeAddRow.style.display = admin ? 'grid' : 'none';
-
   await pullNoticeToggle();
   startListeners();
 });
@@ -164,16 +173,13 @@ function renderNoticeList(items){
   if (!noticeList) return;
   noticeList.innerHTML = '';
   if (!items || !items.length) return;
-
   const admin = isAdminUser(auth.currentUser);
-
   items.forEach((it)=>{
     const li    = el('li', 'notice-card ' + (it.kind?`kind-${it.kind}`:''));
     const title = el('div','notice-title', it.title || '(제목 없음)');
     const meta  = el('div','notice-meta', it.createdAt ? fmtDateK(it.createdAt) : '');
     if (it.body) li.append(title, meta, el('pre', null, it.body));
     else li.append(title, meta);
-
     if (admin) {
       const actions = el('div','card-actions');
       const delBtn  = el('button','btn','삭제');
@@ -185,7 +191,6 @@ function renderNoticeList(items){
       actions.append(delBtn);
       li.appendChild(actions);
     }
-
     noticeList.appendChild(li);
   });
 }
@@ -246,44 +251,31 @@ function renderTaskList(cat, docs){
   const ul = lists[cat]; if (!ul) return;
   ul.innerHTML = '';
   const admin = isAdminUser(auth.currentUser);
-
   docs.forEach((it)=>{
     const li = el('li','task');
-
     const subjLine    = el('div','title', it.subj || '(과목 없음)');
     const contentLine = el('div','content', it.text || '');
     const detail      = it.detail ? el('pre','detail', it.detail) : null;
-
-    // 날짜 정보 (단일 or 범위)
-    const startLike = it.startDate || it.startAt || it.date || it.dateAt || null; // 과거 단일 필드 호환
+    const startLike = it.startDate || it.startAt || it.date || it.dateAt || null;
     const endLike   = it.endDate   || it.endAt   || null;
-
     const startStr = startLike ? fmtDateK(startLike) : '';
     const endStr   = endLike   ? fmtDateK(endLike)   : '';
-
     let dateText = '';
     if (startStr && endStr) dateText = `${startStr} ~ ${endStr}`;
     else if (startStr)      dateText = startStr;
-
     const periodStr = it.period ? `${it.period}교시` : '';
     const combined  = (dateText && periodStr) ? `${dateText} ${periodStr}` : (dateText || periodStr);
-
-    // 📅 아이콘 포함 날짜/교시 줄
     const dateLine = combined ? el('div','meta', '📅 ' + combined) : null;
-
-    // D-day 계산 & 배지
     const dd = evalDDay(startLike, endLike);
     if (dd) {
       const badge = el('span', `dday ${dd.cls}`, dd.label);
       subjLine.append(' ', badge);
     }
-
     const wrap = el('div','task__main');
     wrap.append(subjLine, contentLine);
     if (detail) wrap.append(detail);
     if (dateLine) wrap.append(dateLine);
     li.appendChild(wrap);
-
     if (admin) {
       const actions = el('div','card-actions');
       const editBtn = el('button','btn','수정');
@@ -297,7 +289,6 @@ function renderTaskList(cat, docs){
       actions.append(editBtn, delBtn);
       li.appendChild(actions);
     }
-
     ul.appendChild(li);
   });
 }
@@ -305,6 +296,13 @@ function listenTask(cat){
   colTask(cat).orderBy('createdAt','asc').onSnapshot(
     (snap)=>{
       const arr=[]; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
+      arr.sort((a,b)=>{
+        const A = _makeSortKey(a);
+        const B = _makeSortKey(b);
+        if (A.group !== B.group) return A.group - B.group;
+        if (A.key   !== B.key)   return A.key   - B.key;
+        return A.tiebreak - B.tiebreak;
+      });
       renderTaskList(cat, arr);
     },
     (err)=>{ console.error(err); alert(`${cat} 목록을 불러오지 못했습니다: `+err.message); }
@@ -313,14 +311,13 @@ function listenTask(cat){
 function wireAddButtons(){
   addRows.forEach(row=>{
     const cat = row.getAttribute('data-cat');
-    const subjEl     = $('.subj', row);
-    const textEl     = $('.text', row);
-    const startEl    = $('.date-start', row);
-    const endEl      = $('.date-end', row);
-    const periodEl   = $('.period', row);
-    const detailEl   = $('.detail', row);
-    const addBtn     = $('.add', row);
-
+    const subjEl   = $('.subj', row);
+    const textEl   = $('.text', row);
+    const startEl  = $('.date-start', row);
+    const endEl    = $('.date-end', row);
+    const periodEl = $('.period', row);
+    const detailEl = $('.detail', row);
+    const addBtn   = $('.add', row);
     if (!addBtn) return;
     addBtn.addEventListener('click', async ()=>{
       const user = auth.currentUser;
@@ -328,29 +325,17 @@ function wireAddButtons(){
       const subj    = (subjEl?.value ?? '').trim();
       const text    = (textEl?.value ?? '').trim();
       const detail  = (detailEl?.value ?? '').trim();
-      const sDate   = (startEl?.value ?? '').trim(); // YYYY-MM-DD
+      const sDate   = (startEl?.value ?? '').trim();
       const eDate   = (endEl?.value ?? '').trim();
       const period  = (periodEl?.value ?? '').trim();
       if (!subj) return alert('과목을 입력하세요.');
-
-      const payload = {
-        subj, text, detail, period,
+      const payload = { subj, text, detail, period,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
-
-      // 날짜 저장 (단일/범위 모두 지원)
-      if (sDate) {
-        payload.startDate = sDate;
-        payload.startAt   = toTsFromDateInput(sDate);
-      }
-      if (eDate) {
-        payload.endDate = eDate;
-        payload.endAt   = toTsFromDateInput(eDate);
-      }
-
+      if (sDate) { payload.startDate = sDate; payload.startAt = toTsFromDateInput(sDate); }
+      if (eDate) { payload.endDate = eDate; payload.endAt   = toTsFromDateInput(eDate); }
       try{
         await colTask(cat).add(payload);
-        // reset
         subjEl.value = textEl.value = detailEl.value = periodEl.value = '';
         if (startEl) startEl.value = '';
         if (endEl)   endEl.value   = '';
@@ -371,77 +356,7 @@ const btnSave   = $('#editSave');
 const btnCancel = $('#editCancel');
 const btnClose  = $('#editClose');
 let editing = null;
-
 function openEditModal(cat, item){
   editing = { cat, id: item.id };
   mSubj.value    = item.subj || '';
-  mText.value    = item.text || '';
-  mDetail.value  = item.detail || '';
-  mPeriod.value  = item.period || '';
-
-  // 기존 단일 date/dateAt 데이터도 시작일로 매핑
-  const startSeed = item.startDate || (item.startAt?.toDate ? item.startAt.toDate().toISOString().slice(0,10) : '')
-                  || item.date || (item.dateAt?.toDate ? item.dateAt.toDate().toISOString().slice(0,10) : '');
-  const endSeed   = item.endDate   || (item.endAt?.toDate   ? item.endAt.toDate().toISOString().slice(0,10) : '');
-  mDateStart.value = startSeed || '';
-  mDateEnd.value   = endSeed   || '';
-
-  modal.classList.add('show');
-}
-function closeEditModal(){
-  modal.classList.remove('show');
-  editing = null;
-}
-if (btnCancel) btnCancel.addEventListener('click', closeEditModal);
-if (btnClose)  btnClose.addEventListener('click', closeEditModal);
-if (modal)     modal.addEventListener('click', (e)=>{ if (e.target === modal) closeEditModal(); });
-
-if (btnSave) btnSave.addEventListener('click', async ()=>{
-  if (!editing) return;
-  const user = auth.currentUser;
-  if (!isAdminUser(user)) { alert('관리자만 수정할 수 있습니다.'); return; }
-
-  const subj    = mSubj.value.trim();
-  const text    = mText.value.trim();
-  const detail  = mDetail.value.trim();
-  const sDate   = mDateStart.value.trim();
-  const eDate   = mDateEnd.value.trim();
-  const period  = mPeriod.value.trim();
-
-  try{
-    const payload = {
-      subj, text, detail, period,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    // 날짜 저장: 입력 없으면 삭제
-    if (sDate) { payload.startDate = sDate; payload.startAt = toTsFromDateInput(sDate); }
-    else { payload.startDate = firebase.firestore.FieldValue.delete(); payload.startAt = firebase.firestore.FieldValue.delete(); }
-
-    if (eDate) { payload.endDate = eDate; payload.endAt = toTsFromDateInput(eDate); }
-    else { payload.endDate = firebase.firestore.FieldValue.delete(); payload.endAt = firebase.firestore.FieldValue.delete(); }
-
-    // 과거 단일 필드가 남아있다면 정리(선택적)
-    payload.date   = firebase.firestore.FieldValue.delete();
-    payload.dateAt = firebase.firestore.FieldValue.delete();
-
-    await colTask(editing.cat).doc(editing.id).set(payload, { merge:true });
-    closeEditModal();
-  }catch(e){ console.error(e); alert('수정 실패: '+e.message); }
-});
-
-/* ====== 시작 ====== */
-let started=false;
-function startListeners(){
-  if(started) return; started = true;
-  listenNotices();
-  listenTask('exam'); listenTask('perf'); listenTask('home');
-  wireAddButtons();
-}
-
-/* ====== 섹션 토글 ====== */
-window.toggleSection = function(id){
-  const box = document.getElementById(id);
-  if (!box) return;
-  box.classList.toggle('open');
-};
+  mText.value    = item.text
