@@ -65,7 +65,7 @@ function toTsFromDateInput(dateStr) {
   if (Number.isNaN(dt.getTime())) return null;
   return firebase.firestore.Timestamp.fromDate(dt);
 }
-// D-day 계산: (대상날짜 - 오늘0시) 일수
+// D-day 계산
 function calcDDay(dateLike){
   if (!dateLike) return null;
   const dt = dateLike?.toDate ? dateLike.toDate() : new Date(dateLike);
@@ -73,30 +73,19 @@ function calcDDay(dateLike){
   const today = new Date(); today.setHours(0,0,0,0);
   const target = new Date(dt); target.setHours(0,0,0,0);
   const diff = Math.round((target - today) / (24*60*60*1000)); // 일수
-  return diff; // 음수면 지남, 0이면 D-day
+  return diff;
 }
 function ddayBadge(diff){
   if (diff == null) return null;
-
-  // 라벨은 기존과 동일: 미래는 D-N, 오늘 D-day, 과거는 D+N
   const label = diff > 0 ? `D-${diff}` : (diff === 0 ? 'D-day' : `D+${Math.abs(diff)}`);
-
-  // ✅ 색상 규칙
-  // 지난 일정: 회색
-  // 당일: 빨강
-  // 1~2일 전: 주황
-  // 3~7일 전: 노랑
-  // 8일 이상: 초록
   let cls;
   if (diff < 0)       cls = 'gray';
   else if (diff === 0) cls = 'red';
   else if (diff <= 2)  cls = 'orange';
   else if (diff <= 7)  cls = 'yellow';
   else                 cls = 'green';
-
   return el('span', `dday ${cls}`, label);
 }
-
 
 /* ====== Firestore refs ====== */
 const colNotices = (uid=PUBLIC_UID)=> db.collection('users').doc(uid).collection('notices');
@@ -165,7 +154,6 @@ function renderNoticeList(items){
     noticeList.appendChild(li);
   });
 }
-
 function listenNotices(){
   colNotices().orderBy('createdAt','desc').onSnapshot(
     (snap)=>{
@@ -175,7 +163,6 @@ function listenNotices(){
     (err)=>{ console.error(err); alert('공지 목록을 불러오지 못했습니다: '+err.message); }
   );
 }
-
 async function addNotice(){
   const user = auth.currentUser;
   if (!isAdminUser(user)) return alert('관리자만 추가할 수 있습니다.');
@@ -183,7 +170,6 @@ async function addNotice(){
   const kind  = (nKind && nKind.value) || 'notice';
   const body  = (nBody && nBody.value.trim()) || '';
   if (!title) return alert('제목을 입력하세요.');
-
   try{
     await colNotices().add({
       title, body, kind,
@@ -229,14 +215,19 @@ function renderTaskList(cat, docs){
   docs.forEach((it)=>{
     const li = el('li','task');
 
-    // 표시 순서: 과목 → 내용 → 상세 → 날짜(요일) + D-day
     const subjLine    = el('div','title', it.subj || '(과목 없음)');
     const contentLine = el('div','content', it.text || '');
     const detail      = it.detail ? el('pre','detail', it.detail) : null;
 
-    const whenDate = it.date ? it.date : (it.dateAt ? it.dateAt : null);
-    const whenStr  = whenDate ? fmtDateK(whenDate) : '';
-    const dateLine = whenStr ? el('div','meta', whenStr) : null;
+    // 날짜+교시 한 줄
+    const whenDate  = it.date ? it.date : (it.dateAt ? it.dateAt : null);
+    const whenStr   = whenDate ? fmtDateK(whenDate) : '';
+    const periodStr = it.period ? `${it.period}교시` : '';
+    let combinedStr = '';
+    if (whenStr && periodStr) combinedStr = `${whenStr} ${periodStr}`;
+    else if (whenStr) combinedStr = whenStr;
+    else if (periodStr) combinedStr = periodStr;
+    const dateLine = combinedStr ? el('div','meta', combinedStr) : null;
 
     // D-day
     const diff = calcDDay(whenDate);
@@ -253,14 +244,12 @@ function renderTaskList(cat, docs){
       const actions = el('div','card-actions');
       const editBtn = el('button','btn','수정');
       const delBtn  = el('button','btn','삭제');
-
       editBtn.addEventListener('click', ()=> openEditModal(cat, it));
       delBtn.addEventListener('click', async ()=>{
         if (!confirm('삭제할까요?')) return;
         try { await colTask(cat).doc(it.id).delete(); }
         catch(e){ alert('삭제 실패: '+e.message); }
       });
-
       actions.append(editBtn, delBtn);
       li.appendChild(actions);
     }
@@ -268,7 +257,6 @@ function renderTaskList(cat, docs){
     ul.appendChild(li);
   });
 }
-
 function listenTask(cat){
   colTask(cat).orderBy('createdAt','asc').onSnapshot(
     (snap)=>{
@@ -278,13 +266,13 @@ function listenTask(cat){
     (err)=>{ console.error(err); alert(`${cat} 목록을 불러오지 못했습니다: `+err.message); }
   );
 }
-
 function wireAddButtons(){
   addRows.forEach(row=>{
     const cat = row.getAttribute('data-cat');
     const subjEl   = $('.subj', row);
     const textEl   = $('.text', row);
     const dateEl   = $('.date', row);
+    const periodEl = $('.period', row);
     const detailEl = $('.detail', row);
     const addBtn   = $('.add', row);
 
@@ -292,51 +280,46 @@ function wireAddButtons(){
     addBtn.addEventListener('click', async ()=>{
       const user = auth.currentUser;
       if (!isAdminUser(user)) return alert('관리자만 추가할 수 있습니다.');
-
       const subj   = (subjEl?.value ?? '').trim();
       const text   = (textEl?.value ?? '').trim();
       const detail = (detailEl?.value ?? '').trim();
       const dateStr= (dateEl?.value ?? '').trim();
+      const period = (periodEl?.value ?? '').trim();
       if (!subj) return alert('과목을 입력하세요.');
 
-      const payload = {
-        subj, text, detail,
+      const payload = { subj, text, detail, period,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
       if (dateStr) {
         payload.date   = dateStr;
         payload.dateAt = toTsFromDateInput(dateStr);
       }
-
       try{
         await colTask(cat).add(payload);
-        if (subjEl) subjEl.value = '';
-        if (textEl) textEl.value = '';
-        if (detailEl) detailEl.value = '';
-        if (dateEl) dateEl.value = '';
+        subjEl.value = textEl.value = detailEl.value = dateEl.value = periodEl.value = '';
       }catch(e){ console.error(e); alert('추가 실패: '+e.message); }
     });
   });
 }
 
 /* ====== 수정 모달 ====== */
-const modal = $('#editModal');
-const mSubj = $('#mSubj');
-const mText = $('#mText');
-const mDate = $('#mDate');
+const modal   = $('#editModal');
+const mSubj   = $('#mSubj');
+const mText   = $('#mText');
+const mDate   = $('#mDate');
+const mPeriod = $('#mPeriod');
 const mDetail = $('#mDetail');
-const btnSave = $('#editSave');
+const btnSave   = $('#editSave');
 const btnCancel = $('#editCancel');
-const btnClose = $('#editClose');
-
-let editing = null; // {cat, id}
+const btnClose  = $('#editClose');
+let editing = null;
 
 function openEditModal(cat, item){
   editing = { cat, id: item.id };
   mSubj.value   = item.subj || '';
   mText.value   = item.text || '';
   mDetail.value = item.detail || '';
-  // date string 우선, 없으면 Timestamp → YYYY-MM-DD
+  mPeriod.value = item.period || '';
   let cur = item.date ? (typeof item.date === 'string' ? item.date : '') :
             (item.dateAt?.toDate ? item.dateAt.toDate().toISOString().slice(0,10) : '');
   mDate.value = cur || '';
@@ -354,15 +337,13 @@ if (btnSave) btnSave.addEventListener('click', async ()=>{
   if (!editing) return;
   const user = auth.currentUser;
   if (!isAdminUser(user)) { alert('관리자만 수정할 수 있습니다.'); return; }
-
   const subj   = mSubj.value.trim();
   const text   = mText.value.trim();
   const detail = mDetail.value.trim();
   const dateStr= mDate.value.trim();
-
+  const period = mPeriod.value.trim();
   try{
-    const payload = {
-      subj, text, detail,
+    const payload = { subj, text, detail, period,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
     if (dateStr) {
