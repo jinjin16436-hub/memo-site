@@ -227,7 +227,7 @@ function renderTaskList(cat, docs){
     if (whenStr && periodStr) combinedStr = `${whenStr} ${periodStr}`;
     else if (whenStr) combinedStr = whenStr;
     else if (periodStr) combinedStr = periodStr;
-    const dateLine = combinedStr ? el('div','meta', combinedStr) : null;
+    const dateLine = combinedStr ? el('div','meta', '📅 ' + combinedStr) : null;
 
     // D-day
     const diff = calcDDay(whenDate);
