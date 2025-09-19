@@ -222,6 +222,53 @@ input:checked + .slider:before{transform:translateX(24px)}
   border-color:#3aa3ff;box-shadow:0 0 0 3px rgba(58,163,255,.15);background:#0e1626
 }
 
+/* ===== 시험/수행/숙제 추가 폼 – 사용성 개선 레이아웃 ===== */
+/* 1행: 과목 | 내용 | 교시 | [+추가]
+   2행: 상세내용(전폭) | [+추가]
+   3행: 시작일 | 종료일 | (여백) | [+추가] */
+.add-row[data-cat]{
+  display:grid;
+  grid-template-columns: 1fr 1fr 240px 96px; /* 교시 240px, 버튼 96px */
+  grid-template-areas:
+    "subj   text   period add"
+    "detail detail detail add"
+    "start  end    .      add";
+  gap:12px;
+  align-items:start;
+}
+
+/* 영역 매핑 */
+.add-row[data-cat] .subj   { grid-area:subj;   height:42px; }
+.add-row[data-cat] .text   { grid-area:text;   height:42px; }
+.add-row[data-cat] .period { grid-area:period; height:42px; width:100%; min-width:0; }
+.add-row[data-cat] .detail { grid-area:detail; min-height:220px; line-height:1.7; resize:vertical; }
+.add-row[data-cat] .date-start{ grid-area:start; height:42px; }
+.add-row[data-cat] .date-end  { grid-area:end;   height:42px; }
+
+/* 세로 [+추가] 버튼 */
+.add-row[data-cat] .add{
+  grid-area:add;
+  justify-self:stretch;
+  align-self:stretch;
+  border-radius:14px;
+  font-weight:700;
+}
+
+/* 모바일 – 1열 + 버튼열 고정 */
+@media (max-width: 820px){
+  .add-row[data-cat]{
+    grid-template-columns: 1fr 88px;
+    grid-template-areas:
+      "subj   add"
+      "text   add"
+      "period add"
+      "detail add"
+      "start  add"
+      "end    add";
+  }
+  .add-row[data-cat] .add{ align-self:start; height:48px; }
+}
+
 /* ===== 본문 pre 스타일(요청) ===== */
 .task pre,
 .notice-card pre {
