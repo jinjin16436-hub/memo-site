@@ -296,3 +296,18 @@ input:checked + .slider:before{transform:translateX(24px)}
 }
 
 
+/* 교시 입력칸 가로 넓히기 */
+.add-row[data-cat] .period{
+  grid-column: 3 / span 2 !important;  /* 날짜 옆 두 칸 차지 */
+  width: 100% !important;              /* 가로 꽉 차게 */
+  min-width: 0;                        /* grid 안에서 줄바꿈 허용 */
+  height: 42px;
+}
+
+/* 모바일에서도 전체 폭 사용 */
+@media (max-width: 820px){
+  .add-row[data-cat] .period{
+    grid-column: 1 / span 1 !important;
+    width: 100% !important;
+  }
+}
