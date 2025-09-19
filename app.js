@@ -3,6 +3,7 @@
    - 단일 날짜 + 기간(시작~종료) 지원
    - 오늘이 기간 내면 D-day
    - D-day 정렬 (진행/당일 → 미래 → 과거 → 날짜 없음)
+   - ✅ 중요 전달 사항: "제목 → 내용 → 게시일" 순서 + 수정 모달
    =============================== */
 
 if (!window.ENV || !window.ENV.FIREBASE) {
@@ -63,6 +64,14 @@ function fmtDateK(d) {
   const day = String(dt.getDate()).padStart(2, '0');
   const wk = ['일','월','화','수','목','금','토'][dt.getDay()];
   return `${y}-${m}-${day} (${wk})`;
+}
+// 공지의 "게시일: YYYY - MM - DD (요일)" 포맷 전용
+function fmtDateKSpaced(d){
+  if (!d) return '';
+  const s = fmtDateK(d);            // YYYY-MM-DD (요일)
+  const [ymd, wk] = s.split(' ');
+  const ymdSpaced = ymd.replaceAll('-', ' - ');
+  return `${ymdSpaced} ${wk}`;
 }
 function toTsFromDateInput(dateStr) {
   if (!dateStr) return null;
@@ -189,24 +198,38 @@ function renderNoticeList(items){
   if (!items || !items.length) return;
 
   const admin = isAdminUser(auth.currentUser);
+
   items.forEach((it)=>{
     const li    = el('li', 'notice-card ' + (it.kind?`kind-${it.kind}`:''));
+    // ✅ 순서: 제목 → 내용 → 게시일
     const title = el('div','notice-title', it.title || '(제목 없음)');
-    const meta  = el('div','notice-meta', it.createdAt ? fmtDateK(it.createdAt) : '');
-    if (it.body) li.append(title, meta, el('pre', null, it.body));
-    else li.append(title, meta);
+    const body  = it.body ? el('pre', null, it.body) : null;
+
+    // createdAt 없으면 updatedAt, 그것도 없으면 빈 문자열
+    const postedTs = it.createdAt || it.updatedAt || null;
+    const posted   = postedTs ? `게시일: ${fmtDateKSpaced(postedTs)}` : '';
+    const meta     = el('div','notice-meta', posted);
+
+    li.append(title);
+    if (body) li.append(body);
+    li.append(meta);
 
     if (admin) {
       const actions = el('div','card-actions');
+      const editBtn = el('button','btn','수정');
       const delBtn  = el('button','btn','삭제');
+
+      editBtn.addEventListener('click', ()=> openNoticeEditModal(it));
       delBtn.addEventListener('click', async ()=>{
         if (!confirm('삭제할까요?')) return;
         try { await colNotices().doc(it.id).delete(); }
         catch(e){ alert('삭제 실패: '+e.message); }
       });
-      actions.append(delBtn);
+
+      actions.append(editBtn, delBtn);
       li.appendChild(actions);
     }
+
     noticeList.appendChild(li);
   });
 }
@@ -230,6 +253,7 @@ async function addNotice(){
     await colNotices().add({
       title, body, kind,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
     if (nTitle) nTitle.value = '';
     if (nBody)  nBody.value  = '';
@@ -261,6 +285,50 @@ if (noticeToggle) {
     }catch(err){ console.error(err); alert('설정 저장 실패: '+err.message); }
   });
 }
+
+/* ====== 공지 수정 모달 로직 ====== */
+const nEditModal  = $('#noticeEditModal');
+const nEditTitle  = $('#nEditTitle');
+const nEditBody   = $('#nEditBody');
+const nEditKind   = $('#nEditKind');
+const nEditSave   = $('#nEditSave');
+const nEditCancel = $('#nEditCancel');
+const nEditClose  = $('#nEditClose');
+let editingNotice = null;
+
+function openNoticeEditModal(item){
+  editingNotice = { id: item.id };
+  nEditTitle.value = item.title || '';
+  nEditBody.value  = item.body  || '';
+  nEditKind.value  = item.kind  || 'notice';
+  nEditModal.classList.add('show');
+}
+function closeNoticeEditModal(){
+  nEditModal.classList.remove('show');
+  editingNotice = null;
+}
+if (nEditCancel) nEditCancel.addEventListener('click', closeNoticeEditModal);
+if (nEditClose)  nEditClose.addEventListener('click', closeNoticeEditModal);
+if (nEditModal)  nEditModal.addEventListener('click', (e)=>{ if (e.target === nEditModal) closeNoticeEditModal(); });
+
+if (nEditSave) nEditSave.addEventListener('click', async ()=>{
+  if (!editingNotice) return;
+  const user = auth.currentUser;
+  if (!isAdminUser(user)) return alert('관리자만 수정할 수 있습니다.');
+
+  const title = nEditTitle.value.trim();
+  const body  = nEditBody.value.trim();
+  const kind  = nEditKind.value;
+
+  if (!title) return alert('제목을 입력하세요.');
+  try{
+    await colNotices().doc(editingNotice.id).set({
+      title, body, kind,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
+    closeNoticeEditModal();
+  }catch(e){ console.error(e); alert('수정 실패: '+e.message); }
+});
 
 /* ====== 시험/수행/숙제 ====== */
 function renderTaskList(cat, docs){
@@ -385,7 +453,7 @@ function wireAddButtons(){
   });
 }
 
-/* ====== 수정 모달 ====== */
+/* ====== 과제 수정 모달 ====== */
 const modal       = $('#editModal');
 const mSubj       = $('#mSubj');
 const mText       = $('#mText');
