@@ -90,6 +90,28 @@ h2{margin:1.5rem 0 .5rem;font-size:1.2rem}
   border-color:#3aa3ff;box-shadow:0 0 0 3px rgba(58,163,255,.15)
 }
 
+/* ===== 상세 내용 박스 크게 (추가 폼 공통) ===== */
+.add-row .detail{
+  /* 높이 확 늘리기 */
+  min-height: 200px;          /* 기존 110px → 200px */
+  line-height: 1.7;
+
+  /* 가로도 한 줄 전체 쓰게 */
+  grid-column: 1 / -1;        /* 그리드일 때 전체 열을 차지 */
+}
+
+/* 포커스 시 더 넉넉하게 펼치기(선택) */
+.add-row .detail:focus{
+  min-height: 240px;
+}
+
+/* 여백 조금 더 */
+.add-row{
+  gap: 14px;                  /* 12px → 14px */
+  padding: 18px;              /* 16px → 18px */
+}
+
+
 /* pre 스타일 */
 .task pre,.notice-card pre{
   font-family:"Noto Sans KR",sans-serif;font-size:.95rem;line-height:1.8;
