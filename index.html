@@ -2,115 +2,135 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>부광고 1-1 </title>
-  <link rel="stylesheet" href="style.css?v=19">
-  <script src="env.js"></script>
+  <title>부광고 1-1</title>
+
+  <link rel="stylesheet" href="style.css?v=20">
+
+  <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script defer src="app.js?v=19"></script>
+
+  <!-- 환경변수 -->
+  <script src="env.js?v=20"></script>
+
+  <!-- 앱 -->
+  <script defer src="app.js?v=20"></script>
 </head>
 <body>
-  <header>
+  <header class="topbar">
     <h1>사이트 버전 1.1.0 (부광고.웹.한국)</h1>
     <div class="auth">
-      <span id="userInfoBox"></span>
+      <span id="userInfoBox" class="muted"></span>
       <button id="loginBtn" class="btn">로그인</button>
-      <button id="logoutBtn" class="btn">로그아웃</button>
+      <button id="logoutBtn" class="btn" style="display:none">로그아웃</button>
     </div>
   </header>
 
-  <!-- 중요 전달 사항 -->
-  <section>
-    <h2>
-      중요 전달 사항
-      <label><input type="checkbox" id="noticeToggle" checked> 표시</label>
-    </h2>
-    <ul id="notice_list" class="card-list"></ul>
-    <div id="notice_addRow" class="add-row">
-      <input id="nTitle" placeholder="제목">
-      <select id="nType">
-        <option value="notice">공지(빨강)</option>
-        <option value="info">안내(파랑)</option>
-        <option value="etc">기타(초록)</option>
-      </select>
-      <textarea id="nBody" placeholder="내용"></textarea>
-      <button id="nAddBtn" class="btn btn--primary">추가</button>
-    </div>
-  </section>
+  <main class="container">
 
-  <!-- 시험 -->
-  <section>
-    <h2>시험</h2>
-    <ul id="list_exam" class="card-list"></ul>
-    <div id="exam_addRow" class="add-row">
-      <input id="examSubj" placeholder="과목">
-      <input id="examCont" placeholder="내용">
-      <textarea id="examDesc" placeholder="상세 내용"></textarea>
-      <input id="examStart" type="date">
-      <input id="examEnd" type="date">
-      <input id="examPeriod" placeholder="교시">
-      <button id="examAddBtn" class="btn btn--primary">추가</button>
-    </div>
-  </section>
+    <!-- ===== 중요 전달 사항 ===== -->
+    <section id="sec_notice" class="sec" data-sec="notice">
+      <div class="section-head row-between">
+        <div class="row gap-8"><span style="font-size:20px">📢</span><span>중요 전달 사항</span></div>
+        <label class="switch">
+          <input id="noticeToggle" type="checkbox" checked><span class="slider round"></span>
+        </label>
+      </div>
+      <div class="section-body open">
+        <ul id="notice_list" class="card-list"></ul>
 
-  <!-- 수행 -->
-  <section>
-    <h2>수행평가</h2>
-    <ul id="list_perf" class="card-list"></ul>
-    <div id="perf_addRow" class="add-row">
-      <input id="perfSubj" placeholder="과목">
-      <input id="perfCont" placeholder="내용">
-      <textarea id="perfDesc" placeholder="상세 내용"></textarea>
-      <input id="perfStart" type="date">
-      <input id="perfEnd" type="date">
-      <input id="perfPeriod" placeholder="교시">
-      <button id="perfAddBtn" class="btn btn--primary">추가</button>
-    </div>
-  </section>
+        <!-- 관리자만 보이는 공지 추가 (※ id는 app.js와 일치) -->
+        <div id="noticeAddRow" class="add-row col gap-8" style="display:none">
+          <div class="grid-2">
+            <input id="nTitle" class="input subj" type="text" placeholder="제목" />
+            <select id="nKind" class="select">
+              <option value="notice">공지(빨강)</option>
+              <option value="info">안내(노랑)</option>
+              <option value="alert">알림(초록)</option>
+            </select>
+          </div>
+          <textarea id="nBody" class="detail" rows="4" placeholder="내용 (줄바꿈 가능)"></textarea>
+          <button id="nAddBtn" class="btn btn--primary align-end">+ 추가</button>
+        </div>
+      </div>
+    </section>
 
-  <!-- 숙제 -->
-  <section>
-    <h2>숙제</h2>
-    <ul id="list_home" class="card-list"></ul>
-    <div id="home_addRow" class="add-row">
-      <input id="homeSubj" placeholder="과목">
-      <input id="homeCont" placeholder="내용">
-      <textarea id="homeDesc" placeholder="상세 내용"></textarea>
-      <input id="homeStart" type="date">
-      <input id="homeEnd" type="date">
-      <input id="homePeriod" placeholder="교시">
-      <button id="homeAddBtn" class="btn btn--primary">추가</button>
-    </div>
-  </section>
+    <!-- ===== 시험 ===== -->
+    <section class="sec">
+      <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
+      <div id="sec_exam" class="section-body open">
+        <ul id="list_exam" class="card-list"></ul>
 
-  <!-- 수정 모달 -->
+        <!-- 관리자만 보이는 추가폼 -->
+        <div class="add-row" data-cat="exam" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <textarea class="detail" rows="4" placeholder="상세 내용"></textarea>
+          <div class="grid-3">
+            <input class="date-start" type="date" />
+            <input class="date-end" type="date" />
+            <input class="period" type="text" placeholder="교시" />
+          </div>
+          <button class="btn btn--primary add align-end">+ 추가</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 수행평가 ===== -->
+    <section class="sec">
+      <button class="section-head" onclick="toggleSection('sec_perf')">📝 수행평가 ▾</button>
+      <div id="sec_perf" class="section-body open">
+        <ul id="list_perf" class="card-list"></ul>
+        <div class="add-row" data-cat="perf" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <textarea class="detail" rows="4" placeholder="상세 내용"></textarea>
+          <div class="grid-3">
+            <input class="date-start" type="date" />
+            <input class="date-end" type="date" />
+            <input class="period" type="text" placeholder="교시" />
+          </div>
+          <button class="btn btn--primary add align-end">+ 추가</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 숙제 ===== -->
+    <section class="sec">
+      <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
+      <div id="sec_home" class="section-body open">
+        <ul id="list_home" class="card-list"></ul>
+        <div class="add-row" data-cat="home" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <textarea class="detail" rows="4" placeholder="상세 내용"></textarea>
+          <div class="grid-3">
+            <input class="date-start" type="date" />
+            <input class="date-end" type="date" />
+            <input class="period" type="text" placeholder="교시" />
+          </div>
+          <button class="btn btn--primary add align-end">+ 추가</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== 과제 수정 모달 ===== -->
   <div id="editModal" class="modal">
     <div class="modal__dialog">
       <div class="modal__head">
         <strong>항목 수정</strong>
-        <button class="modal__close" id="editClose">✕</button>
+        <button class="modal__close" id="editClose">×</button>
       </div>
       <div class="modal__body">
         <div class="form-grid">
-          <label>과목
-            <input id="editSubj">
-          </label>
-          <label>내용
-            <input id="editCont">
-          </label>
-          <label class="full">상세 내용
-            <textarea id="editDesc"></textarea>
-          </label>
-          <label>시작일
-            <input id="editStart" type="date">
-          </label>
-          <label>종료일
-            <input id="editEnd" type="date">
-          </label>
-          <label>교시
-            <input id="editPeriod">
-          </label>
+          <label class="full">과목<input id="mSubj" type="text"/></label>
+          <label class="full">내용<input id="mText" type="text"/></label>
+          <label class="full">상세 내용<textarea id="mDetail" rows="6"></textarea></label>
+          <label>시작일<input id="mDateStart" type="date"/></label>
+          <label>종료일<input id="mDateEnd" type="date"/></label>
+          <label>교시<input id="mPeriod" type="text"/></label>
         </div>
       </div>
       <div class="modal__foot">
@@ -120,28 +140,24 @@
     </div>
   </div>
 
-  <!-- 공지 수정 모달 -->
+  <!-- ===== 공지 수정 모달 ===== -->
   <div id="noticeEditModal" class="modal">
     <div class="modal__dialog">
       <div class="modal__head">
         <strong>공지 수정</strong>
-        <button class="modal__close" id="nEditClose">✕</button>
+        <button class="modal__close" id="nEditClose">×</button>
       </div>
       <div class="modal__body">
         <div class="form-grid">
-          <label>제목
-            <input id="nEditTitle">
-          </label>
+          <label class="full">제목<input id="nEditTitle" type="text" /></label>
           <label>종류
-            <select id="nEditType">
+            <select id="nEditKind">
               <option value="notice">공지(빨강)</option>
-              <option value="info">안내(파랑)</option>
-              <option value="etc">기타(초록)</option>
+              <option value="info">안내(노랑)</option>
+              <option value="alert">알림(초록)</option>
             </select>
           </label>
-          <label class="full">내용
-            <textarea id="nEditBody"></textarea>
-          </label>
+          <label class="full">내용<textarea id="nEditBody" rows="8"></textarea></label>
         </div>
       </div>
       <div class="modal__foot">
