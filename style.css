@@ -77,6 +77,20 @@ body{
   white-space:pre-wrap;word-break:break-word;background:transparent;padding:0;border:none
 }
 
+/* 리스트 앞 점 없애기 */
+.card-list,
+.task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* 혹시 브라우저가 마커를 강제로 보여줄 때 대비 */
+.card-list > li::marker,
+.task-list > li::marker {
+  content: "";
+}
+
 /* 전달사항 카드 */
 .notice-card{border-radius:12px;border:1px solid var(--border);padding:14px 16px}
 .kind-notice{background:rgba(239,68,68,.12)}
