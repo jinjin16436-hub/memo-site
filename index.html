@@ -3,86 +3,111 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>부광고 1-1 숙제 & 수행평가</title>
-  <link rel="stylesheet" href="style.css?v=17"/>
-  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore-compat.js"></script>
-  <script src="env.js?v=17"></script>
+  <title>부광고 1-1</title>
+
+  <link rel="stylesheet" href="style.css?v=18"/>
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- 환경설정 -->
+  <script src="env.js?v=18"></script>
 </head>
 <body>
-  <header>
-    <h1>웹 싸이트 최근 수정:2025.09.19 오후 10시.</h1>
+  <header class="topbar">
+    <h1>사이트 버전 1.0.0</h1>
     <div class="auth">
+      <span id="userInfoBox" class="muted"></span>
       <button id="loginBtn" class="btn">로그인</button>
-      <button id="logoutBtn" class="btn">로그아웃</button>
+      <button id="logoutBtn" class="btn" style="display:none">로그아웃</button>
     </div>
   </header>
 
-  <main>
-    <!-- 중요 전달 사항 -->
-    <section id="sec_notice">
-      <h2>
-        중요 전달 사항
-        <label><input type="checkbox" id="noticeToggle" checked/> 표시</label>
-      </h2>
-      <ul id="notice_list" class="card-list"></ul>
+  <main class="container">
 
-      <!-- 관리자만 보이는 공지 추가 -->
-      <div id="noticeAddRow" class="add-row">
-        <input id="nTitle" class="subj" placeholder="제목"/>
-        <select id="nKind">
-          <option value="notice">공지(빨강)</option>
-          <option value="info">안내(노랑)</option>
-          <option value="alert">알림(초록)</option>
-        </select>
-        <textarea id="nBody" placeholder="내용"></textarea>
-        <button id="nAddBtn" class="btn">추가</button>
+    <!-- ===== 중요 전달 사항 ===== -->
+    <section id="sec_notice" class="sec" data-sec="notice">
+      <div class="section-head row-between">
+        <div class="row gap-8"><span style="font-size:20px">📢</span><span>중요 전달 사항</span></div>
+        <label class="switch">
+          <input id="noticeToggle" type="checkbox"><span class="slider round"></span>
+        </label>
+      </div>
+      <div class="section-body open">
+        <ul id="notice_list" class="card-list"></ul>
+
+        <!-- 관리자만 보이는 공지 추가 -->
+        <div id="noticeAddRow" class="add-row col gap-8" style="display:none">
+          <div class="grid-2">
+            <input id="nTitle" class="input subj" type="text" placeholder="제목" />
+            <select id="nKind" class="select">
+              <option value="notice">공지(빨강)</option>
+              <option value="info">안내(노랑)</option>
+              <option value="alert">알림(초록)</option>
+            </select>
+          </div>
+          <textarea id="nBody" class="detail" rows="4" placeholder="내용 (줄바꿈 가능)"></textarea>
+          <button id="nAddBtn" class="btn align-end">+ 추가</button>
+        </div>
       </div>
     </section>
 
-    <!-- 시험 -->
-    <section id="sec_exam">
-      <h2 onclick="toggleSection('sec_exam')">시험</h2>
-      <ul id="list_exam" class="card-list"></ul>
-      <div class="add-row" data-cat="exam">
-        <input class="subj" placeholder="과목"/>
-        <input class="text" placeholder="내용"/>
-        <textarea class="detail" placeholder="상세 내용"></textarea>
-        <input type="date" class="date-start"/>
-        <input type="date" class="date-end"/>
-        <input class="period" placeholder="교시"/>
-        <button class="btn add">추가</button>
+    <!-- ===== 시험 ===== -->
+    <section class="sec">
+      <button class="section-head" onclick="toggleSection('sec_exam')">🧪 시험 ▾</button>
+      <div id="sec_exam" class="section-body open">
+        <ul id="list_exam" class="card-list"></ul>
+        <div class="add-row" data-cat="exam" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <textarea class="detail" rows="4" placeholder="상세 내용"></textarea>
+          <div class="grid-3">
+            <input class="date-start" type="date" placeholder="시작일" />
+            <input class="date-end" type="date" placeholder="종료일" />
+            <input class="period" type="text" placeholder="교시" />
+          </div>
+          <button class="btn add align-end">+ 추가</button>
+        </div>
       </div>
     </section>
 
-    <!-- 수행 -->
-    <section id="sec_perf">
-      <h2 onclick="toggleSection('sec_perf')">수행</h2>
-      <ul id="list_perf" class="card-list"></ul>
-      <div class="add-row" data-cat="perf">
-        <input class="subj" placeholder="과목"/>
-        <input class="text" placeholder="내용"/>
-        <textarea class="detail" placeholder="상세 내용"></textarea>
-        <input type="date" class="date-start"/>
-        <input type="date" class="date-end"/>
-        <input class="period" placeholder="교시"/>
-        <button class="btn add">추가</button>
+    <!-- ===== 수행평가 ===== -->
+    <section class="sec">
+      <button class="section-head" onclick="toggleSection('sec_perf')">📝 수행평가 ▾</button>
+      <div id="sec_perf" class="section-body open">
+        <ul id="list_perf" class="card-list"></ul>
+        <div class="add-row" data-cat="perf" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <textarea class="detail" rows="4" placeholder="상세 내용"></textarea>
+          <div class="grid-3">
+            <input class="date-start" type="date" placeholder="시작일" />
+            <input class="date-end" type="date" placeholder="종료일" />
+            <input class="period" type="text" placeholder="교시" />
+          </div>
+          <button class="btn add align-end">+ 추가</button>
+        </div>
       </div>
     </section>
 
-    <!-- 숙제 -->
-    <section id="sec_home">
-      <h2 onclick="toggleSection('sec_home')">숙제</h2>
-      <ul id="list_home" class="card-list"></ul>
-      <div class="add-row" data-cat="home">
-        <input class="subj" placeholder="과목"/>
-        <input class="text" placeholder="내용"/>
-        <textarea class="detail" placeholder="상세 내용"></textarea>
-        <input type="date" class="date-start"/>
-        <input type="date" class="date-end"/>
-        <input class="period" placeholder="교시"/>
-        <button class="btn add">추가</button>
+    <!-- ===== 숙제 ===== -->
+    <section class="sec">
+      <button class="section-head" onclick="toggleSection('sec_home')">📌 숙제 ▾</button>
+      <div id="sec_home" class="section-body open">
+        <ul id="list_home" class="card-list"></ul>
+        <div class="add-row" data-cat="home" style="display:none">
+          <input class="subj" type="text" placeholder="과목" />
+          <input class="text" type="text" placeholder="내용" />
+          <textarea class="detail" rows="4" placeholder="상세 내용"></textarea>
+          <div class="grid-3">
+            <input class="date-start" type="date" placeholder="시작일" />
+            <input class="date-end" type="date" placeholder="종료일" />
+            <input class="period" type="text" placeholder="교시" />
+          </div>
+          <button class="btn add align-end">+ 추가</button>
+        </div>
       </div>
     </section>
   </main>
@@ -98,7 +123,7 @@
         <div class="form-grid">
           <label class="full">과목<input id="mSubj" type="text"/></label>
           <label class="full">내용<input id="mText" type="text"/></label>
-          <label class="full">상세 내용<textarea id="mDetail" rows="5"></textarea></label>
+          <label class="full">상세 내용<textarea id="mDetail" rows="6"></textarea></label>
           <label>시작일<input id="mDateStart" type="date"/></label>
           <label>종료일<input id="mDateEnd" type="date"/></label>
           <label>교시<input id="mPeriod" type="text"/></label>
@@ -138,6 +163,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=17"></script>
+  <script src="app.js?v=18"></script>
 </body>
 </html>
