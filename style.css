@@ -384,6 +384,95 @@ input:checked + .slider:before{transform:translateX(24px)}
   }
 }
 
+/* iOS 자동 확대 방지 & 텍스트 스케일 안정화 */
+html { -webkit-text-size-adjust: 100%; }
+
+/* =========================
+   모바일 폼/상단바 정리
+   ========================= */
+@media (max-width: 820px){
+
+  /* 상단바: 제목과 로그인 버튼 크기 축소 */
+  .topbar{ padding:10px 12px; }
+  .topbar h1{
+    font-size: 18px;
+    line-height: 1.2;
+    margin-right: 12px;
+    max-width: calc(100% - 120px); /* 버튼 공간 고려 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar .auth{ gap:8px; }
+  .topbar .auth .btn, .topbar .btn{
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    border-radius: 12px !important;
+    height: auto !important;
+    min-width: auto !important;
+  }
+
+  /* 추가 폼 입력칸 크기/모서리 정리 (과목/내용/날짜/교시) */
+  .add-row,
+  .add-row[data-cat]{
+    border-radius: 12px;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  /* 모든 입력 요소 폰트/패딩 정리 */
+  .add-row .subj,
+  .add-row .text,
+  .add-row .date-start,
+  .add-row .date-end,
+  .add-row .period,
+  .add-row select,
+  .add-row textarea{
+    font-size: 16px !important;      /* 16px 유지: iOS 확대 방지 */
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  /* 상세 내용 텍스트 영역 높이 살짝 늘림 (보기 쉬움) */
+  .add-row .detail{
+    min-height: 160px !important;
+    line-height: 1.6 !important;
+  }
+
+  /* (data-cat) 그리드일 때도 동일한 입력 크기 유지 */
+  .add-row[data-cat] .subj,
+  .add-row[data-cat] .text,
+  .add-row[data-cat] .date-start,
+  .add-row[data-cat] .date-end,
+  .add-row[data-cat] .period{
+    font-size: 16px !important;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  /* +추가 버튼도 모바일 조정 */
+  .add-row .add{
+    padding: 10px 14px !important;
+    font-size: 15px !important;
+    border-radius: 12px !important;
+  }
+}
+
+/* 더 작은 화면(<=480px)에서는 한 번 더 살짝 컴팩트하게 */
+@media (max-width: 480px){
+  .topbar h1{ font-size: 17px; }
+  .topbar .auth .btn, .topbar .btn{ font-size: 13.5px !important; padding: 8px 10px !important; }
+
+  .add-row .subj,
+  .add-row .text,
+  .add-row .date-start,
+  .add-row .date-end,
+  .add-row .period,
+  .add-row select,
+  .add-row textarea{
+    font-size: 15.5px !important;
+  }
+}
 
 /* ===== 본문 pre 스타일 ===== */
 .task pre,
