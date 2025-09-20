@@ -374,6 +374,74 @@ input:checked + .slider:before{transform:translateX(24px)}
   }
 }
 
+/* =========================================
+   모바일: 모든 카드 크기를 시험 카드와 통일
+   (#list_exam 외에도 수행/숙제/공지 모두 적용)
+   ========================================= */
+@media (max-width: 820px){
+  /* 카드 공통 */
+  .task,
+  .notice-card{
+    padding: 14px 16px !important;
+  }
+
+  /* 제목 */
+  .task .title,
+  .notice-card .notice-title{
+    font-size: 18px !important;
+    line-height: 1.35 !important;
+    margin-bottom: 6px !important;
+  }
+
+  /* 본문/상세 내용 */
+  .task .content,
+  .task pre,
+  .notice-card .notice-content,
+  .notice-card pre,
+  .notice-card p{
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 6px 0 8px;
+  }
+
+  /* 메타(게시일, 날짜 등) */
+  .task .meta,
+  .notice-card .notice-meta{
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    margin-top: 6px !important;
+  }
+
+  /* D-day 뱃지 */
+  .task .dday,
+  .notice-card .dday{
+    padding: 1px 6px !important;
+    font-size: 11px !important;
+  }
+
+  /* 카드 간격 */
+  .task-list,
+  .card-list{
+    gap: 12px !important;
+  }
+}
+
+/* 더 작은 화면(<=480px)일 때 한 번 더 소폭 축소 */
+@media (max-width: 480px){
+  .task .title,
+  .notice-card .notice-title{ font-size: 17px !important; }
+  .task .content,
+  .task pre,
+  .notice-card .notice-content,
+  .notice-card pre,
+  .notice-card p{ font-size: 13.5px !important; }
+  .task .meta,
+  .notice-card .notice-meta{ font-size: 12.5px !important; }
+}
+
+
 /* ===== 본문 pre 스타일(요청) ===== */
 .task pre,
 .notice-card pre {
