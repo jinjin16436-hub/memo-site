@@ -1,6 +1,8 @@
 /* =========================================================
  * app.js  (Firebase compat)
  * - firebaseConfig 는 index.html 에서 window.firebaseConfig 로 주입
+ * - 평면(복수/단수) + 레거시 경로를 모두 읽어 합치기
+ * - 수정은 모달 팝업으로 처리
  * ========================================================= */
 
 /* ---------- Firebase 초기화 ---------- */
@@ -19,12 +21,12 @@ firebase.initializeApp(cfg);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-/* ---------- 관리자 UID 리스트(필요시 추가) ---------- */
+/* ---------- 관리자 UID ---------- */
 const ADMIN_UIDS = [
-  "vv0bADtWdqQUnqFMy8k01dhO13t2" // 기본 관리자
+  "vv0bADtWdqQUnqFMy8k01dhO13t2" // 관리자
 ];
 
-/* ---------- 전역 상태 ---------- */
+/* ---------- 전역 ---------- */
 let currentUser = null;
 let isAdmin = false;
 
@@ -46,7 +48,7 @@ const el = (tag, attrs = {}, ...children) => {
 const todayISO = () => new Date().toISOString().slice(0,10);
 const fmtDate  = (s) => s ? s : '';
 
-/* ---------- D-day 계산 & 색상 ---------- */
+/* ---------- D-day ---------- */
 function colorByDiff(diff){
   if (diff === 0) return 'red';
   if (diff <= 2)  return 'orange';
@@ -110,10 +112,10 @@ function mapWorkDoc(d){
   return { subject, text, detail, startDate, endDate, period };
 }
 
-/* ---------- 공용 Firestore 경로 ---------- */
+/* ---------- Firestore 경로 ---------- */
 function colRef(col){ return db.collection('users').doc(currentUser.uid).collection(col); }
 
-/* ---------- Auth & 상단 버튼 ---------- */
+/* ---------- Auth ---------- */
 const loginBtn  = $('#loginBtn');
 const logoutBtn = $('#logoutBtn');
 const userInfo  = $('#userInfo');
@@ -155,7 +157,9 @@ async function loadAll(){
   await Promise.all([loadNotices(), loadExams(), loadTasks(), loadHomeworks()]);
 }
 
-/* ---------- 공지 로딩 & 렌더 ---------- */
+/* =========================================================
+   공지 로딩/렌더
+   ========================================================= */
 async function loadNotices(){
   const ul = $('#list_notice'); if (!ul) return;
   ul.innerHTML = '';
@@ -163,7 +167,6 @@ async function loadNotices(){
   try {
     snap = await colRef('notices').orderBy('createdAt','desc').get();
   } catch (e) {
-    // createdAt이 없던 문서 대응
     snap = await colRef('notices').get();
   }
   snap.forEach(doc=>{
@@ -193,32 +196,42 @@ function renderNotice(raw){
   return li;
 }
 
-/* ---------- 시험/수행/숙제: 평면 + 레거시 모두 읽기 ---------- */
-// 평면: /users/{uid}/{colName}
-async function tryFlat(colName) {
-  try {
-    return await colRef(colName).get();
-  } catch (e) {
-    console.warn(`[flat] ${colName} get 실패:`, e);
-    return { empty: true, docs: [] };
+/* =========================================================
+   시험/수행/숙제: 평면(복수/단수) + 레거시 모두 읽기
+   ========================================================= */
+// 평면 다중 시도
+async function tryFlatMulti(candidates) {
+  const allDocs = [];
+  for (const cn of candidates) {
+    try {
+      const snap = await colRef(cn).get();
+      if (!snap.empty) {
+        console.log(`[flat] ${cn}: ${snap.size} docs`);
+        allDocs.push(...snap.docs.map(d => ({ id:d.id, ...d.data() })));
+      }
+    } catch (e) {
+      // 권한/경로 없음 무시
+    }
   }
+  return allDocs;
 }
-// 레거시: /users/{uid}/tasks/{cat}/items  (cat: exams|exam|tasks|task|homeworks|homework)
+
+// 레거시: /users/{uid}/tasks/{cat}/items  (cat 복수/단수 둘다 시도)
 async function tryLegacy(catPlural) {
   const cats = [catPlural, catPlural.replace(/s$/, '')];
   const results = [];
   for (const cat of cats) {
     try {
       const snap = await colRef('tasks').doc(cat).collection('items').get();
-      if (!snap.empty) results.push(...snap.docs);
+      if (!snap.empty) {
+        console.log(`[legacy] tasks/${cat}/items: ${snap.size} docs`);
+        results.push(...snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }
     } catch (e) { /* 경로 없으면 무시 */ }
   }
   return results;
 }
-function toArrayFromSnap(snap) {
-  if (!snap || snap.empty) return [];
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-}
+
 function sortByWhen(items){
   items.sort((a,b) => {
     const getT = (x) => {
@@ -232,7 +245,7 @@ function sortByWhen(items){
   });
 }
 
-/* ---- 렌더 공통 ---- */
+/* ---- 공통 렌더 ---- */
 function renderWorkItem(raw, colname){
   const d = mapWorkDoc(raw);
   const li = el('li',{class:'task'});
@@ -268,10 +281,11 @@ async function loadExams() {
   const ul = $('#list_exam'); if (!ul) return;
   ul.innerHTML = '';
 
-  const flatSnap   = await tryFlat('exams');
-  let items        = toArrayFromSnap(flatSnap);
-  const legacyDocs = await tryLegacy('exams');
-  if (legacyDocs.length) items = items.concat(legacyDocs.map(d => ({ id: d.id, ...d.data() })));
+  const flatItems   = await tryFlatMulti(['exams','exam']);
+  const legacyItems = await tryLegacy('exams');
+  let items = [...flatItems, ...legacyItems];
+
+  console.log('[loadExams] merged:', items.length);
 
   if (!items.length) {
     ul.innerHTML = '<li class="task" style="opacity:.7">등록된 시험이 없습니다.</li>';
@@ -286,10 +300,11 @@ async function loadTasks() {
   const ul = $('#list_task'); if (!ul) return;
   ul.innerHTML = '';
 
-  const flatSnap   = await tryFlat('tasks');
-  let items        = toArrayFromSnap(flatSnap);
-  const legacyDocs = await tryLegacy('tasks');
-  if (legacyDocs.length) items = items.concat(legacyDocs.map(d => ({ id: d.id, ...d.data() })));
+  const flatItems   = await tryFlatMulti(['tasks','task']);
+  const legacyItems = await tryLegacy('tasks');
+  let items = [...flatItems, ...legacyItems];
+
+  console.log('[loadTasks] merged:', items.length);
 
   if (!items.length) {
     ul.innerHTML = '<li class="task" style="opacity:.7">등록된 수행평가가 없습니다.</li>';
@@ -304,10 +319,11 @@ async function loadHomeworks() {
   const ul = $('#list_homework'); if (!ul) return;
   ul.innerHTML = '';
 
-  const flatSnap   = await tryFlat('homeworks');
-  let items        = toArrayFromSnap(flatSnap);
-  const legacyDocs = await tryLegacy('homeworks');
-  if (legacyDocs.length) items = items.concat(legacyDocs.map(d => ({ id: d.id, ...d.data() })));
+  const flatItems   = await tryFlatMulti(['homeworks','homework']);
+  const legacyItems = await tryLegacy('homeworks');
+  let items = [...flatItems, ...legacyItems];
+
+  console.log('[loadHomeworks] merged:', items.length);
 
   if (!items.length) {
     ul.innerHTML = '<li class="task" style="opacity:.7">등록된 숙제가 없습니다.</li>';
@@ -317,31 +333,49 @@ async function loadHomeworks() {
   items.forEach(raw => ul.appendChild(renderWorkItem(raw, 'homeworks')));
 }
 
-/* ---------- 수정/삭제 버튼 ---------- */
+/* =========================================================
+   수정/삭제 버튼 + 모달 편집기
+   ========================================================= */
 function buttonRow(colname, id, mapped){
   const wrap = el('div',{class:'row',style:'gap:8px;margin-top:10px;'});
   const edit = el('button',{class:'btn'},'수정');
   const del  = el('button',{class:'btn'},'삭제');
 
   edit.addEventListener('click', async ()=>{
-    if (colname==='notices'){
-      const title = prompt('제목', mapped.title ?? '');
-      if (title===null) return;
-      const body  = prompt('내용', mapped.body ?? '');
-      if (body===null) return;
-      const kind  = prompt('종류(notice|info|alert)', mapped.kind ?? 'notice') || 'notice';
-      await colRef('notices').doc(id).update({ title, body, kind });
+    if (colname === 'notices') {
+      const initial = {
+        title: mapped.title ?? '',
+        body : mapped.body ?? '',
+        kind : mapped.kind ?? 'notice',
+      };
+      const res = await openEditModal('공지 수정', [
+        { key:'title', label:'제목', type:'text', value:initial.title },
+        { key:'body',  label:'내용', type:'textarea', value:initial.body },
+        { key:'kind',  label:'종류(notice|info|alert)', type:'text', value:initial.kind },
+      ]);
+      if (!res) return;
+      await colRef('notices').doc(id).update({
+        title:res.title, body:res.body, kind:res.kind
+      });
     } else {
-      const subject   = prompt('과목', mapped.subject ?? '');
-      if (subject===null) return;
-      const text      = prompt('내용', mapped.text ?? '');
-      if (text===null) return;
-      const detail    = prompt('상세 내용', mapped.detail ?? '');
-      if (detail===null) return;
-      const startDate = prompt('시작일 yyyy-mm-dd', mapped.startDate ?? '') || null;
-      const endDate   = prompt('종료일 yyyy-mm-dd', mapped.endDate ?? '')   || null;
-      const period    = prompt('교시/시간대', mapped.period ?? '') || '';
-      await colRef(colname).doc(id).update({ subject, text, detail, startDate, endDate, period });
+      const initial = {
+        subject   : mapped.subject ?? '',
+        text      : mapped.text ?? '',
+        detail    : mapped.detail ?? '',
+        startDate : mapped.startDate ?? '',
+        endDate   : mapped.endDate ?? '',
+        period    : mapped.period ?? '',
+      };
+      const res = await openEditModal('항목 수정', [
+        { key:'subject',   label:'과목',     type:'text',     value:initial.subject },
+        { key:'text',      label:'내용',     type:'textarea', value:initial.text },
+        { key:'detail',    label:'상세 내용',type:'textarea', value:initial.detail },
+        { key:'startDate', label:'시작일',   type:'date',     value:initial.startDate },
+        { key:'endDate',   label:'종료일',   type:'date',     value:initial.endDate },
+        { key:'period',    label:'교시/시간',type:'text',     value:initial.period },
+      ]);
+      if (!res) return;
+      await colRef(colname).doc(id).update(res);
     }
     await loadAll();
   });
@@ -356,10 +390,76 @@ function buttonRow(colname, id, mapped){
   return wrap;
 }
 
-/* ---------- 입력값 헬퍼 ---------- */
+/* ---------- 모달 ---------- */
+function ensureModalRoot(){
+  let root = $('#modal-root');
+  if (!root) {
+    root = el('div',{id:'modal-root'});
+    document.body.appendChild(root);
+  }
+  return root;
+}
+function openEditModal(title, fields){
+  return new Promise(resolve=>{
+    const root = ensureModalRoot();
+
+    const overlay = el('div',{class:'modal show'});
+    const dialog  = el('div',{class:'modal__dialog'});
+    const head    = el('div',{class:'modal__head'},
+      el('strong',{}, title),
+      el('button',{class:'modal__close'},'닫기')
+    );
+    const body    = el('div',{class:'modal__body'});
+    const foot    = el('div',{class:'modal__foot'});
+
+    const form = el('div',{class:'form-grid'});
+    const state = {};
+
+    fields.forEach(f=>{
+      const wrap = el('label',{}, f.label);
+      let input;
+      if (f.type === 'textarea') {
+        input = el('textarea',{value:f.value || ''});
+      } else if (f.type === 'date') {
+        input = el('input',{type:'date', value:f.value || ''});
+      } else {
+        input = el('input',{type:'text', value:f.value || ''});
+      }
+      wrap.appendChild(input);
+      form.appendChild(wrap);
+      state[f.key] = input;
+    });
+
+    const saveBtn = el('button',{class:'btn btn--primary'},'저장');
+    const cancelBtn = el('button',{class:'btn'},'취소');
+
+    body.appendChild(form);
+    foot.append(cancelBtn, saveBtn);
+    dialog.append(head, body, foot);
+    overlay.appendChild(dialog);
+    root.appendChild(overlay);
+
+    // 이벤트
+    head.querySelector('.modal__close').onclick = close;
+    cancelBtn.onclick = () => { close(); resolve(null); };
+    saveBtn.onclick = () => {
+      const result = {};
+      fields.forEach(f => result[f.key] = state[f.key].value);
+      close(); resolve(result);
+    };
+
+    function close(){
+      overlay.remove();
+    }
+  });
+}
+
+/* =========================================================
+   추가(공지/시험/수행/숙제)
+   ========================================================= */
 function v(id){ return (document.getElementById(id)?.value || '').trim(); }
 
-/* ---------- 공지 추가 ---------- */
+/* 공지 추가 */
 $('#nAddBtn')?.addEventListener('click', async ()=>{
   if (!currentUser) return alert('로그인이 필요합니다.');
   const title = v('nTitle');
@@ -376,7 +476,7 @@ $('#nAddBtn')?.addEventListener('click', async ()=>{
   await loadNotices();
 });
 
-/* ---------- 시험 추가 ---------- */
+/* 시험 추가 */
 $('#exAddBtn')?.addEventListener('click', async ()=>{
   if (!currentUser) return alert('로그인이 필요합니다.');
   const subject   = v('exSubj');
@@ -399,7 +499,7 @@ $('#exAddBtn')?.addEventListener('click', async ()=>{
   await loadExams();
 });
 
-/* ---------- 수행 추가 ---------- */
+/* 수행 추가 */
 $('#taAddBtn')?.addEventListener('click', async ()=>{
   if (!currentUser) return alert('로그인이 필요합니다.');
   const subject   = v('taSubj');
@@ -422,7 +522,7 @@ $('#taAddBtn')?.addEventListener('click', async ()=>{
   await loadTasks();
 });
 
-/* ---------- 숙제 추가 ---------- */
+/* 숙제 추가 */
 $('#hwAddBtn')?.addEventListener('click', async ()=>{
   if (!currentUser) return alert('로그인이 필요합니다.');
   const subject   = v('hwSubj');
