@@ -1,6 +1,9 @@
-/* ==============================
-   Firebase 초기화
-============================== */
+/* =========================================================
+ * app.js  (Firebase compat)
+ * - firebaseConfig 는 index.html 에서 window.firebaseConfig 로 주입
+ * ========================================================= */
+
+/* ---------- Firebase 초기화 ---------- */
 const cfg =
   (typeof window !== 'undefined' && window.firebaseConfig)
     ? window.firebaseConfig
@@ -16,15 +19,16 @@ firebase.initializeApp(cfg);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-/* (필요 시) 관리자 UID 등록 */
+/* ---------- 관리자 UID 리스트(필요시 추가) ---------- */
 const ADMIN_UIDS = [
-  // '추가 관리자 UID'
+  "vv0bADtWdqQUnqFMy8k01dhO13t2" // 기본 관리자
 ];
 
+/* ---------- 전역 상태 ---------- */
 let currentUser = null;
 let isAdmin = false;
 
-/* DOM 도우미 */
+/* ---------- DOM 헬퍼 ---------- */
 const $ = (q) => document.querySelector(q);
 const el = (tag, attrs = {}, ...children) => {
   const n = document.createElement(tag);
@@ -38,11 +42,11 @@ const el = (tag, attrs = {}, ...children) => {
   return n;
 };
 
-/* 날짜/포맷 */
+/* ---------- 날짜/포맷 ---------- */
 const todayISO = () => new Date().toISOString().slice(0,10);
 const fmtDate  = (s) => s ? s : '';
 
-/* D-day 계산 & 색상 */
+/* ---------- D-day 계산 & 색상 ---------- */
 function colorByDiff(diff){
   if (diff === 0) return 'red';
   if (diff <= 2)  return 'orange';
@@ -83,7 +87,7 @@ function calcDday(start, end) {
   return null;
 }
 
-/* 레거시 필드 매핑 (공지) */
+/* ---------- 레거시 필드 매핑 ---------- */
 function mapNoticeDoc(d){
   const title = d.title ?? d.subject ?? d.name ?? '(제목 없음)';
   const body  = d.body  ?? d.text    ?? d.content ?? '';
@@ -96,8 +100,6 @@ function mapNoticeDoc(d){
 
   return { title, body, kind, createdISO };
 }
-
-/* 레거시 필드 매핑 (시험/수행/숙제) */
 function mapWorkDoc(d){
   const subject   = d.subject ?? d.title ?? d.name ?? '(과목 없음)';
   const text      = d.text    ?? d.content ?? '';
@@ -108,20 +110,10 @@ function mapWorkDoc(d){
   return { subject, text, detail, startDate, endDate, period };
 }
 
-/* 공용 Firestore 경로 */
+/* ---------- 공용 Firestore 경로 ---------- */
 function colRef(col){ return db.collection('users').doc(currentUser.uid).collection(col); }
 
-/* createdAt 정렬 실패시 폴백 */
-async function safeLoad(col){
-  try {
-    return await colRef(col).orderBy('createdAt','desc').get();
-  } catch (e) {
-    console.warn(`[safeLoad] orderBy(createdAt) 실패 → 일반 get() 폴백: ${col}`, e);
-    return await colRef(col).get();
-  }
-}
-
-/* 로그인/로그아웃 */
+/* ---------- Auth & 상단 버튼 ---------- */
 const loginBtn  = $('#loginBtn');
 const logoutBtn = $('#logoutBtn');
 const userInfo  = $('#userInfo');
@@ -153,7 +145,7 @@ auth.onAuthStateChanged(async (user)=>{
   await loadAll();
 });
 
-/* 리스트 리셋/로드 */
+/* ---------- 리스트 리셋/로드 ---------- */
 function clearAllLists(){
   ['#list_notice','#list_exam','#list_task','#list_homework'].forEach(s=>{
     const ul = $(s); if (ul) ul.innerHTML = '';
@@ -163,11 +155,17 @@ async function loadAll(){
   await Promise.all([loadNotices(), loadExams(), loadTasks(), loadHomeworks()]);
 }
 
-/* 공지 렌더 */
+/* ---------- 공지 로딩 & 렌더 ---------- */
 async function loadNotices(){
   const ul = $('#list_notice'); if (!ul) return;
   ul.innerHTML = '';
-  const snap = await safeLoad('notices');
+  let snap;
+  try {
+    snap = await colRef('notices').orderBy('createdAt','desc').get();
+  } catch (e) {
+    // createdAt이 없던 문서 대응
+    snap = await colRef('notices').get();
+  }
   snap.forEach(doc=>{
     const raw = doc.data(); raw.id = doc.id;
     ul.appendChild(renderNotice(raw));
@@ -195,7 +193,46 @@ function renderNotice(raw){
   return li;
 }
 
-/* 시험/수행/숙제 렌더 공통 */
+/* ---------- 시험/수행/숙제: 평면 + 레거시 모두 읽기 ---------- */
+// 평면: /users/{uid}/{colName}
+async function tryFlat(colName) {
+  try {
+    return await colRef(colName).get();
+  } catch (e) {
+    console.warn(`[flat] ${colName} get 실패:`, e);
+    return { empty: true, docs: [] };
+  }
+}
+// 레거시: /users/{uid}/tasks/{cat}/items  (cat: exams|exam|tasks|task|homeworks|homework)
+async function tryLegacy(catPlural) {
+  const cats = [catPlural, catPlural.replace(/s$/, '')];
+  const results = [];
+  for (const cat of cats) {
+    try {
+      const snap = await colRef('tasks').doc(cat).collection('items').get();
+      if (!snap.empty) results.push(...snap.docs);
+    } catch (e) { /* 경로 없으면 무시 */ }
+  }
+  return results;
+}
+function toArrayFromSnap(snap) {
+  if (!snap || snap.empty) return [];
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+function sortByWhen(items){
+  items.sort((a,b) => {
+    const getT = (x) => {
+      if (x.createdAt?.toDate) return x.createdAt.toDate().getTime();
+      if (typeof x.createdAt === 'string') return new Date(x.createdAt).getTime();
+      if (x.startDate) return new Date(x.startDate).getTime();
+      if (x.endDate) return new Date(x.endDate).getTime();
+      return 0;
+    };
+    return getT(b) - getT(a);
+  });
+}
+
+/* ---- 렌더 공통 ---- */
 function renderWorkItem(raw, colname){
   const d = mapWorkDoc(raw);
   const li = el('li',{class:'task'});
@@ -226,26 +263,61 @@ function renderWorkItem(raw, colname){
   return li;
 }
 
-async function loadExams(){
+/* ---- 시험 ---- */
+async function loadExams() {
   const ul = $('#list_exam'); if (!ul) return;
   ul.innerHTML = '';
-  const snap = await safeLoad('exams');
-  snap.forEach(doc=>{ const raw=doc.data(); raw.id=doc.id; ul.appendChild(renderWorkItem(raw,'exams')); });
-}
-async function loadTasks(){
-  const ul = $('#list_task'); if (!ul) return;
-  ul.innerHTML = '';
-  const snap = await safeLoad('tasks');
-  snap.forEach(doc=>{ const raw=doc.data(); raw.id=doc.id; ul.appendChild(renderWorkItem(raw,'tasks')); });
-}
-async function loadHomeworks(){
-  const ul = $('#list_homework'); if (!ul) return;
-  ul.innerHTML = '';
-  const snap = await safeLoad('homeworks');
-  snap.forEach(doc=>{ const raw=doc.data(); raw.id=doc.id; ul.appendChild(renderWorkItem(raw,'homeworks')); });
+
+  const flatSnap   = await tryFlat('exams');
+  let items        = toArrayFromSnap(flatSnap);
+  const legacyDocs = await tryLegacy('exams');
+  if (legacyDocs.length) items = items.concat(legacyDocs.map(d => ({ id: d.id, ...d.data() })));
+
+  if (!items.length) {
+    ul.innerHTML = '<li class="task" style="opacity:.7">등록된 시험이 없습니다.</li>';
+    return;
+  }
+  sortByWhen(items);
+  items.forEach(raw => ul.appendChild(renderWorkItem(raw, 'exams')));
 }
 
-/* 수정/삭제 버튼 */
+/* ---- 수행평가 ---- */
+async function loadTasks() {
+  const ul = $('#list_task'); if (!ul) return;
+  ul.innerHTML = '';
+
+  const flatSnap   = await tryFlat('tasks');
+  let items        = toArrayFromSnap(flatSnap);
+  const legacyDocs = await tryLegacy('tasks');
+  if (legacyDocs.length) items = items.concat(legacyDocs.map(d => ({ id: d.id, ...d.data() })));
+
+  if (!items.length) {
+    ul.innerHTML = '<li class="task" style="opacity:.7">등록된 수행평가가 없습니다.</li>';
+    return;
+  }
+  sortByWhen(items);
+  items.forEach(raw => ul.appendChild(renderWorkItem(raw, 'tasks')));
+}
+
+/* ---- 숙제 ---- */
+async function loadHomeworks() {
+  const ul = $('#list_homework'); if (!ul) return;
+  ul.innerHTML = '';
+
+  const flatSnap   = await tryFlat('homeworks');
+  let items        = toArrayFromSnap(flatSnap);
+  const legacyDocs = await tryLegacy('homeworks');
+  if (legacyDocs.length) items = items.concat(legacyDocs.map(d => ({ id: d.id, ...d.data() })));
+
+  if (!items.length) {
+    ul.innerHTML = '<li class="task" style="opacity:.7">등록된 숙제가 없습니다.</li>';
+    return;
+  }
+  sortByWhen(items);
+  items.forEach(raw => ul.appendChild(renderWorkItem(raw, 'homeworks')));
+}
+
+/* ---------- 수정/삭제 버튼 ---------- */
 function buttonRow(colname, id, mapped){
   const wrap = el('div',{class:'row',style:'gap:8px;margin-top:10px;'});
   const edit = el('button',{class:'btn'},'수정');
@@ -284,10 +356,10 @@ function buttonRow(colname, id, mapped){
   return wrap;
 }
 
-/* 추가 폼 저장 */
+/* ---------- 입력값 헬퍼 ---------- */
 function v(id){ return (document.getElementById(id)?.value || '').trim(); }
 
-/* 공지 */
+/* ---------- 공지 추가 ---------- */
 $('#nAddBtn')?.addEventListener('click', async ()=>{
   if (!currentUser) return alert('로그인이 필요합니다.');
   const title = v('nTitle');
@@ -304,7 +376,7 @@ $('#nAddBtn')?.addEventListener('click', async ()=>{
   await loadNotices();
 });
 
-/* 시험 */
+/* ---------- 시험 추가 ---------- */
 $('#exAddBtn')?.addEventListener('click', async ()=>{
   if (!currentUser) return alert('로그인이 필요합니다.');
   const subject   = v('exSubj');
@@ -327,7 +399,7 @@ $('#exAddBtn')?.addEventListener('click', async ()=>{
   await loadExams();
 });
 
-/* 수행 */
+/* ---------- 수행 추가 ---------- */
 $('#taAddBtn')?.addEventListener('click', async ()=>{
   if (!currentUser) return alert('로그인이 필요합니다.');
   const subject   = v('taSubj');
@@ -350,7 +422,7 @@ $('#taAddBtn')?.addEventListener('click', async ()=>{
   await loadTasks();
 });
 
-/* 숙제 */
+/* ---------- 숙제 추가 ---------- */
 $('#hwAddBtn')?.addEventListener('click', async ()=>{
   if (!currentUser) return alert('로그인이 필요합니다.');
   const subject   = v('hwSubj');
@@ -373,7 +445,7 @@ $('#hwAddBtn')?.addEventListener('click', async ()=>{
   await loadHomeworks();
 });
 
-/* 공지 표시 토글(리스트만 숨김) */
+/* ---------- 공지 표시 토글(리스트만 숨김) ---------- */
 const noticeSwitch = $('#noticeSwitch');
 const noticeList   = $('#list_notice');
 noticeSwitch?.addEventListener('change', (e)=>{
@@ -381,5 +453,5 @@ noticeSwitch?.addEventListener('change', (e)=>{
   noticeList.style.display = e.target.checked ? '' : 'none';
 });
 
-/* 초기 리셋 */
+/* ---------- 초기 ---------- */
 clearAllLists();
