@@ -5,11 +5,11 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-// 관리자 UID 등록(필요시 수정)
+/* // 관리자 UID 등록(필요시 수정)
 const ADMIN_UIDS = [
    // 'vv0bADtWdqQUnqFMy8k01dhO13t2'
 ];
-
+*/
 let currentUser = null;
 let isAdmin = false;
 
