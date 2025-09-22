@@ -12,6 +12,5 @@ window.firebaseConfig = {
   PUBLIC_UID: "vv0bADtWdqQUnqFMy8k01dhO13t2",
 
   // 관리자 식별 (여러 명 가능)
-  ADMIN_UIDS: ["vv0bADtWdqQUnqFMy8k01dhO13t2"],
-  ADMIN_EMAILS: ["jinjin16436@gmail.com"] // 필요 없으면 비워도 됨
+  ADMIN_UIDS: "vv0bADtWdqQUnqFMy8k01dhO13t2",
 };
