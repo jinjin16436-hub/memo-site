@@ -4,17 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>부광고 1-1</title>
-
-  <!-- 네가 쓰던 CSS를 그대로 링크하세요 -->
-  <link rel="stylesheet" href="style.css?v=1" />
+  <link rel="stylesheet" href="style.css?v=1.2" />
 </head>
 <body>
+
   <!-- 상단바 -->
-  <header class="topbar">
-    <h1>사이트 버전 v1.1.2 (부광고.웹.한국)</h1>
+  <header class="topbar container">
+    <h1>사이트 버전 v1.1.3 (부광고.웹.한국)</h1>
     <div class="auth">
       <span id="userInfo">로그아웃 상태</span>
-      <button id="loginBtn"  type="button" class="btn btn--primary">로그인</button>
+      <button id="loginBtn" type="button" class="btn btn--primary">로그인</button>
       <button id="logoutBtn" type="button" class="btn btn--ghost" style="display:none;">로그아웃</button>
     </div>
   </header>
@@ -22,109 +21,99 @@
   <main class="container">
 
     <!-- 중요 전달 사항 -->
-    <section class="sec">
-      <div class="section-head">
-        <span>📣 중요 전달 사항</span>
-        <label class="switch" style="margin-left:12px;">
+    <section class="sec" id="sec_notice">
+      <div class="section-head row-between">
+        <div>📣 중요 전달 사항</div>
+        <label class="row" style="gap:8px;">
           <input id="noticeSwitch" type="checkbox" checked />
-          <span class="slider round"></span>
+          <span>표시</span>
         </label>
       </div>
-
       <div class="section-body">
-        <!-- 공지 리스트 -->
         <ul id="list_notice" class="card-list"></ul>
 
-        <!-- (관리자용) 공지 추가 -->
-        <div class="add-row" id="noticeAddRow">
-          <input  id="nTitle" class="subj input" placeholder="제목" />
-          <select id="nKind"  class="select">
+        <!-- 공지 추가 폼 -->
+        <div class="add-row" data-cat="notice" style="margin-top:16px;">
+          <input id="nTitle" class="subj" type="text" placeholder="제목" />
+          <select id="nKind" class="text">
             <option value="notice">공지(빨강)</option>
             <option value="info">안내(노랑)</option>
-            <option value="alert">참고(초록)</option>
+            <option value="alert">강조(초록)</option>
           </select>
-          <textarea id="nBody"  class="detail" placeholder="내용 (줄바꿈 가능)"></textarea>
+          <textarea id="nBody" class="detail" placeholder="내용 (줄바꿈 가능)"></textarea>
           <button id="nAddBtn" class="btn btn--primary add">+ 추가</button>
         </div>
       </div>
     </section>
 
     <!-- 시험 -->
-    <section class="sec">
-      <div class="section-head">✏️ 시험</div>
+    <section class="sec" id="sec_exam">
+      <div class="section-head">✍️ 시험</div>
       <div class="section-body">
         <ul id="list_exam" class="task-list"></ul>
 
+        <!-- 시험(전용 폼: 과목 칸 없음) -->
         <div class="add-row" data-cat="exam">
-          <input  id="exSubj"   class="subj input"   placeholder="과목" />
-          <input  id="exText"   class="text input"   placeholder="내용" />
-          <textarea id="exDetail" class="detail"     placeholder="상세 내용"></textarea>
-          <input  id="exStart"  class="date-start input" type="date" />
-          <input  id="exEnd"    class="date-end input"   type="date" />
-          <input  id="exPeriod" class="period input"     placeholder="교시 또는 시간대 (예: 2교시/09:10~10:00)" />
+          <input  id="exText"   class="text" type="text" placeholder="시험 이름" />
+          <textarea id="exDetail" class="detail" placeholder="상세 내용"></textarea>
+          <input  id="exStart" class="date-start" type="date" />
+          <input  id="exEnd"   class="date-end"   type="date" />
+          <input  id="exPeriod" class="period" type="text" placeholder="교시/시간" />
           <button id="exAddBtn" class="btn btn--primary add">+ 추가</button>
         </div>
       </div>
     </section>
 
     <!-- 수행평가 -->
-    <section class="sec">
-      <div class="section-head">🧪 수행평가</div>
+    <section class="sec" id="sec_task">
+      <div class="section-head">📝 수행평가</div>
       <div class="section-body">
         <ul id="list_task" class="task-list"></ul>
 
         <div class="add-row" data-cat="task">
-          <input  id="taSubj"   class="subj input"   placeholder="과목" />
-          <input  id="taText"   class="text input"   placeholder="내용" />
-          <textarea id="taDetail" class="detail"     placeholder="상세 내용"></textarea>
-          <input  id="taStart"  class="date-start input" type="date" />
-          <input  id="taEnd"    class="date-end input"   type="date" />
-          <input  id="taPeriod" class="period input"     placeholder="교시 또는 시간대" />
+          <input  id="taSubj"   class="subj"  type="text" placeholder="과목" />
+          <input  id="taText"   class="text"  type="text" placeholder="내용" />
+          <textarea id="taDetail" class="detail" placeholder="상세 내용"></textarea>
+          <input  id="taStart" class="date-start" type="date" />
+          <input  id="taEnd"   class="date-end"   type="date" />
+          <input  id="taPeriod" class="period" type="text" placeholder="교시/시간" />
           <button id="taAddBtn" class="btn btn--primary add">+ 추가</button>
         </div>
       </div>
     </section>
 
     <!-- 숙제 -->
-    <section class="sec">
+    <section class="sec" id="sec_homework">
       <div class="section-head">📌 숙제</div>
       <div class="section-body">
         <ul id="list_homework" class="task-list"></ul>
 
         <div class="add-row" data-cat="homework">
-          <input  id="hwSubj"   class="subj input"   placeholder="과목" />
-          <input  id="hwText"   class="text input"   placeholder="내용" />
-          <textarea id="hwDetail" class="detail"     placeholder="상세 내용"></textarea>
-          <input  id="hwStart"  class="date-start input" type="date" />
-          <input  id="hwEnd"    class="date-end input"   type="date" />
-          <input  id="hwPeriod" class="period input"     placeholder="교시 또는 시간대" />
+          <input  id="hwSubj"   class="subj"  type="text" placeholder="과목" />
+          <input  id="hwText"   class="text"  type="text" placeholder="내용" />
+          <textarea id="hwDetail" class="detail" placeholder="상세 내용"></textarea>
+          <input  id="hwStart" class="date-start" type="date" />
+          <input  id="hwEnd"   class="date-end"   type="date" />
+          <input  id="hwPeriod" class="period" type="text" placeholder="교시/시간" />
           <button id="hwAddBtn" class="btn btn--primary add">+ 추가</button>
         </div>
       </div>
     </section>
+
   </main>
 
-  <!-- Firebase compat CDN -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
-  <!-- 🔵 전역으로 바로 주입(ENV.js 대체) -->
-  <script>
-    window.firebaseConfig = {
-      apiKey: "AIzaSyA10dRuTxDs0Ymz0AC1hf7dhn678n4SVs4",
-      authDomain: "my-memo-site.firebaseapp.com",
-      projectId: "my-memo-site",
-      storageBucket: "my-memo-site.firebasestorage.app",
-      messagingSenderId: "196036694705",
-      appId: "1:196036694705:web:8988d12919420130464890"
-    };
-    console.log('firebaseConfig loaded:', window.firebaseConfig);
-  </script>
-
-  <!-- 앱 스크립트 -->
-  <script src="app.js?v=46"></script>
-  
+  <!-- 모달 루트는 body 끝에 두는 게 안전 -->
   <div id="modal-root"></div>
+
+  <!-- Firebase env (네가 가진 env.js) -->
+  <script src="env.js?v=1"></script>
+
+  <!-- Firebase compat CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore-compat.js"></script>
+
+  <!-- App -->
+  <script src="app.js?v=1.3"></script>
 </body>
 </html>
