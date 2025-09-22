@@ -1,317 +1,644 @@
 /* =========================================================
- * app.js (Firebase compat)
- * - window.firebaseConfig 는 env.js에서 주입
- * - 시험(전용 폼: 과목 없음) / 수행 / 숙제 / 공지
- * - 레거시 경로도 함께 로딩
- * - 수정은 모달 팝업
- * ========================================================= */
+   app.js  (v1.4.0 – full)
+   - 반드시 env.js(전역: window.firebaseConfig, PUBLIC_UID, ADMIN_UIDS, ADMIN_EMAILS) 이후에 로드
+   - Firebase CDN compat(전역 firebase.*) 사용 기준
+   ========================================================= */
 
-/* ---------- Firebase 초기화 ---------- */
-const cfg =
-  (typeof window !== 'undefined' && window.firebaseConfig)
-    ? window.firebaseConfig
-    : (typeof firebaseConfig !== 'undefined' ? firebaseConfig : null);
+/* ---------------------------
+   0) 안전 장치 (env.js 확인)
+   --------------------------- */
+if (!window.firebaseConfig) {
+  alert("firebaseConfig가 로드되지 않았어요. env.js 순서를 확인해주세요.");
+  throw new Error("Missing firebaseConfig");
+}
 
-if (!cfg) { alert('firebaseConfig가 로드되지 않았어요. env.js 순서를 확인해주세요.'); throw new Error('Missing firebaseConfig'); }
-
-firebase.initializeApp(cfg);
+/* ---------------------------
+   1) Firebase 초기화
+   --------------------------- */
+// CDN compat 버전 예시
+const app = firebase.initializeApp(window.firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-/* 관리자 UID */
-const ADMIN_UIDS = ["vv0bADtWdqQUnqFMy8k01dhO13t2"];
-
-/* 전역 */
-let currentUser = null;
-let isAdmin = false;
-
-/* DOM */
-const $ = q => document.querySelector(q);
-const el = (tag, attrs={}, ...children)=>{
-  const n = document.createElement(tag);
-  Object.entries(attrs).forEach(([k,v])=>{
-    if (k==='class') n.className=v;
-    else if (k==='dataset') Object.assign(n.dataset,v);
-    else if (k in n) n[k]=v;
-    else n.setAttribute(k,v);
-  });
-  children.forEach(c=>n.appendChild(typeof c==='string'?document.createTextNode(c):c));
-  return n;
+/* ---------------------------
+   2) 전역 상태
+   --------------------------- */
+const STATE = {
+  uid: null,
+  isAdmin: false,
+  profile: null,
 };
 
-/* 유틸 */
-const todayISO = ()=>new Date().toISOString().slice(0,10);
-const fmtDate  = (s)=>s||'';
-function colorByDiff(diff){ if(diff===0)return'red'; if(diff<=2)return'orange'; if(diff<=7)return'yellow'; return'green'; }
-function calcDday(start,end){
-  if(!start && !end) return null;
-  const today=new Date(todayISO());
-  const s=start?new Date(start):null, e=end?new Date(end):null;
-  if(s&&e){
-    if(today<s){ const d=Math.ceil((s-today)/86400000); return {label:`D-${d}`,badge:colorByDiff(d)};}
-    if(today>e) return null;
-    return {label:'D-day',badge:'green'};
-  }else if(s){
-    if(today<s){ const d=Math.ceil((s-today)/86400000); return {label:`D-${d}`,badge:colorByDiff(d)};}
-    if(today.toDateString()===s.toDateString()) return {label:'D-day',badge:'red'};
-  }else if(e){
-    if(today<e){ const d=Math.ceil((e-today)/86400000); return {label:`D-${d}`,badge:colorByDiff(d)};}
-    if(today.toDateString()===e.toDateString()) return {label:'D-day',badge:'red'};
+const PUBLIC_UID = window.PUBLIC_UID || "public";
+const USER_ROOT  = db.collection("users").doc(PUBLIC_UID);
+
+/* ---------------------------
+   3) Dom 쿼리 헬퍼
+   --------------------------- */
+function $(sel, root = document) { return root.querySelector(sel); }
+function $all(sel, root = document) { return Array.from(root.querySelectorAll(sel)); }
+
+/* ---------------------------
+   4) 관리자 판단
+   --------------------------- */
+function computeIsAdmin(user) {
+  if (!user) return false;
+  if (Array.isArray(window.ADMIN_UIDS) && window.ADMIN_UIDS.includes(user.uid)) return true;
+  if (Array.isArray(window.ADMIN_EMAILS) && window.ADMIN_EMAILS.includes(user.email)) return true;
+  return false;
+}
+
+/* ---------------------------
+   5) 유틸
+   --------------------------- */
+function escapeHtml(str = "") {
+  return str.replace(/[&<>"']/g, (s) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s]));
+}
+function fmtDate(d) {
+  if (!d) return "";
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return d; // YYYY-MM-DD 문자열이면 그대로
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+function ddayBadge(start, end) {
+  if (!start && !end) return "";
+  const today = new Date();
+  const s = start ? new Date(start) : null;
+  const e = end   ? new Date(end)   : null;
+
+  if (s && e) {
+    if (today >= s && today <= e) return `<span class="dday green">D-day</span>`;
   }
-  return null;
+  let diff;
+  if (s) diff = Math.ceil((s - today) / 86400000);
+  else if (e) diff = Math.ceil((e - today) / 86400000);
+  else return "";
+
+  if (diff === 0) return `<span class="dday red">D-day</span>`;
+  let klass = "gray";
+  if (diff > 0 && diff <= 2) klass = "orange";
+  else if (diff > 2 && diff <= 7) klass = "yellow";
+  else if (diff > 7) klass = "green";
+  return `<span class="dday ${klass}">D-${diff}</span>`;
 }
 
-/* 맵퍼 */
-function mapNoticeDoc(d){
-  const title=d.title??d.subject??d.name??'(제목 없음)';
-  const body =d.body ??d.text   ??d.content??'';
-  const kind =d.kind ??'notice';
-  let createdISO=todayISO();
-  if(d.createdAt?.toDate) createdISO=d.createdAt.toDate().toISOString().slice(0,10);
-  else if(typeof d.createdAt==='string') createdISO=d.createdAt;
-  else if(d.created||d.date) createdISO=d.created||d.date;
-  return {title,body,kind,createdISO};
-}
-function mapWorkDoc(d){
-  return {
-    subject   : d.subject ?? d.title ?? d.name ?? '(과목 없음)',
-    text      : d.text    ?? d.content ?? '',
-    detail    : d.detail  ?? d.desc ?? d.description ?? '',
-    startDate : d.startDate ?? d.start ?? d.dateStart ?? d.date ?? null,
-    endDate   : d.endDate   ?? d.end   ?? d.dateEnd   ?? null,
-    period    : d.period ?? d.class ?? d.lesson ?? d.time ?? ''
-  };
-}
+/* ---------------------------
+   6) 로그인/로그아웃 버튼
+   --------------------------- */
+const loginBtn  = $("#loginBtn");
+const logoutBtn = $("#logoutBtn");
+const userInfo  = $("#userInfo");
 
-/* Firestore helpers */
-const colRef = (c)=>db.collection('users').doc(currentUser.uid).collection(c);
-
-/* Auth */
-$('#loginBtn')?.addEventListener('click', async ()=>{
-  const provider=new firebase.auth.GoogleAuthProvider();
-  await auth.signInWithPopup(provider);
+loginBtn?.addEventListener("click", async () => {
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+  } catch (e) {
+    console.error(e);
+    alert("로그인 실패");
+  }
 });
-$('#logoutBtn')?.addEventListener('click', async ()=>auth.signOut());
+logoutBtn?.addEventListener("click", async () => { await auth.signOut(); });
 
-auth.onAuthStateChanged(async (user)=>{
-  currentUser=user||null;
-  isAdmin=!!(user&&ADMIN_UIDS.includes(user.uid));
+auth.onAuthStateChanged(async (user) => {
+  STATE.uid = user?.uid ?? null;
+  STATE.isAdmin = computeIsAdmin(user);
+  STATE.profile = user;
 
-  const info=$('#userInfo'); if(info) info.textContent = user ? `${user.displayName||'사용자'} | UID ${user.uid}${isAdmin?' (관리자)':''}` : '로그아웃 상태';
-  $('#loginBtn').style.display = user ? 'none' : '';
-  $('#logoutBtn').style.display = user ? '' : 'none';
+  if (userInfo) userInfo.textContent = user ? `${user.displayName || user.email}${STATE.isAdmin ? " (관리자)" : ""}` : "로그인 필요";
+  if (loginBtn)  loginBtn.style.display  = user ? "none"         : "inline-block";
+  if (logoutBtn) logoutBtn.style.display = user ? "inline-block" : "none";
 
-  clearAllLists();
-  if(user) await loadAll();
+  // 폼/목록 리렌더
+  loadAll();
 });
 
-/* 리스트 클리어/로드 */
-function clearAllLists(){ ['#list_notice','#list_exam','#list_task','#list_homework'].forEach(s=>{const ul=$(s); if(ul) ul.innerHTML='';}); }
-async function loadAll(){ await Promise.all([loadNotices(),loadExams(),loadTasks(),loadHomeworks()]); }
+/* =========================================================
+   A) 공지/전달 사항 & 설정 (선택 UI가 있는 경우에만 동작)
+   --------------------------------------------------------- */
 
-/* =====================================
-   공지
-   ===================================== */
-async function loadNotices(){
-  const ul=$('#list_notice'); if(!ul) return;
-  ul.innerHTML='';
-  let snap;
-  try { snap=await colRef('notices').orderBy('createdAt','desc').get(); }
-  catch { snap=await colRef('notices').get(); }
-  snap.forEach(doc=>{
-    const raw=doc.data(); raw.id=doc.id;
-    ul.appendChild(renderNotice(raw));
-  });
-}
-function kindClass(kind){ if(kind==='notice')return'kind-notice'; if(kind==='info')return'kind-info'; if(kind==='alert')return'kind-alert'; return''; }
-function renderNotice(raw){
-  const d=mapNoticeDoc(raw);
-  const li=el('li',{class:`notice-card ${kindClass(d.kind)}`});
-  li.append(
-    el('div',{class:'notice-title'},d.title),
-    el('pre',{},d.body),
-    el('div',{class:'notice-meta'},`게시일: ${d.createdISO}`)
-  );
-  if(isAdmin) li.appendChild(editButtons('notices',raw.id,{title:d.title,body:d.body,kind:d.kind,createdAt:d.createdISO}));
-  return li;
-}
+const NOTICE_KIND_LABEL = {
+  notice: "공지(빨강)",
+  info:   "안내(노랑)",
+  alert:  "알림(초록)"
+};
 
-/* =====================================
-   시험/수행/숙제 로딩(평면+레거시)
-   ===================================== */
-async function tryFlat(candidates){
-  const all=[]; for(const c of candidates){
-    try{ const snap=await colRef(c).get(); if(!snap.empty) all.push(...snap.docs.map(d=>({id:d.id,...d.data()}))); }catch{}
-  } return all;
-}
-async function tryLegacy(catPlural){
-  const cats=[catPlural, catPlural.replace(/s$/,'')];
-  const all=[]; for(const c of cats){
-    try{ const snap=await colRef('tasks').doc(c).collection('items').get(); if(!snap.empty) all.push(...snap.docs.map(d=>({id:d.id,...d.data()}))); }catch{}
-  } return all;
-}
-function sortByWhen(items){
-  items.sort((a,b)=>{
-    const t=x=>{
-      if(x.createdAt?.toDate) return x.createdAt.toDate().getTime();
-      if(typeof x.createdAt==='string') return new Date(x.createdAt).getTime();
-      if(x.startDate) return new Date(x.startDate).getTime();
-      if(x.endDate) return new Date(x.endDate).getTime();
-      return 0;
+function mountNoticeAdd() {
+  const wrap = $("#noticeAdd");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+
+  // 관리자만 추가 표시
+  if (!STATE.isAdmin) { wrap.classList.add("hide"); return; }
+  wrap.classList.remove("hide");
+
+  const row = document.createElement("div");
+  row.className = "add-row";
+  row.dataset.cat = "notice-add";
+
+  const title = input("text", "n-title", "제목");
+  const kind  = selectKind();
+  const detail = textarea("n-detail", "내용 (줄바꿈 가능)");
+  const addBtn = document.createElement("button");
+  addBtn.className = "btn btn--primary add";
+  addBtn.textContent = "+ 추가";
+
+  addBtn.addEventListener("click", async () => {
+    const payload = {
+      title: title.value.trim(),
+      kind:  kind.value,
+      content: detail.value.trim(),
+      createdAt: Date.now()
     };
-    return t(b)-t(a);
-  });
-}
-function renderWorkItem(raw,colname){
-  const d=mapWorkDoc(raw);
-  const li=el('li',{class:'task'});
-  const dday=calcDday(d.startDate,d.endDate);
-  const title=el('div',{class:'title'}, d.subject, dday?el('span',{class:`dday ${dday.badge}`},' ',dday.label):'');
-  const content=el('pre',{},d.text);
-  const detail=d.detail?el('pre',{},d.detail):null;
-  const metaText=(d.startDate||d.endDate?`${fmtDate(d.startDate)} ~ ${fmtDate(d.endDate)}`:'') + (d.period?`${(d.startDate||d.endDate)?' · ':''}${d.period}`:'');
-  const meta=metaText?el('div',{class:'meta'},metaText):null;
-  li.append(title,content); if(detail) li.append(detail); if(meta) li.append(meta);
-  if(isAdmin) li.appendChild(editButtons(colname,raw.id,{subject:d.subject,text:d.text,detail:d.detail,startDate:d.startDate,endDate:d.endDate,period:d.period}));
-  return li;
-}
-
-/* 시험 */
-async function loadExams(){
-  const ul=$('#list_exam'); if(!ul) return; ul.innerHTML='';
-  const merged=[...(await tryFlat(['exams','exam'])), ...(await tryLegacy('exams'))];
-  if(!merged.length){ ul.innerHTML='<li class="task" style="opacity:.7">등록된 시험이 없습니다.</li>'; return; }
-  sortByWhen(merged); merged.forEach(r=>ul.appendChild(renderWorkItem(r,'exams')));
-}
-/* 수행 */
-async function loadTasks(){
-  const ul=$('#list_task'); if(!ul) return; ul.innerHTML='';
-  const merged=[...(await tryFlat(['tasks','task'])), ...(await tryLegacy('tasks'))];
-  if(!merged.length){ ul.innerHTML='<li class="task" style="opacity:.7">등록된 수행평가가 없습니다.</li>'; return; }
-  sortByWhen(merged); merged.forEach(r=>ul.appendChild(renderWorkItem(r,'tasks')));
-}
-/* 숙제 */
-async function loadHomeworks(){
-  const ul=$('#list_homework'); if(!ul) return; ul.innerHTML='';
-  const merged=[...(await tryFlat(['homeworks','homework'])), ...(await tryLegacy('homeworks'))];
-  if(!merged.length){ ul.innerHTML='<li class="task" style="opacity:.7">등록된 숙제가 없습니다.</li>'; return; }
-  sortByWhen(merged); merged.forEach(r=>ul.appendChild(renderWorkItem(r,'homeworks')));
-}
-
-/* =====================================
-   수정/삭제 버튼 + 모달
-   ===================================== */
-function editButtons(colname,id,fields){
-  const wrap=el('div',{class:'row',style:'gap:8px;margin-top:10px;'});
-  const bEdit=el('button',{class:'btn'},'수정');
-  const bDel =el('button',{class:'btn'},'삭제');
-  bEdit.onclick=async ()=>{
-    if(colname==='notices'){
-      const res=await openModal('공지 수정',[
-        {key:'title',label:'제목',type:'text',value:fields.title||''},
-        {key:'body', label:'내용',type:'textarea',value:fields.body||''},
-        {key:'kind', label:'종류(notice|info|alert)',type:'text',value:fields.kind||'notice'},
-      ]);
-      if(!res) return;
-      await colRef('notices').doc(id).update({title:res.title,body:res.body,kind:res.kind});
-    }else{
-      const res=await openModal('항목 수정',[
-        {key:'subject',label:'과목',type:'text',value:fields.subject||''},
-        {key:'text',label:'내용',type:'textarea',value:fields.text||''},
-        {key:'detail',label:'상세 내용',type:'textarea',value:fields.detail||''},
-        {key:'startDate',label:'시작일',type:'date',value:fields.startDate||''},
-        {key:'endDate',label:'종료일',type:'date',value:fields.endDate||''},
-        {key:'period',label:'교시/시간',type:'text',value:fields.period||''},
-      ]);
-      if(!res) return;
-      await colRef(colname).doc(id).update(res);
+    if (!payload.title && !payload.content) {
+      alert("제목 또는 내용 중 하나는 입력하세요.");
+      return;
     }
-    await loadAll();
-  };
-  bDel.onclick=async ()=>{ if(!confirm('삭제할까요?'))return; await colRef(colname).doc(id).delete(); await loadAll(); };
-  wrap.append(bEdit,bDel); return wrap;
+    try {
+      await USER_ROOT.collection("notices").add(payload);
+      title.value = ""; detail.value = "";
+      loadNotices();
+    } catch (e) {
+      console.error(e); alert("추가 실패");
+    }
+  });
+
+  row.append(
+    wrapEl(title),
+    wrapEl(kind),
+    wrapEl(detail),
+    addBtn
+  );
+  wrap.appendChild(row);
+
+  function input(type, cls, ph) { const el = document.createElement("input"); el.type = type; el.className = cls; if (ph) el.placeholder = ph; return el; }
+  function textarea(cls, ph) { const el = document.createElement("textarea"); el.className = cls; if (ph) el.placeholder = ph; return el; }
+  function selectKind() {
+    const sel = document.createElement("select");
+    sel.className = "select";
+    sel.innerHTML = `
+      <option value="notice">${NOTICE_KIND_LABEL.notice}</option>
+      <option value="info">${NOTICE_KIND_LABEL.info}</option>
+      <option value="alert">${NOTICE_KIND_LABEL.alert}</option>
+    `;
+    return sel;
+  }
+  function wrapEl(ch) { const d = document.createElement("div"); d.appendChild(ch); return d; }
 }
-function ensureModalRoot(){ let r=$('#modal-root'); if(!r){r=el('div',{id:'modal-root'}); document.body.appendChild(r);} return r; }
-function openModal(title,fields){
-  return new Promise(resolve=>{
-    const root=ensureModalRoot();
-    const overlay=el('div',{class:'modal show'});
-    const dialog =el('div',{class:'modal__dialog'});
-    const head   =el('div',{class:'modal__head'}, el('strong',{},title), el('button',{class:'modal__close'},'닫기'));
-    const body   =el('div',{class:'modal__body'});
-    const foot   =el('div',{class:'modal__foot'});
-    const form   =el('div',{class:'form-grid'}); const state={};
 
-    fields.forEach(f=>{
-      const lab=el('label',{},f.label);
-      let input;
-      if(f.type==='textarea') input=el('textarea',{value:f.value||''});
-      else if(f.type==='date') input=el('input',{type:'date',value:f.value||''});
-      else input=el('input',{type:'text',value:f.value||''});
-      lab.appendChild(input); form.appendChild(lab); state[f.key]=input;
+async function loadNotices() {
+  const list = $("#list_notice");
+  if (!list) return;
+  list.innerHTML = "";
+
+  try {
+    const snap = await USER_ROOT.collection("notices").orderBy("createdAt", "asc").get();
+    if (snap.empty) {
+      const empty = document.createElement("div");
+      empty.className = "notice-card";
+      empty.textContent = "등록된 전달 사항이 없습니다.";
+      list.appendChild(empty);
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    snap.forEach((doc) => {
+      const d = doc.data();
+      const card = renderNoticeCard(doc.id, d);
+      frag.appendChild(card);
     });
+    list.appendChild(frag);
+  } catch (e) {
+    console.error(e);
+    const err = document.createElement("div");
+    err.className = "notice-card";
+    err.textContent = "전달 사항을 불러오지 못했어요.";
+    list.appendChild(err);
+  }
+}
 
-    const save=el('button',{class:'btn btn--primary'},'저장');
-    const cancel=el('button',{class:'btn'},'취소');
-    body.appendChild(form); foot.append(cancel,save);
-    dialog.append(head,body,foot); overlay.appendChild(dialog); root.appendChild(overlay);
+function renderNoticeCard(id, d) {
+  const div = document.createElement("div");
+  div.className = `notice-card ${kindClass(d.kind)}`;
 
-    head.querySelector('.modal__close').onclick=close;
-    cancel.onclick=()=>{ close(); resolve(null); };
-    save.onclick=()=>{ const r={}; fields.forEach(f=>r[f.key]=state[f.key].value); close(); resolve(r); };
-    function close(){ overlay.remove(); }
+  const t = document.createElement("div");
+  t.className = "notice-title";
+  t.textContent = d.title || "(제목 없음)";
+
+  const body = document.createElement("pre");
+  body.textContent = d.content || "";
+
+  const meta = document.createElement("div");
+  meta.className = "notice-meta";
+  meta.textContent = fmtDate(d.createdAt || Date.now());
+
+  const btns = document.createElement("div");
+  btns.className = "row gap-8";
+  if (STATE.isAdmin) {
+    const edit = mkBtn("수정", () => openNoticeEdit(id, d));
+    const del  = mkBtn("삭제", async () => {
+      if (!confirm("삭제할까요?")) return;
+      try {
+        await USER_ROOT.collection("notices").doc(id).delete();
+        loadNotices();
+      } catch (e) { console.error(e); alert("삭제 실패"); }
+    });
+    btns.append(edit, del);
+  }
+
+  div.append(t, body, meta, btns);
+  return div;
+
+  function mkBtn(txt, fn) { const b=document.createElement("button"); b.className="btn"; b.textContent=txt; b.onclick=fn; return b; }
+  function kindClass(k) {
+    if (k === "notice") return "kind-notice";
+    if (k === "info")   return "kind-info";
+    if (k === "alert")  return "kind-alert";
+    return "";
+  }
+}
+
+function openNoticeEdit(id, d) {
+  const modal = $("#modal-root");
+  modal.innerHTML = "";
+  modal.classList.add("show");
+
+  const dlg = document.createElement("div");
+  dlg.className = "modal__dialog";
+
+  const head = document.createElement("div");
+  head.className = "modal__head";
+  head.innerHTML = `<strong>전달 사항 수정</strong>`;
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "modal__close";
+  closeBtn.textContent = "닫기";
+  closeBtn.onclick = () => modal.classList.remove("show");
+  head.appendChild(closeBtn);
+
+  const body = document.createElement("div");
+  body.className = "modal__body";
+
+  const form = document.createElement("div");
+  form.className = "form-grid";
+
+  const f1 = field("제목", "title", "text", d.title || "");
+  const f2 = fieldSelect("종류", "kind", d.kind || "notice");
+  const f3 = fieldTextarea("내용", "content", d.content || "");
+  f3.classList.add("full");
+
+  form.append(f1, f2, f3);
+  body.appendChild(form);
+
+  const foot = document.createElement("div");
+  foot.className = "modal__foot";
+
+  const cancel = document.createElement("button");
+  cancel.className = "btn";
+  cancel.textContent = "취소";
+  cancel.onclick = () => modal.classList.remove("show");
+
+  const save = document.createElement("button");
+  save.className = "btn btn--primary";
+  save.textContent = "저장";
+  save.onclick = async () => {
+    const payload = {
+      title:   $('input[name="title"]', form)?.value.trim() || "",
+      kind:    $('select[name="kind"]', form)?.value || "notice",
+      content: $('textarea[name="content"]', form)?.value.trim() || ""
+    };
+    try {
+      await USER_ROOT.collection("notices").doc(id).update(payload);
+      modal.classList.remove("show");
+      loadNotices();
+    } catch (e) { console.error(e); alert("저장 실패"); }
+  };
+
+  foot.append(cancel, save);
+  dlg.append(head, body, foot);
+  modal.appendChild(dlg);
+
+  function field(label, name, type, value) {
+    const wrap = document.createElement("label");
+    wrap.innerHTML = `${label}`;
+    const inp = document.createElement("input");
+    inp.type = type; inp.name = name; inp.value = value || "";
+    wrap.appendChild(inp); return wrap;
+  }
+  function fieldTextarea(label, name, value) {
+    const wrap = document.createElement("label");
+    wrap.innerHTML = `${label}`;
+    const ta = document.createElement("textarea");
+    ta.name = name; ta.value = value || "";
+    wrap.appendChild(ta); return wrap;
+  }
+  function fieldSelect(label, name, value) {
+    const wrap = document.createElement("label");
+    wrap.innerHTML = `${label}`;
+    const sel = document.createElement("select");
+    sel.name = name;
+    sel.innerHTML = `
+      <option value="notice">공지(빨강)</option>
+      <option value="info">안내(노랑)</option>
+      <option value="alert">알림(초록)</option>
+    `;
+    sel.value = value;
+    wrap.appendChild(sel); return wrap;
+  }
+}
+
+/* 설정(전달 사항 표시 토글) – 페이지에 토글 UI가 있을 때만 동작 */
+async function bindSettingToggle() {
+  const toggle = $("#toggleNotices");
+  if (!toggle) return;
+
+  // 읽기
+  try {
+    const doc = await USER_ROOT.collection("settings").doc("app").get();
+    const val = doc.exists ? !!doc.data().showNotices : true;
+    toggle.checked = val;
+    controlNoticeVisibility(val);
+  } catch (e) {
+    console.error(e);
+  }
+
+  // 쓰기
+  toggle.addEventListener("change", async () => {
+    const v = !!toggle.checked;
+    controlNoticeVisibility(v);
+    if (!STATE.isAdmin) return;
+    try {
+      await USER_ROOT.collection("settings").doc("app").set(
+        { showNotices: v },
+        { merge: true }
+      );
+    } catch (e) { console.error(e); }
   });
 }
 
-/* =====================================
-   추가
-   ===================================== */
-const v=id=>(document.getElementById(id)?.value||'').trim();
+function controlNoticeVisibility(show) {
+  const sec = $("#noticeSection");
+  if (!sec) return;
+  sec.style.display = show ? "" : "none";
+}
 
-/* 공지 */
-$('#nAddBtn')?.addEventListener('click', async ()=>{
-  if(!currentUser) return alert('로그인이 필요합니다.');
-  const title=v('nTitle'), body=v('nBody'), kind=$('#nKind')?.value||'notice';
-  if(!title && !body) return alert('내용을 입력해주세요.');
-  await colRef('notices').add({title,body,kind,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  ['nTitle','nBody'].forEach(id=>{const e=document.getElementById(id); if(e) e.value='';});
-  await loadNotices();
-});
+/* =========================================================
+   B) 시험/수행/숙제 (공통 로직)
+   --------------------------------------------------------- */
+const CAT_INFO = {
+  exams:      { title: "시험",     listId: "list_exam",     mountId: "add_exam" },
+  activities: { title: "수행평가", listId: "list_activity", mountId: "add_activity" },
+  homeworks:  { title: "숙제",     listId: "list_homework", mountId: "add_homework" }
+};
 
-/* 시험(과목 없음) */
-$('#exAddBtn')?.addEventListener('click', async ()=>{
-  if(!currentUser) return alert('로그인이 필요합니다.');
-  const text=v('exText'), detail=v('exDetail'), start=$('#exStart')?.value||null, end=$('#exEnd')?.value||null, period=v('exPeriod');
-  if(!text && !detail) return alert('내용을 입력해주세요.');
-  await colRef('exams').add({subject:text, text, detail, startDate:start, endDate:end, period, createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  ['exText','exDetail','exStart','exEnd','exPeriod'].forEach(id=>{const e=document.getElementById(id); if(e) e.value='';});
-  await loadExams();
-});
+function mountAddRow(cat) {
+  const mountEl = document.getElementById(CAT_INFO[cat].mountId);
+  if (!mountEl) return;
+  mountEl.innerHTML = "";
 
-/* 수행 */
-$('#taAddBtn')?.addEventListener('click', async ()=>{
-  if(!currentUser) return alert('로그인이 필요합니다.');
-  const subject=v('taSubj'), text=v('taText'), detail=v('taDetail'), start=$('#taStart')?.value||null, end=$('#taEnd')?.value||null, period=v('taPeriod');
-  if(!subject && !text && !detail) return alert('내용을 입력해주세요.');
-  await colRef('tasks').add({subject,text,detail,startDate:start,endDate:end,period,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  ['taSubj','taText','taDetail','taStart','taEnd','taPeriod'].forEach(id=>{const e=document.getElementById(id); if(e) e.value='';});
-  await loadTasks();
-});
+  if (!STATE.isAdmin) { mountEl.classList.add("hide"); return; }
+  mountEl.classList.remove("hide");
 
-/* 숙제 */
-$('#hwAddBtn')?.addEventListener('click', async ()=>{
-  if(!currentUser) return alert('로그인이 필요합니다.');
-  const subject=v('hwSubj'), text=v('hwText'), detail=v('hwDetail'), start=$('#hwStart')?.value||null, end=$('#hwEnd')?.value||null, period=v('hwPeriod');
-  if(!subject && !text && !detail) return alert('내용을 입력해주세요.');
-  await colRef('homeworks').add({subject,text,detail,startDate:start,endDate:end,period,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  ['hwSubj','hwText','hwDetail','hwStart','hwEnd','hwPeriod'].forEach(id=>{const e=document.getElementById(id); if(e) e.value='';});
-  await loadHomeworks();
-});
+  const row = document.createElement("div");
+  row.className = "add-row";
+  row.dataset.cat = cat;
 
-/* 공지 표시 토글(목록만 숨김) */
-$('#noticeSwitch')?.addEventListener('change', e=>{
-  const ul=$('#list_notice'); if(!ul) return; ul.style.display = e.target.checked ? '' : 'none';
-});
+  const subj   = input("text", "subj", "과목");
+  const text   = input("text", "text", "내용");
+  const detail = textarea("detail", "상세 내용 (줄바꿈 가능)");
+  const start  = input("date", "date-start", "시작일");
+  const end    = input("date", "date-end", "종료일");
+  const period = input("text", "period", "교시/시간");
+  const addBtn = document.createElement("button");
+  addBtn.className = "btn btn--primary add";
+  addBtn.textContent = "+ 추가";
 
-/* 초기 */
-clearAllLists();
+  // 시험은 과목칸 숨김
+  const subjWrap = wrap(subj);
+  if (cat === "exams") subjWrap.classList.add("hide");
+
+  addBtn.addEventListener("click", async () => {
+    const payload = {
+      subject: subj.value.trim(),
+      title:   text.value.trim(),
+      detail:  detail.value.trim(),
+      start:   start.value || null,
+      end:     end.value || null,
+      period:  period.value.trim() || null,
+      createdAt: Date.now()
+    };
+    if (cat === "exams") payload.subject = "";
+
+    if (!payload.title && !payload.detail) {
+      alert("내용 또는 상세 내용을 입력하세요.");
+      return;
+    }
+    try {
+      await USER_ROOT.collection("tasks").doc(cat).collection("items").add(payload);
+      text.value = ""; detail.value=""; start.value=""; end.value=""; period.value="";
+      loadCategory(cat);
+    } catch (e) {
+      console.error(e); alert("추가 실패(권한/네트워크 확인)");
+    }
+  });
+
+  row.append(
+    subjWrap,
+    wrap(text),
+    wrap(detail),
+    wrap(start),
+    wrap(end),
+    wrap(period),
+    addBtn
+  );
+  mountEl.appendChild(row);
+
+  function input(type, cls, ph){ const el=document.createElement("input"); el.type=type; el.className=cls; if(ph) el.placeholder=ph; return el; }
+  function textarea(cls, ph){ const el=document.createElement("textarea"); el.className=cls; if(ph) el.placeholder=ph; return el; }
+  function wrap(child){ const d=document.createElement("div"); d.appendChild(child); return d; }
+}
+
+async function loadCategory(cat) {
+  const listEl = document.getElementById(CAT_INFO[cat].listId);
+  if (!listEl) return;
+  listEl.innerHTML = "";
+
+  try {
+    const snap = await USER_ROOT.collection("tasks").doc(cat).collection("items")
+      .orderBy("createdAt", "asc").get();
+
+    if (snap.empty) {
+      const empty = document.createElement("div");
+      empty.className = "task";
+      empty.textContent = `등록된 ${CAT_INFO[cat].title}가 없습니다.`;
+      listEl.appendChild(empty);
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    snap.forEach((doc) => {
+      const data = doc.data();
+      const card = renderTaskCard(cat, doc.id, data);
+      frag.appendChild(card);
+    });
+    listEl.appendChild(frag);
+  } catch (e) {
+    console.error(e);
+    const err = document.createElement("div");
+    err.className="task";
+    err.textContent="읽기 실패(권한/네트워크 확인)";
+    listEl.appendChild(err);
+  }
+}
+
+function renderTaskCard(cat, id, d) {
+  const li = document.createElement("li");
+  li.className = "task";
+
+  const top = document.createElement("div");
+  top.className = "row-between";
+
+  const title = document.createElement("div");
+  title.className = "title";
+  const subjTxt = (cat !== "exams" && d.subject) ? `(${d.subject}) ` : "";
+  title.innerHTML = `${subjTxt}${escapeHtml(d.title || "")}${ddayBadge(d.start, d.end)}`;
+  top.appendChild(title);
+
+  const btns = document.createElement("div");
+  btns.className = "row gap-8";
+  if (STATE.isAdmin) {
+    const edit = mkButton("수정", () => openEditModal(cat, id, d));
+    const del  = mkButton("삭제", async () => {
+      if (!confirm("삭제할까요?")) return;
+      try {
+        await USER_ROOT.collection("tasks").doc(cat).collection("items").doc(id).delete();
+        loadCategory(cat);
+      } catch (e) { console.error(e); alert("삭제 실패"); }
+    });
+    btns.append(edit, del);
+  }
+  top.appendChild(btns);
+
+  const body = document.createElement("div");
+  body.className = "content";
+  const pre = document.createElement("pre");
+  pre.textContent = d.detail || "";
+  body.appendChild(pre);
+
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  const dateRange = (d.start || d.end) ? `${d.start || ""} ~ ${d.end || ""}` : "";
+  const period = d.period ? ` | ${d.period}` : "";
+  meta.textContent = [dateRange, period].filter(Boolean).join("");
+  li.append(top, body, meta);
+
+  return li;
+
+  function mkButton(t, fn){ const b=document.createElement("button"); b.className="btn"; b.textContent=t; b.addEventListener("click",fn); return b; }
+}
+
+/* ---------------------------
+   수정 모달 (시험은 과목칸 숨김)
+   --------------------------- */
+function openEditModal(cat, id, d) {
+  const modal = $("#modal-root");
+  modal.innerHTML = "";
+  modal.classList.add("show");
+
+  const dlg = document.createElement("div");
+  dlg.className = "modal__dialog";
+
+  const head = document.createElement("div");
+  head.className = "modal__head";
+  head.innerHTML = `<strong>항목 수정</strong>`;
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "modal__close";
+  closeBtn.textContent = "닫기";
+  closeBtn.onclick = () => modal.classList.remove("show");
+  head.appendChild(closeBtn);
+
+  const body = document.createElement("div");
+  body.className = "modal__body";
+
+  const form = document.createElement("div");
+  form.className = "form-grid";
+
+  const f1 = field("과목", "subject", "text", d.subject || "");
+  const f2 = field("내용", "title", "text", d.title || "");
+  const f3 = fieldTextarea("상세 내용", "detail", d.detail || ""); f3.classList.add("full");
+  const f4 = field("시작일", "start", "date", d.start ? d.start : "");
+  const f5 = field("종료일", "end", "date", d.end ? d.end : "");
+  const f6 = field("교시/시간", "period", "text", d.period || "");
+
+  form.append(f1, f2, f3, f4, f5, f6);
+  body.appendChild(form);
+
+  // 시험은 과목 칸 숨김
+  if (cat === "exams") f1.classList.add("hide");
+
+  const foot = document.createElement("div");
+  foot.className = "modal__foot";
+
+  const cancel = document.createElement("button");
+  cancel.className = "btn";
+  cancel.textContent = "취소";
+  cancel.onclick = () => modal.classList.remove("show");
+
+  const save = document.createElement("button");
+  save.className = "btn btn--primary";
+  save.textContent = "저장";
+  save.onclick = async () => {
+    const payload = {
+      subject: $('input[name="subject"]', form)?.value.trim() || "",
+      title:   $('input[name="title"]', form)?.value.trim() || "",
+      detail:  $('textarea[name="detail"]', form)?.value.trim() || "",
+      start:   $('input[name="start"]', form)?.value || null,
+      end:     $('input[name="end"]', form)?.value || null,
+      period:  $('input[name="period"]', form)?.value.trim() || null,
+    };
+    if (cat === "exams") payload.subject = "";
+
+    try {
+      await USER_ROOT.collection("tasks").doc(cat).collection("items").doc(id).update(payload);
+      modal.classList.remove("show");
+      loadCategory(cat);
+    } catch (e) { console.error(e); alert("저장 실패"); }
+  };
+
+  foot.append(cancel, save);
+  dlg.append(head, body, foot);
+  modal.appendChild(dlg);
+
+  function field(label, name, type, value) {
+    const wrap = document.createElement("label");
+    wrap.innerHTML = `${label}`;
+    const inp = document.createElement("input");
+    inp.type = type; inp.name = name; inp.value = value || "";
+    wrap.appendChild(inp); return wrap;
+  }
+  function fieldTextarea(label, name, value) {
+    const wrap = document.createElement("label");
+    wrap.innerHTML = `${label}`;
+    const ta = document.createElement("textarea");
+    ta.name = name; ta.value = value || "";
+    wrap.appendChild(ta); return wrap;
+  }
+}
+
+/* =========================================================
+   C) 로딩 시퀀스
+   --------------------------------------------------------- */
+function loadAll() {
+  // 공지
+  mountNoticeAdd();
+  loadNotices();
+  bindSettingToggle();
+
+  // 카테고리 폼 + 목록
+  Object.keys(CAT_INFO).forEach((cat) => mountAddRow(cat));
+  Object.keys(CAT_INFO).forEach((cat) => loadCategory(cat));
+}
+
+/* --------------------------------------------------------- */
