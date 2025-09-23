@@ -1,644 +1,417 @@
-/* =========================================================
-   app.js  (v1.4.0 – full)
-   - 반드시 env.js(전역: window.firebaseConfig, PUBLIC_UID, ADMIN_UIDS, ADMIN_EMAILS) 이후에 로드
-   - Firebase CDN compat(전역 firebase.*) 사용 기준
-   ========================================================= */
+/* app.js v1.4.1 — 모바일 폼 정리 + Timestamp 포맷 + 모달 수정 */
 
-/* ---------------------------
-   0) 안전 장치 (env.js 확인)
-   --------------------------- */
+// ===== Firebase 준비 =====
 if (!window.firebaseConfig) {
-  alert("firebaseConfig가 로드되지 않았어요. env.js 순서를 확인해주세요.");
-  throw new Error("Missing firebaseConfig");
+  alert('firebaseConfig가 로드되지 않았어요. env.js 순서를 확인해주세요.');
+  throw new Error('Missing firebaseConfig');
 }
-
-/* ---------------------------
-   1) Firebase 초기화
-   --------------------------- */
-// CDN compat 버전 예시
-const app = firebase.initializeApp(window.firebaseConfig);
+firebase.initializeApp(window.firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-/* ---------------------------
-   2) 전역 상태
-   --------------------------- */
-const STATE = {
-  uid: null,
-  isAdmin: false,
-  profile: null,
+const PUBLIC_UID   = window.PUBLIC_UID;
+const ADMIN_UIDS   = window.ADMIN_UIDS || [];
+const ADMIN_EMAILS = window.ADMIN_EMAILS || [];
+
+const isAdmin = () => {
+  const u = auth.currentUser;
+  if (!u) return false;
+  return ADMIN_UIDS.includes(u.uid) || ADMIN_EMAILS.includes(u.email || '');
 };
 
-const PUBLIC_UID = window.PUBLIC_UID || "public";
-const USER_ROOT  = db.collection("users").doc(PUBLIC_UID);
+const $ = (sel, parent=document) => parent.querySelector(sel);
+const el = (tag, attrs={}, ...children) => {
+  const node = document.createElement(tag);
+  Object.entries(attrs).forEach(([k,v])=>{
+    if (k==='class') node.className=v;
+    else if (k==='html') node.innerHTML=v;
+    else node.setAttribute(k,v);
+  });
+  children.forEach(c => {
+    if (c==null) return;
+    node.appendChild(typeof c==='string'? document.createTextNode(c) : c);
+  });
+  return node;
+};
 
-/* ---------------------------
-   3) Dom 쿼리 헬퍼
-   --------------------------- */
-function $(sel, root = document) { return root.querySelector(sel); }
-function $all(sel, root = document) { return Array.from(root.querySelectorAll(sel)); }
+// ===== 날짜/시간 포맷 =====
+const tsToDate = (ts) => {
+  try { return ts && ts.toDate ? ts.toDate() : (ts instanceof Date ? ts : null); }
+  catch(e){ return null; }
+};
+const fmtDate = (d, withDay=false) => {
+  if (!d) return '';
+  return d.toLocaleDateString('ko-KR', {
+    year:'numeric', month:'2-digit', day:'2-digit',
+    ...(withDay? {weekday:'short'} : {})
+  });
+};
+const fmtRange = (s,e) => {
+  const sd = tsToDate(s); const ed = tsToDate(e);
+  if (!sd && !ed) return '';
+  if (sd && ed) return `${fmtDate(sd,true)} ~ ${fmtDate(ed,true)}`;
+  if (sd) return fmtDate(sd,true);
+  return fmtDate(ed,true);
+};
+const ddayColor = (n) => {
+  if (n<0) return 'gray';
+  if (n===0) return 'red';
+  if (n<=2) return 'orange';
+  if (n<=7) return 'yellow';
+  return 'green';
+};
+const ddayBadge = (start, end) => {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const s = tsToDate(start); const e = tsToDate(end);
+  if (!s && !e) return '';
+  const pick = s || e;
+  const diff = Math.floor((pick - today)/(86400000));
+  const color = ddayColor(diff);
+  const label = (diff===0) ? 'D-day' : (diff>0 ? `D-${diff}` : `D+${Math.abs(diff)}`);
+  return `<span class="dday ${color}">${label}</span>`;
+};
 
-/* ---------------------------
-   4) 관리자 판단
-   --------------------------- */
-function computeIsAdmin(user) {
-  if (!user) return false;
-  if (Array.isArray(window.ADMIN_UIDS) && window.ADMIN_UIDS.includes(user.uid)) return true;
-  if (Array.isArray(window.ADMIN_EMAILS) && window.ADMIN_EMAILS.includes(user.email)) return true;
-  return false;
-}
+// ===== 인증 =====
+const loginBtn  = $('#loginBtn');
+const logoutBtn = $('#logoutBtn');
+const userInfo  = $('#userInfo');
 
-/* ---------------------------
-   5) 유틸
-   --------------------------- */
-function escapeHtml(str = "") {
-  return str.replace(/[&<>"']/g, (s) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s]));
-}
-function fmtDate(d) {
-  if (!d) return "";
-  const dt = new Date(d);
-  if (Number.isNaN(dt.getTime())) return d; // YYYY-MM-DD 문자열이면 그대로
-  const y = dt.getFullYear();
-  const m = String(dt.getMonth() + 1).padStart(2, "0");
-  const dd = String(dt.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dd}`;
-}
-function ddayBadge(start, end) {
-  if (!start && !end) return "";
-  const today = new Date();
-  const s = start ? new Date(start) : null;
-  const e = end   ? new Date(end)   : null;
-
-  if (s && e) {
-    if (today >= s && today <= e) return `<span class="dday green">D-day</span>`;
-  }
-  let diff;
-  if (s) diff = Math.ceil((s - today) / 86400000);
-  else if (e) diff = Math.ceil((e - today) / 86400000);
-  else return "";
-
-  if (diff === 0) return `<span class="dday red">D-day</span>`;
-  let klass = "gray";
-  if (diff > 0 && diff <= 2) klass = "orange";
-  else if (diff > 2 && diff <= 7) klass = "yellow";
-  else if (diff > 7) klass = "green";
-  return `<span class="dday ${klass}">D-${diff}</span>`;
-}
-
-/* ---------------------------
-   6) 로그인/로그아웃 버튼
-   --------------------------- */
-const loginBtn  = $("#loginBtn");
-const logoutBtn = $("#logoutBtn");
-const userInfo  = $("#userInfo");
-
-loginBtn?.addEventListener("click", async () => {
+loginBtn.onclick = async () => {
   try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    await auth.signInWithPopup(provider);
-  } catch (e) {
-    console.error(e);
-    alert("로그인 실패");
+     const provider = new firebase.auth.GoogleAuthProvider();
+     await auth.signInWithPopup(provider);
+  } catch(err) { alert(err.message); }
+};
+logoutBtn.onclick = async () => auth.signOut();
+
+auth.onAuthStateChanged((u)=>{
+  if (u) {
+    userInfo.textContent = `${u.displayName || u.email} (관리자: ${isAdmin() ? 'O' : 'X'})`;
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = '';
+    $('#noticeAdd')?.style && ( $('#noticeAdd').style.display = isAdmin() ? '' : 'none');
+    renderAddForms();   // 권한에 따라 버튼 보이기/숨기기
+  } else {
+    userInfo.textContent = '로그인 필요';
+    loginBtn.style.display = '';
+    logoutBtn.style.display = 'none';
+    $('#noticeAdd')?.style && ( $('#noticeAdd').style.display = 'none');
+    renderAddForms();
   }
 });
-logoutBtn?.addEventListener("click", async () => { await auth.signOut(); });
 
-auth.onAuthStateChanged(async (user) => {
-  STATE.uid = user?.uid ?? null;
-  STATE.isAdmin = computeIsAdmin(user);
-  STATE.profile = user;
+// ======= 공지 =======
+const listNotice = $('#list_notice');
+const noticeAddWrap = $('#noticeAdd');
+const toggleNotices = $('#toggleNotices');
+const noticeHeadBtn  = $('#noticeHeadBtn');
+const noticeBody     = $('#noticeBody');
 
-  if (userInfo) userInfo.textContent = user ? `${user.displayName || user.email}${STATE.isAdmin ? " (관리자)" : ""}` : "로그인 필요";
-  if (loginBtn)  loginBtn.style.display  = user ? "none"         : "inline-block";
-  if (logoutBtn) logoutBtn.style.display = user ? "inline-block" : "none";
-
-  // 폼/목록 리렌더
-  loadAll();
-});
-
-/* =========================================================
-   A) 공지/전달 사항 & 설정 (선택 UI가 있는 경우에만 동작)
-   --------------------------------------------------------- */
-
-const NOTICE_KIND_LABEL = {
-  notice: "공지(빨강)",
-  info:   "안내(노랑)",
-  alert:  "알림(초록)"
+toggleNotices.onchange = async (e)=>{
+  const on = e.target.checked;
+  noticeAddWrap.style.display = on && isAdmin() ? '' : 'none';
+  listNotice.parentElement.style.display = on ? '' : 'none';
+  // settings 저장 (관리자만)
+  if (isAdmin()){
+    await db.doc(`users/${PUBLIC_UID}/settings/app`).set({showNotices:on},{merge:true});
+  }
+};
+noticeHeadBtn.onclick = () => {
+  noticeBody.style.display = (noticeBody.style.display==='none'?'':'none')==='' ? 'none' : '';
 };
 
-function mountNoticeAdd() {
-  const wrap = $("#noticeAdd");
-  if (!wrap) return;
-  wrap.innerHTML = "";
-
-  // 관리자만 추가 표시
-  if (!STATE.isAdmin) { wrap.classList.add("hide"); return; }
-  wrap.classList.remove("hide");
-
-  const row = document.createElement("div");
-  row.className = "add-row";
-  row.dataset.cat = "notice-add";
-
-  const title = input("text", "n-title", "제목");
-  const kind  = selectKind();
-  const detail = textarea("n-detail", "내용 (줄바꿈 가능)");
-  const addBtn = document.createElement("button");
-  addBtn.className = "btn btn--primary add";
-  addBtn.textContent = "+ 추가";
-
-  addBtn.addEventListener("click", async () => {
-    const payload = {
-      title: title.value.trim(),
-      kind:  kind.value,
-      content: detail.value.trim(),
-      createdAt: Date.now()
-    };
-    if (!payload.title && !payload.content) {
-      alert("제목 또는 내용 중 하나는 입력하세요.");
-      return;
-    }
-    try {
-      await USER_ROOT.collection("notices").add(payload);
-      title.value = ""; detail.value = "";
-      loadNotices();
-    } catch (e) {
-      console.error(e); alert("추가 실패");
-    }
-  });
-
-  row.append(
-    wrapEl(title),
-    wrapEl(kind),
-    wrapEl(detail),
-    addBtn
-  );
-  wrap.appendChild(row);
-
-  function input(type, cls, ph) { const el = document.createElement("input"); el.type = type; el.className = cls; if (ph) el.placeholder = ph; return el; }
-  function textarea(cls, ph) { const el = document.createElement("textarea"); el.className = cls; if (ph) el.placeholder = ph; return el; }
-  function selectKind() {
-    const sel = document.createElement("select");
-    sel.className = "select";
-    sel.innerHTML = `
-      <option value="notice">${NOTICE_KIND_LABEL.notice}</option>
-      <option value="info">${NOTICE_KIND_LABEL.info}</option>
-      <option value="alert">${NOTICE_KIND_LABEL.alert}</option>
+// 공지 목록
+const loadNotices = async ()=>{
+  const snap = await db.collection(`users/${PUBLIC_UID}/notices`)
+    .orderBy('createdAt','desc')
+    .get();
+  listNotice.innerHTML = '';
+  if (snap.empty){
+    listNotice.appendChild(el('li',{},'등록된 전달 사항이 없습니다.'));
+    return;
+  }
+  snap.forEach(doc=>{
+    const d = doc.data();
+    const createdTxt = fmtDate(tsToDate(d.createdAt), true);
+    const li = el('li',{class:`notice-card kind-${d.kind || 'notice'}`});
+    li.innerHTML = `
+      <div class="notice-title">${d.title || '(제목 없음)'}</div>
+      <div class="notice-body"><pre>${d.body || ''}</pre></div>
+      <div class="notice-meta">${createdTxt}</div>
     `;
-    return sel;
-  }
-  function wrapEl(ch) { const d = document.createElement("div"); d.appendChild(ch); return d; }
-}
-
-async function loadNotices() {
-  const list = $("#list_notice");
-  if (!list) return;
-  list.innerHTML = "";
-
-  try {
-    const snap = await USER_ROOT.collection("notices").orderBy("createdAt", "asc").get();
-    if (snap.empty) {
-      const empty = document.createElement("div");
-      empty.className = "notice-card";
-      empty.textContent = "등록된 전달 사항이 없습니다.";
-      list.appendChild(empty);
-      return;
+    if (isAdmin()){
+      const row = el('div', {class:'row gap-8', style:'margin-top:10px'});
+      const b1 = el('button', {class:'btn'}, '수정');
+      const b2 = el('button', {class:'btn'}, '삭제');
+      b1.onclick = ()=> openNoticeEdit(doc.id, d);
+      b2.onclick = ()=> confirmDelete(()=> db.doc(`users/${PUBLIC_UID}/notices/${doc.id}`).delete());
+      row.append(b1,b2); li.appendChild(row);
     }
-
-    const frag = document.createDocumentFragment();
-    snap.forEach((doc) => {
-      const d = doc.data();
-      const card = renderNoticeCard(doc.id, d);
-      frag.appendChild(card);
-    });
-    list.appendChild(frag);
-  } catch (e) {
-    console.error(e);
-    const err = document.createElement("div");
-    err.className = "notice-card";
-    err.textContent = "전달 사항을 불러오지 못했어요.";
-    list.appendChild(err);
-  }
-}
-
-function renderNoticeCard(id, d) {
-  const div = document.createElement("div");
-  div.className = `notice-card ${kindClass(d.kind)}`;
-
-  const t = document.createElement("div");
-  t.className = "notice-title";
-  t.textContent = d.title || "(제목 없음)";
-
-  const body = document.createElement("pre");
-  body.textContent = d.content || "";
-
-  const meta = document.createElement("div");
-  meta.className = "notice-meta";
-  meta.textContent = fmtDate(d.createdAt || Date.now());
-
-  const btns = document.createElement("div");
-  btns.className = "row gap-8";
-  if (STATE.isAdmin) {
-    const edit = mkBtn("수정", () => openNoticeEdit(id, d));
-    const del  = mkBtn("삭제", async () => {
-      if (!confirm("삭제할까요?")) return;
-      try {
-        await USER_ROOT.collection("notices").doc(id).delete();
-        loadNotices();
-      } catch (e) { console.error(e); alert("삭제 실패"); }
-    });
-    btns.append(edit, del);
-  }
-
-  div.append(t, body, meta, btns);
-  return div;
-
-  function mkBtn(txt, fn) { const b=document.createElement("button"); b.className="btn"; b.textContent=txt; b.onclick=fn; return b; }
-  function kindClass(k) {
-    if (k === "notice") return "kind-notice";
-    if (k === "info")   return "kind-info";
-    if (k === "alert")  return "kind-alert";
-    return "";
-  }
-}
-
-function openNoticeEdit(id, d) {
-  const modal = $("#modal-root");
-  modal.innerHTML = "";
-  modal.classList.add("show");
-
-  const dlg = document.createElement("div");
-  dlg.className = "modal__dialog";
-
-  const head = document.createElement("div");
-  head.className = "modal__head";
-  head.innerHTML = `<strong>전달 사항 수정</strong>`;
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "modal__close";
-  closeBtn.textContent = "닫기";
-  closeBtn.onclick = () => modal.classList.remove("show");
-  head.appendChild(closeBtn);
-
-  const body = document.createElement("div");
-  body.className = "modal__body";
-
-  const form = document.createElement("div");
-  form.className = "form-grid";
-
-  const f1 = field("제목", "title", "text", d.title || "");
-  const f2 = fieldSelect("종류", "kind", d.kind || "notice");
-  const f3 = fieldTextarea("내용", "content", d.content || "");
-  f3.classList.add("full");
-
-  form.append(f1, f2, f3);
-  body.appendChild(form);
-
-  const foot = document.createElement("div");
-  foot.className = "modal__foot";
-
-  const cancel = document.createElement("button");
-  cancel.className = "btn";
-  cancel.textContent = "취소";
-  cancel.onclick = () => modal.classList.remove("show");
-
-  const save = document.createElement("button");
-  save.className = "btn btn--primary";
-  save.textContent = "저장";
-  save.onclick = async () => {
-    const payload = {
-      title:   $('input[name="title"]', form)?.value.trim() || "",
-      kind:    $('select[name="kind"]', form)?.value || "notice",
-      content: $('textarea[name="content"]', form)?.value.trim() || ""
-    };
-    try {
-      await USER_ROOT.collection("notices").doc(id).update(payload);
-      modal.classList.remove("show");
-      loadNotices();
-    } catch (e) { console.error(e); alert("저장 실패"); }
-  };
-
-  foot.append(cancel, save);
-  dlg.append(head, body, foot);
-  modal.appendChild(dlg);
-
-  function field(label, name, type, value) {
-    const wrap = document.createElement("label");
-    wrap.innerHTML = `${label}`;
-    const inp = document.createElement("input");
-    inp.type = type; inp.name = name; inp.value = value || "";
-    wrap.appendChild(inp); return wrap;
-  }
-  function fieldTextarea(label, name, value) {
-    const wrap = document.createElement("label");
-    wrap.innerHTML = `${label}`;
-    const ta = document.createElement("textarea");
-    ta.name = name; ta.value = value || "";
-    wrap.appendChild(ta); return wrap;
-  }
-  function fieldSelect(label, name, value) {
-    const wrap = document.createElement("label");
-    wrap.innerHTML = `${label}`;
-    const sel = document.createElement("select");
-    sel.name = name;
-    sel.innerHTML = `
-      <option value="notice">공지(빨강)</option>
-      <option value="info">안내(노랑)</option>
-      <option value="alert">알림(초록)</option>
-    `;
-    sel.value = value;
-    wrap.appendChild(sel); return wrap;
-  }
-}
-
-/* 설정(전달 사항 표시 토글) – 페이지에 토글 UI가 있을 때만 동작 */
-async function bindSettingToggle() {
-  const toggle = $("#toggleNotices");
-  if (!toggle) return;
-
-  // 읽기
-  try {
-    const doc = await USER_ROOT.collection("settings").doc("app").get();
-    const val = doc.exists ? !!doc.data().showNotices : true;
-    toggle.checked = val;
-    controlNoticeVisibility(val);
-  } catch (e) {
-    console.error(e);
-  }
-
-  // 쓰기
-  toggle.addEventListener("change", async () => {
-    const v = !!toggle.checked;
-    controlNoticeVisibility(v);
-    if (!STATE.isAdmin) return;
-    try {
-      await USER_ROOT.collection("settings").doc("app").set(
-        { showNotices: v },
-        { merge: true }
-      );
-    } catch (e) { console.error(e); }
+    listNotice.appendChild(li);
   });
-}
-
-function controlNoticeVisibility(show) {
-  const sec = $("#noticeSection");
-  if (!sec) return;
-  sec.style.display = show ? "" : "none";
-}
-
-/* =========================================================
-   B) 시험/수행/숙제 (공통 로직)
-   --------------------------------------------------------- */
-const CAT_INFO = {
-  exams:      { title: "시험",     listId: "list_exam",     mountId: "add_exam" },
-  activities: { title: "수행평가", listId: "list_activity", mountId: "add_activity" },
-  homeworks:  { title: "숙제",     listId: "list_homework", mountId: "add_homework" }
 };
 
-function mountAddRow(cat) {
-  const mountEl = document.getElementById(CAT_INFO[cat].mountId);
-  if (!mountEl) return;
-  mountEl.innerHTML = "";
-
-  if (!STATE.isAdmin) { mountEl.classList.add("hide"); return; }
-  mountEl.classList.remove("hide");
-
-  const row = document.createElement("div");
-  row.className = "add-row";
-  row.dataset.cat = cat;
-
-  const subj   = input("text", "subj", "과목");
-  const text   = input("text", "text", "내용");
-  const detail = textarea("detail", "상세 내용 (줄바꿈 가능)");
-  const start  = input("date", "date-start", "시작일");
-  const end    = input("date", "date-end", "종료일");
-  const period = input("text", "period", "교시/시간");
-  const addBtn = document.createElement("button");
-  addBtn.className = "btn btn--primary add";
-  addBtn.textContent = "+ 추가";
-
-  // 시험은 과목칸 숨김
-  const subjWrap = wrap(subj);
-  if (cat === "exams") subjWrap.classList.add("hide");
-
-  addBtn.addEventListener("click", async () => {
-    const payload = {
-      subject: subj.value.trim(),
-      title:   text.value.trim(),
-      detail:  detail.value.trim(),
-      start:   start.value || null,
-      end:     end.value || null,
-      period:  period.value.trim() || null,
-      createdAt: Date.now()
-    };
-    if (cat === "exams") payload.subject = "";
-
-    if (!payload.title && !payload.detail) {
-      alert("내용 또는 상세 내용을 입력하세요.");
-      return;
-    }
-    try {
-      await USER_ROOT.collection("tasks").doc(cat).collection("items").add(payload);
-      text.value = ""; detail.value=""; start.value=""; end.value=""; period.value="";
-      loadCategory(cat);
-    } catch (e) {
-      console.error(e); alert("추가 실패(권한/네트워크 확인)");
-    }
+// 공지 추가
+$('#nAddBtn').onclick = async ()=>{
+  if (!isAdmin()) return alert('관리자만 추가할 수 있어요.');
+  const title = $('#nTitle').value.trim();
+  const kind  = $('#nKind').value;
+  const body  = $('#nBody').value.trim();
+  if (!title || !body) return alert('제목/내용을 입력하세요.');
+  await db.collection(`users/${PUBLIC_UID}/notices`).add({
+    title, kind, body,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
+  $('#nTitle').value=''; $('#nBody').value='';
+  await loadNotices();
+};
 
-  row.append(
-    subjWrap,
-    wrap(text),
-    wrap(detail),
-    wrap(start),
-    wrap(end),
-    wrap(period),
-    addBtn
-  );
-  mountEl.appendChild(row);
+// 공지 수정 모달
+const openNoticeEdit = (id, data) => {
+  const root = $('#modal-root'); root.innerHTML = '';
+  const modal = el('div',{class:'modal show'});
+  const dialog = el('div',{class:'modal__dialog'});
+  dialog.innerHTML = `
+    <div class="modal__head">
+      <strong>전달 사항 수정</strong>
+      <button class="modal__close">닫기</button>
+    </div>
+    <div class="modal__body">
+      <div class="form-grid">
+        <label>제목<input id="m_title" class="input" value="${data.title || ''}" /></label>
+        <label>종류
+          <select id="m_kind" class="select">
+            <option value="notice" ${data.kind==='notice'?'selected':''}>공지(빨강)</option>
+            <option value="info"   ${data.kind==='info'  ?'selected':''}>안내(노랑)</option>
+            <option value="alert"  ${data.kind==='alert' ?'selected':''}>메모(초록)</option>
+          </select>
+        </label>
+        <label class="full">내용<textarea id="m_body" class="input" style="min-height:120px">${data.body || ''}</textarea></label>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" id="m_cancel">취소</button>
+      <button class="btn btn--primary" id="m_save">저장</button>
+    </div>
+  `;
+  modal.appendChild(dialog); root.appendChild(modal);
 
-  function input(type, cls, ph){ const el=document.createElement("input"); el.type=type; el.className=cls; if(ph) el.placeholder=ph; return el; }
-  function textarea(cls, ph){ const el=document.createElement("textarea"); el.className=cls; if(ph) el.placeholder=ph; return el; }
-  function wrap(child){ const d=document.createElement("div"); d.appendChild(child); return d; }
-}
-
-async function loadCategory(cat) {
-  const listEl = document.getElementById(CAT_INFO[cat].listId);
-  if (!listEl) return;
-  listEl.innerHTML = "";
-
-  try {
-    const snap = await USER_ROOT.collection("tasks").doc(cat).collection("items")
-      .orderBy("createdAt", "asc").get();
-
-    if (snap.empty) {
-      const empty = document.createElement("div");
-      empty.className = "task";
-      empty.textContent = `등록된 ${CAT_INFO[cat].title}가 없습니다.`;
-      listEl.appendChild(empty);
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    snap.forEach((doc) => {
-      const data = doc.data();
-      const card = renderTaskCard(cat, doc.id, data);
-      frag.appendChild(card);
-    });
-    listEl.appendChild(frag);
-  } catch (e) {
-    console.error(e);
-    const err = document.createElement("div");
-    err.className="task";
-    err.textContent="읽기 실패(권한/네트워크 확인)";
-    listEl.appendChild(err);
-  }
-}
-
-function renderTaskCard(cat, id, d) {
-  const li = document.createElement("li");
-  li.className = "task";
-
-  const top = document.createElement("div");
-  top.className = "row-between";
-
-  const title = document.createElement("div");
-  title.className = "title";
-  const subjTxt = (cat !== "exams" && d.subject) ? `(${d.subject}) ` : "";
-  title.innerHTML = `${subjTxt}${escapeHtml(d.title || "")}${ddayBadge(d.start, d.end)}`;
-  top.appendChild(title);
-
-  const btns = document.createElement("div");
-  btns.className = "row gap-8";
-  if (STATE.isAdmin) {
-    const edit = mkButton("수정", () => openEditModal(cat, id, d));
-    const del  = mkButton("삭제", async () => {
-      if (!confirm("삭제할까요?")) return;
-      try {
-        await USER_ROOT.collection("tasks").doc(cat).collection("items").doc(id).delete();
-        loadCategory(cat);
-      } catch (e) { console.error(e); alert("삭제 실패"); }
-    });
-    btns.append(edit, del);
-  }
-  top.appendChild(btns);
-
-  const body = document.createElement("div");
-  body.className = "content";
-  const pre = document.createElement("pre");
-  pre.textContent = d.detail || "";
-  body.appendChild(pre);
-
-  const meta = document.createElement("div");
-  meta.className = "meta";
-  const dateRange = (d.start || d.end) ? `${d.start || ""} ~ ${d.end || ""}` : "";
-  const period = d.period ? ` | ${d.period}` : "";
-  meta.textContent = [dateRange, period].filter(Boolean).join("");
-  li.append(top, body, meta);
-
-  return li;
-
-  function mkButton(t, fn){ const b=document.createElement("button"); b.className="btn"; b.textContent=t; b.addEventListener("click",fn); return b; }
-}
-
-/* ---------------------------
-   수정 모달 (시험은 과목칸 숨김)
-   --------------------------- */
-function openEditModal(cat, id, d) {
-  const modal = $("#modal-root");
-  modal.innerHTML = "";
-  modal.classList.add("show");
-
-  const dlg = document.createElement("div");
-  dlg.className = "modal__dialog";
-
-  const head = document.createElement("div");
-  head.className = "modal__head";
-  head.innerHTML = `<strong>항목 수정</strong>`;
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "modal__close";
-  closeBtn.textContent = "닫기";
-  closeBtn.onclick = () => modal.classList.remove("show");
-  head.appendChild(closeBtn);
-
-  const body = document.createElement("div");
-  body.className = "modal__body";
-
-  const form = document.createElement("div");
-  form.className = "form-grid";
-
-  const f1 = field("과목", "subject", "text", d.subject || "");
-  const f2 = field("내용", "title", "text", d.title || "");
-  const f3 = fieldTextarea("상세 내용", "detail", d.detail || ""); f3.classList.add("full");
-  const f4 = field("시작일", "start", "date", d.start ? d.start : "");
-  const f5 = field("종료일", "end", "date", d.end ? d.end : "");
-  const f6 = field("교시/시간", "period", "text", d.period || "");
-
-  form.append(f1, f2, f3, f4, f5, f6);
-  body.appendChild(form);
-
-  // 시험은 과목 칸 숨김
-  if (cat === "exams") f1.classList.add("hide");
-
-  const foot = document.createElement("div");
-  foot.className = "modal__foot";
-
-  const cancel = document.createElement("button");
-  cancel.className = "btn";
-  cancel.textContent = "취소";
-  cancel.onclick = () => modal.classList.remove("show");
-
-  const save = document.createElement("button");
-  save.className = "btn btn--primary";
-  save.textContent = "저장";
-  save.onclick = async () => {
-    const payload = {
-      subject: $('input[name="subject"]', form)?.value.trim() || "",
-      title:   $('input[name="title"]', form)?.value.trim() || "",
-      detail:  $('textarea[name="detail"]', form)?.value.trim() || "",
-      start:   $('input[name="start"]', form)?.value || null,
-      end:     $('input[name="end"]', form)?.value || null,
-      period:  $('input[name="period"]', form)?.value.trim() || null,
-    };
-    if (cat === "exams") payload.subject = "";
-
-    try {
-      await USER_ROOT.collection("tasks").doc(cat).collection("items").doc(id).update(payload);
-      modal.classList.remove("show");
-      loadCategory(cat);
-    } catch (e) { console.error(e); alert("저장 실패"); }
+  dialog.querySelector('.modal__close').onclick = ()=> modal.remove();
+  $('#m_cancel', dialog).onclick = ()=> modal.remove();
+  $('#m_save', dialog).onclick   = async ()=>{
+    const t = $('#m_title',dialog).value.trim();
+    const k = $('#m_kind', dialog).value;
+    const b = $('#m_body', dialog).value.trim();
+    if (!t || !b) return alert('제목/내용 입력');
+    await db.doc(`users/${PUBLIC_UID}/notices/${id}`).set({title:t,kind:k,body:b},{merge:true});
+    modal.remove(); loadNotices();
   };
+};
 
-  foot.append(cancel, save);
-  dlg.append(head, body, foot);
-  modal.appendChild(dlg);
+// ======= 과제(시험/수행/숙제) =======
 
-  function field(label, name, type, value) {
-    const wrap = document.createElement("label");
-    wrap.innerHTML = `${label}`;
-    const inp = document.createElement("input");
-    inp.type = type; inp.name = name; inp.value = value || "";
-    wrap.appendChild(inp); return wrap;
+const loadTasks = async (cat, listEl) => {
+  listEl.innerHTML = '';
+  const col = db.collection(`users/${PUBLIC_UID}/tasks/${cat}/items`).orderBy('createdAt','desc');
+  const snap = await col.get();
+  if (snap.empty){
+    listEl.appendChild(el('li',{}, `등록된 ${cat==='exams' ? '시험' : cat==='activities'?'수행평가':'숙제'}가 없습니다.`));
+    return;
   }
-  function fieldTextarea(label, name, value) {
-    const wrap = document.createElement("label");
-    wrap.innerHTML = `${label}`;
-    const ta = document.createElement("textarea");
-    ta.name = name; ta.value = value || "";
-    wrap.appendChild(ta); return wrap;
-  }
-}
+  snap.forEach(doc=>{
+    const d = doc.data();
+    const title = (cat==='exams' ? (d.name || '시험') : (d.subject || '과목 없음'));
+    const dday  = ddayBadge(d.startDate, d.endDate);
+    const range = fmtRange(d.startDate, d.endDate);
+    const li = el('li',{class:'task'});
+    li.innerHTML = `
+      <div class="title">${title} ${dday}</div>
+      <div class="content"><pre>${d.content || ''}</pre></div>
+      ${d.detail ? `<div class="content"><pre>${d.detail}</pre></div>` : ''}
+      ${d.period ? `<div class="content"><pre>${d.period}</pre></div>` : ''}
+      ${range ? `<div class="meta">${range}</div>` : ''}
+    `;
+    if (isAdmin()){
+      const row = el('div',{class:'row gap-8', style:'margin-top:10px'});
+      const b1 = el('button',{class:'btn'},'수정');
+      const b2 = el('button',{class:'btn'},'삭제');
+      b1.onclick = ()=> openTaskEdit(cat, doc.id, d);
+      b2.onclick = ()=> confirmDelete(()=> db.doc(`users/${PUBLIC_UID}/tasks/${cat}/items/${doc.id}`).delete()).then(()=>loadAllTasks());
+      row.append(b1,b2); li.appendChild(row);
+    }
+    listEl.appendChild(li);
+  });
+};
 
-/* =========================================================
-   C) 로딩 시퀀스
-   --------------------------------------------------------- */
-function loadAll() {
-  // 공지
-  mountNoticeAdd();
-  loadNotices();
-  bindSettingToggle();
+const listExam     = $('#list_exam');
+const listActivity = $('#list_activity');
+const listHomework = $('#list_homework');
 
-  // 카테고리 폼 + 목록
-  Object.keys(CAT_INFO).forEach((cat) => mountAddRow(cat));
-  Object.keys(CAT_INFO).forEach((cat) => loadCategory(cat));
-}
+const loadAllTasks = ()=> Promise.all([
+  loadTasks('exams',      listExam),
+  loadTasks('activities', listActivity),
+  loadTasks('homeworks',  listHomework),
+]);
 
-/* --------------------------------------------------------- */
+// ======= 추가 폼 렌더 =======
+const renderAddForms = ()=>{
+  renderAddExamForm();
+  renderAddCommonForm('activities', $('#add_activity'));
+  renderAddCommonForm('homeworks',  $('#add_homework'));
+};
+
+const renderAddExamForm = ()=>{
+  const wrap = $('#add_exam'); wrap.innerHTML='';
+  const disabled = !isAdmin();
+  const g = el('div',{class:'task-add ta-grid ta-exam'});
+  g.append(
+    el('input',{class:'input name ta-full', placeholder:'시험 이름', id:'ex_name', ...(disabled? {disabled:true}: {}) }),
+    el('textarea',{class:'input ta-full', placeholder:'상세 내용', id:'ex_detail', style:'min-height:140px', ...(disabled? {disabled:true}: {}) }),
+    el('input',{class:'input', placeholder:'교시/시간', id:'ex_period', ...(disabled? {disabled:true}: {}) }),
+    el('input',{class:'input', type:'date', id:'ex_start', ...(disabled? {disabled:true}: {}) }),
+    el('input',{class:'input', type:'date', id:'ex_end', ...(disabled? {disabled:true}: {}) }),
+  );
+  const act = el('div',{class:'ta-actions'});
+  const addBtn = el('button',{class:'btn btn--primary'},'+ 추가');
+  addBtn.disabled = disabled;
+  addBtn.onclick = async ()=>{
+    if (!isAdmin()) return;
+    const name = $('#ex_name').value.trim();
+    if (!name) return alert('시험 이름을 입력하세요.');
+    const detail = $('#ex_detail').value.trim();
+    const period = $('#ex_period').value.trim();
+    const sd = $('#ex_start').value ? new Date($('#ex_start').value) : null;
+    const ed = $('#ex_end').value   ? new Date($('#ex_end').value)   : null;
+    await db.collection(`users/${PUBLIC_UID}/tasks/exams/items`).add({
+      name, content:'', detail, period,
+      startDate: sd ? firebase.firestore.Timestamp.fromDate(sd) : null,
+      endDate: ed ? firebase.firestore.Timestamp.fromDate(ed) : null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    renderAddExamForm(); loadTasks('exams', listExam);
+  };
+  act.appendChild(addBtn);
+  wrap.append(g,act);
+};
+
+const renderAddCommonForm = (cat, mount)=>{
+  mount.innerHTML='';
+  const disabled = !isAdmin();
+  const g = el('div',{class:'task-add ta-grid'});
+  g.append(
+    el('input',{class:'input', placeholder:'과목', id:`${cat}_subject`, ...(disabled? {disabled:true}: {}) }),
+    el('input',{class:'input', placeholder:'내용', id:`${cat}_content`, ...(disabled? {disabled:true}: {}) }),
+    el('textarea',{class:'input ta-full', placeholder:'상세 내용', id:`${cat}_detail`, style:'min-height:140px', ...(disabled? {disabled:true}: {}) }),
+    el('input',{class:'input', type:'date', id:`${cat}_start`, ...(disabled? {disabled:true}: {}) }),
+    el('input',{class:'input', type:'date', id:`${cat}_end`, ...(disabled? {disabled:true}: {}) }),
+    el('input',{class:'input', placeholder:'교시/시간', id:`${cat}_period`, ...(disabled? {disabled:true}: {}) }),
+  );
+  const act = el('div',{class:'ta-actions'});
+  const addBtn = el('button',{class:'btn btn--primary'},'+ 추가');
+  addBtn.disabled = disabled;
+  addBtn.onclick = async ()=>{
+    if (!isAdmin()) return;
+    const s = $(`#${cat}_subject`).value.trim();
+    const c = $(`#${cat}_content`).value.trim();
+    const d = $(`#${cat}_detail`).value.trim();
+    const p = $(`#${cat}_period`).value.trim();
+    const sdV = $(`#${cat}_start`).value;
+    const edV = $(`#${cat}_end`).value;
+    if (!s || !c) return alert('과목/내용을 입력하세요.');
+    const sd = sdV ? new Date(sdV) : null;
+    const ed = edV ? new Date(edV) : null;
+    await db.collection(`users/${PUBLIC_UID}/tasks/${cat}/items`).add({
+      subject:s, content:c, detail:d, period:p,
+      startDate: sd ? firebase.firestore.Timestamp.fromDate(sd) : null,
+      endDate: ed ? firebase.firestore.Timestamp.fromDate(ed) : null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    renderAddCommonForm(cat, mount);
+    loadTasks(cat, cat==='activities'? listActivity : listHomework);
+  };
+  act.appendChild(addBtn);
+  mount.append(g,act);
+};
+
+// ===== 수정 모달 (시험은 과목칸 숨김) =====
+const openTaskEdit = (cat, id, data) => {
+  const root = $('#modal-root'); root.innerHTML = '';
+  const modal = el('div',{class:'modal show'});
+  const dialog = el('div',{class:'modal__dialog'});
+  const isExam = cat==='exams';
+
+  dialog.innerHTML = `
+    <div class="modal__head">
+      <strong>항목 수정</strong>
+      <button class="modal__close">닫기</button>
+    </div>
+    <div class="modal__body">
+      <div class="form-grid">
+        ${isExam
+          ? `<label class="full">시험 이름<input id="t_subject" class="input" value="${data.name || ''}"></label>`
+          : `<label>과목<input id="t_subject" class="input" value="${data.subject || ''}"></label>`
+        }
+        <label>${isExam?'상세 내용':'내용'}<input id="t_content" class="input" value="${isExam ? (data.content||'') : (data.content||'') }"></label>
+        <label>교시/시간<input id="t_period" class="input" value="${data.period || ''}"></label>
+        <label class="full">상세 내용<textarea id="t_detail" class="input" style="min-height:120px">${data.detail || ''}</textarea></label>
+        <label>시작일<input id="t_start" type="date" class="input" value="${toDateValue(data.startDate)}"></label>
+        <label>종료일<input id="t_end"   type="date" class="input" value="${toDateValue(data.endDate)}"></label>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" id="m_cancel">취소</button>
+      <button class="btn btn--primary" id="m_save">저장</button>
+    </div>
+  `;
+
+  modal.appendChild(dialog); root.appendChild(modal);
+  dialog.querySelector('.modal__close').onclick = ()=> modal.remove();
+  $('#m_cancel', dialog).onclick = ()=> modal.remove();
+  $('#m_save', dialog).onclick   = async ()=>{
+    const sub = $('#t_subject',dialog).value.trim();
+    const con = $('#t_content',dialog).value.trim();
+    const per = $('#t_period', dialog).value.trim();
+    const det = $('#t_detail', dialog).value.trim();
+    const s   = $('#t_start',  dialog).value;
+    const e   = $('#t_end',    dialog).value;
+    const sd  = s? firebase.firestore.Timestamp.fromDate(new Date(s)) : null;
+    const ed  = e? firebase.firestore.Timestamp.fromDate(new Date(e)) : null;
+
+    const payload = { content:con, detail:det, period:per, startDate:sd, endDate:ed };
+    if (isExam) payload.name = sub; else payload.subject = sub;
+
+    await db.doc(`users/${PUBLIC_UID}/tasks/${cat}/items/${id}`).set(payload,{merge:true});
+    modal.remove();
+    loadAllTasks();
+  };
+};
+
+const toDateValue = (ts)=>{
+  const d = tsToDate(ts);
+  if (!d) return '';
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const da=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${da}`;
+};
+
+const confirmDelete = async (fn)=>{
+  if (!confirm('정말 삭제할까요?')) return;
+  await fn();
+};
+
+// 초기 로드
+(async ()=>{
+  // setting 반영
+  try{
+    const setDoc = await db.doc(`users/${PUBLIC_UID}/settings/app`).get();
+    const show = setDoc.exists ? !!setDoc.data().showNotices : true;
+    toggleNotices.checked = show;
+    noticeAddWrap.style.display = show && isAdmin() ? '' : 'none';
+    listNotice.parentElement.style.display = show ? '' : 'none';
+  }catch(e){ /* ignore */ }
+
+  renderAddForms();
+  await loadNotices();
+  await loadAllTasks();
+})();
