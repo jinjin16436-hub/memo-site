@@ -164,6 +164,55 @@ input:checked + .slider:before{transform:translateX(24px)}
   }
 }
 
+/* ===== 모달(수정창) ===== */
+.modal{
+  position:fixed; inset:0;
+  display:none; align-items:center; justify-content:center;
+  background:radial-gradient(100% 100% at 0% 0%, rgba(0,0,0,.65), rgba(0,0,0,.45));
+  backdrop-filter:blur(6px);
+  z-index:9999;
+}
+.modal.show{display:flex}
+.modal__dialog{
+  width:min(760px,94vw);
+  background:linear-gradient(180deg,#0f1722 0%,#0b1323 100%);
+  border:1px solid #213042;
+  border-radius:16px;
+  box-shadow:0 10px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+  overflow:hidden;
+}
+.modal__head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 16px; background:rgba(255,255,255,.03);
+  border-bottom:1px solid var(--border);
+}
+.modal__head strong{font-size:18px;color:#e9ecf1}
+.modal__close{
+  cursor:pointer; border:1px solid #2a3a51; background:#121a25; color:#cfd6de;
+  border-radius:10px; padding:6px 10px;
+}
+.modal__close:hover{background:#1a2431}
+.modal__body{padding:16px 16px 6px}
+.modal__foot{
+  display:flex; gap:10px; justify-content:flex-end;
+  padding:12px 16px; border-top:1px solid var(--border);
+  background:rgba(255,255,255,.02)
+}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media (max-width:900px){ .form-grid{grid-template-columns:1fr 1fr} }
+@media (max-width:600px){ .form-grid{grid-template-columns:1fr} }
+.form-grid .full{grid-column:1 / -1}
+.form-grid label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#9fb0be}
+.form-grid input,.form-grid textarea,.form-grid select{
+  border:1px solid var(--border);background:#0e1520;color:#e6edf3;
+  border-radius:12px;padding:12px 12px;font-size:15px;outline:none
+}
+.form-grid textarea{min-height:120px;resize:vertical}
+.form-grid input:focus,.form-grid textarea:focus,.form-grid select:focus{
+  border-color:#3aa3ff;box-shadow:0 0 0 3px rgba(58,163,255,.15);background:#0e1626
+}
+
+
 /* 본문 pre */
 .task pre, .notice-card pre{
   font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",
