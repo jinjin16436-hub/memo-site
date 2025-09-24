@@ -342,8 +342,9 @@ const delTask = async (cat, id)=>{
   await safeLoadTasks(cat);
 };
 
-// ===== 수정 모달 =====
-const modalRoot = $('#modal-root');
+// === 수정 모달 ===
+const modalRoot = document.querySelector('#modal-root');
+
 const openNoticeEdit = (id, data)=>{
   if(!isAdmin) return;
   modalRoot.innerHTML = `
@@ -377,12 +378,12 @@ const openNoticeEdit = (id, data)=>{
       </div>
     </div>`;
   const close = ()=> modalRoot.innerHTML='';
-  $('#mClose').onclick = $('#mCancel').onclick = close;
-  $('#mSave').onclick = async ()=>{
+  document.getElementById('mClose').onclick = document.getElementById('mCancel').onclick = close;
+  document.getElementById('mSave').onclick = async ()=>{
     await db.doc(`users/${PUBLIC_UID}/notices/${id}`).update({
-      title: $('#mTitle').value.trim(),
-      kind:  $('#mKind').value,
-      body:  $('#mBody').value.trim()
+      title: document.getElementById('mTitle').value.trim(),
+      kind:  document.getElementById('mKind').value,
+      body:  document.getElementById('mBody').value.trim()
     });
     close();
     await safeLoadNotices();
@@ -429,25 +430,33 @@ const openTaskEdit = (cat, id, data)=>{
       </div>
     </div>`;
   const close = ()=> modalRoot.innerHTML='';
-  $('#mClose').onclick = $('#mCancel').onclick = close;
-  $('#mSave').onclick = async ()=>{
+  document.getElementById('mClose').onclick = document.getElementById('mCancel').onclick = close;
+  document.getElementById('mSave').onclick = async ()=>{
     const payload = {
-      detail: $('#mDetail').value.trim(),
-      startDate: $('#mStart').value ? new Date($('#mStart').value) : null,
-      endDate:   $('#mEnd').value   ? new Date($('#mEnd').value)   : null,
-      period: $('#mPeriod').value.trim()
+      detail: document.getElementById('mDetail').value.trim(),
+      startDate: document.getElementById('mStart').value ? new Date(document.getElementById('mStart').value) : null,
+      endDate:   document.getElementById('mEnd').value   ? new Date(document.getElementById('mEnd').value)   : null,
+      period: document.getElementById('mPeriod').value.trim()
     };
     if(cat==='exams'){
-      payload.name = $('#mTitle').value.trim();
+      payload.name = document.getElementById('mTitle').value.trim();
     }else{
-      payload.subject = $('#mSubj').value.trim();
-      payload.content = $('#mTitle').value.trim();
+      payload.subject = document.getElementById('mSubj').value.trim();
+      payload.content = document.getElementById('mTitle').value.trim();
     }
     await db.doc(`users/${PUBLIC_UID}/tasks/${cat}/items/${id}`).update(payload);
     close();
     await safeLoadTasks(cat);
   };
 };
+
+function toDateInputValue(ts){
+  if(!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const pad = n=> String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
 
 function toDateInputValue(ts){
   if(!ts) return '';
