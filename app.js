@@ -92,7 +92,7 @@ auth.onAuthStateChanged((u)=>{
     $('#noticeAdd')?.style && ( $('#noticeAdd').style.display = isAdmin() ? '' : 'none');
     renderAddForms();   // 권한에 따라 버튼 보이기/숨기기
   } else {
-    userInfo.textContent = '로그인 필요';
+    userInfo.textContent = '관리자면 로그인';
     loginBtn.style.display = '';
     logoutBtn.style.display = 'none';
     $('#noticeAdd')?.style && ( $('#noticeAdd').style.display = 'none');
