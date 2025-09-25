@@ -90,36 +90,42 @@ const fmtRange = (s,e)=>{
   if(!s && e) return `${fmtDate(e)}`;
   return `${fmtDate(s)} ~ ${fmtDate(e)}`;
 };
-const ddayBadge = (s,e)=>{
-  const today = new Date(); today.setHours(0,0,0,0);
-  const val   = s ? (s.toDate ? s.toDate() : new Date(s)) : null;
-  const valEnd= e ? (e.toDate? e.toDate(): new Date(e)) : null;
+// 기존 ddayBadge 교체
+const ddayBadge = (start, end) => {
+  // Timestamp | Date | "YYYY-MM-DD" 모두 허용
+  const toDate0 = (v) => {
+    if (!v) return null;
+    const d = v.toDate ? v.toDate() : new Date(v);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  };
 
-  if(!val && !valEnd) return '';
+  const start0 = toDate0(start);
+  const end0   = toDate0(end);
 
-  const dayMs = 24*60*60*1000;
-  let diff;
+  if (!start0 && !end0) return "";
 
-  if (val && !valEnd) {
-    diff = Math.floor((val - today)/dayMs);
-  } else if (!val && valEnd) {
-    diff = Math.floor((valEnd - today)/dayMs);
+  // 오늘 00:00 기준
+  const now = new Date();
+  const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // 1) 종료 판정
+  if (end0) {
+    if (today0 > end0) return `<span class="dday gray">종료</span>`;
   } else {
-    // 구간
-    const d1 = Math.floor((val   - today)/dayMs);
-    const d2 = Math.floor((valEnd- today)/dayMs);
-    if (d1<=0 && d2>=0) diff = 0;        // 진행 중
-    else diff = d1;                      // 시작 기준
+    if (start0 && today0 > start0) return `<span class="dday gray">종료</span>`;
   }
 
-  let cls='green', txt=`D-${diff}`;
-  if (diff===0){ cls='red'; txt='D-day'; }
-  else if (diff===1||diff===2){ cls='orange'; }
-  else if (diff>=3 && diff<=7){ cls='yellow'; }
-  else if (diff>7){ cls='green'; }
-  else { cls='gray'; } // 이미 지난 것
+  // 2) 진행중 (기간형일 때만)
+  if (end0 && today0 >= start0 && today0 <= end0) {
+    return `<span class="dday green">진행중</span>`;
+  }
 
-  return `<span class="dday ${cls}">${txt}</span>`;
+  // 3) 남은 일수 (시작일 기준)
+  const diff = Math.round((start0 - today0) / (1000 * 60 * 60 * 24));
+  if (diff === 0) return `<span class="dday red">D-DAY</span>`;
+  if (diff <= 2)  return `<span class="dday orange">D-${diff}</span>`;
+  if (diff <= 7)  return `<span class="dday yellow">D-${diff}</span>`;
+  return `<span class="dday green">D-${diff}</span>`;
 };
 
 // ===== 권한 표시 =====
@@ -458,9 +464,3 @@ function toDateInputValue(ts){
 }
 
 
-function toDateInputValue(ts){
-  if(!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  const pad = n=> String(n).padStart(2,'0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-}
