@@ -250,49 +250,50 @@ const delNotice = async (id)=>{
 };
 // (수정 모달은 아래 공통 모달에 포함)
 
-// ===== 시험/수행/숙제 로드 =====
+// ===== 시험/수행/숙제 로드 (D-day 정렬: 진행/다가오는 일정 우선, 종료는 마지막) =====
 const safeLoadTasks = async (cat)=>{
   const ul = cat==='exams' ? listExam : (cat==='tasks' ? listTask : listHomework);
   ul.innerHTML = '';
   try{
     const snap = await db.collection(`users/${PUBLIC_UID}/tasks/${cat}/items`).get();
-    if(snap.empty){
+    if (snap.empty){
       ul.innerHTML = `<li class="meta">등록된 ${cat==='exams'?'시험':cat==='tasks'?'수행평가':'숙제'}가 없습니다.</li>`;
       return;
     }
 
-    // --- 데이터 배열화 ---
+    // 오늘 00:00
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    const toDay0 = (v) => {
+      if (!v) return null;
+      const d = v.toDate ? v.toDate() : new Date(v);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    };
+
+    // 남은 일수(정렬 키) 계산: 종료된 건 아주 큰 수(맨 뒤로)
+    const left = (data) => {
+      const s = toDay0(data.startDate);
+      const e = toDay0(data.endDate);
+
+      // 날짜가 전혀 없으면 맨 뒤
+      if (!s && !e) return 99999;
+
+      // 종료 판정
+      if (e && today > e) return 99999;         // 기간형 종료
+      if (!e && s && today > s) return 99999;   // 단일일자 종료
+
+      // 진행/다가오는 일정: 시작일(없으면 종료일) 기준 남은 일수
+      const base = s || e;
+      return Math.floor((base - today) / (1000*60*60*24));
+    };
+
+    // 데이터 배열 + 정렬
     const docs = [];
-    snap.forEach(doc => {
-      docs.push({ id: doc.id, data: doc.data() });
-    });
+    snap.forEach(doc => docs.push({ id: doc.id, data: doc.data() }));
+    docs.sort((a, b) => left(a.data) - left(b.data));
 
-    // --- 디데이 기준 정렬 ---
-    docs.sort((a, b) => {
-      const today = new Date(); today.setHours(0,0,0,0);
-      const toDay0 = (v) => {
-        if (!v) return null;
-        const d = v.toDate ? v.toDate() : new Date(v);
-        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-      };
-      const sa = toDay0(a.data.startDate);
-      const ea = toDay0(a.data.endDate);
-      const sb = toDay0(b.data.startDate);
-      const eb = toDay0(b.data.endDate);
-
-      // 남은 일수 계산
-      const left = (s,e)=>{
-        if(!s && !e) return 99999; // 날짜 없으면 뒤로
-        if(e && today > e) return 99999; // 종료된 건 뒤로
-        const base = s || e;
-        return Math.floor((base - today)/(1000*60*60*24));
-      };
-
-      return left(sa,ea) - left(sb,eb);
-    });
-
-    // --- 렌더링 ---
-    docs.forEach(({id,data})=>{
+    // 렌더링
+    docs.forEach(({id, data})=>{
       const title = (cat==='exams' ? (data.name || '시험') : (data.subject || '과목 없음'));
       const dday  = ddayBadge(data.startDate, data.endDate);
 
