@@ -255,36 +255,68 @@ const safeLoadTasks = async (cat)=>{
   const ul = cat==='exams' ? listExam : (cat==='tasks' ? listTask : listHomework);
   ul.innerHTML = '';
   try{
-    const snap = await db.collection(`users/${PUBLIC_UID}/tasks/${cat}/items`).orderBy('createdAt','desc').get();
+    const snap = await db.collection(`users/${PUBLIC_UID}/tasks/${cat}/items`).get();
     if(snap.empty){
       ul.innerHTML = `<li class="meta">등록된 ${cat==='exams'?'시험':cat==='tasks'?'수행평가':'숙제'}가 없습니다.</li>`;
       return;
     }
-    snap.forEach(doc=>{
-      const d = doc.data();
-      const title = (cat==='exams' ? (d.name || '시험') : (d.subject || '과목 없음'));
-      const dday  = ddayBadge(d.startDate, d.endDate);
+
+    // --- 데이터 배열화 ---
+    const docs = [];
+    snap.forEach(doc => {
+      docs.push({ id: doc.id, data: doc.data() });
+    });
+
+    // --- 디데이 기준 정렬 ---
+    docs.sort((a, b) => {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const toDay0 = (v) => {
+        if (!v) return null;
+        const d = v.toDate ? v.toDate() : new Date(v);
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      };
+      const sa = toDay0(a.data.startDate);
+      const ea = toDay0(a.data.endDate);
+      const sb = toDay0(b.data.startDate);
+      const eb = toDay0(b.data.endDate);
+
+      // 남은 일수 계산
+      const left = (s,e)=>{
+        if(!s && !e) return 99999; // 날짜 없으면 뒤로
+        if(e && today > e) return 99999; // 종료된 건 뒤로
+        const base = s || e;
+        return Math.floor((base - today)/(1000*60*60*24));
+      };
+
+      return left(sa,ea) - left(sb,eb);
+    });
+
+    // --- 렌더링 ---
+    docs.forEach(({id,data})=>{
+      const title = (cat==='exams' ? (data.name || '시험') : (data.subject || '과목 없음'));
+      const dday  = ddayBadge(data.startDate, data.endDate);
 
       const li = el('li',{class:'task'});
       li.innerHTML = `
         <div class="title">${title} ${dday}</div>
-        ${d.content ? `<div class="content"><pre>${d.content}</pre></div>` : ''}
-        ${d.detail  ? `<div class="content"><pre>${d.detail}</pre></div>` : ''}
-        ${renderMeta(d.startDate, d.endDate, d.period)}
+        ${data.content ? `<div class="content"><pre>${data.content}</pre></div>` : ''}
+        ${data.detail  ? `<div class="content"><pre>${data.detail}</pre></div>` : ''}
+        ${renderMeta(data.startDate, data.endDate, data.period)}
       `;
 
       if (isAdmin) {
         const row = el('div');
         const b1 = el('button',{class:'btn'}); b1.textContent='수정';
         const b2 = el('button',{class:'btn'}); b2.textContent='삭제';
-        b1.addEventListener('click',()=> openTaskEdit(cat, doc.id, d));
-        b2.addEventListener('click',()=> delTask(cat, doc.id));
+        b1.addEventListener('click',()=> openTaskEdit(cat, id, data));
+        b2.addEventListener('click',()=> delTask(cat, id));
         row.append(b1,b2);
         li.appendChild(row);
       }
 
       ul.appendChild(li);
     });
+
   }catch(err){
     ul.innerHTML = `<li class="meta">읽기 오류: ${err.message}</li>`;
   }
