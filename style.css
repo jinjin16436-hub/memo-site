@@ -68,14 +68,15 @@ input[type="number"],
 textarea,
 select{
   border:1px solid var(--border);
-  background:#0e1520;
+  background:#121a25;  /* 흰색 → 다크 톤 */
   color:var(--text);
   border-radius:12px;
-  padding:10px 12px;
+  padding:12px 14px;
   font-size:14px;
   width:100%;
   box-sizing:border-box;
   transition:.15s;
+  margin-bottom:12px; /* 입력칸 간격 */
 }
 
 textarea{min-height:120px;resize:vertical;line-height:1.7}
@@ -97,13 +98,10 @@ select:disabled{
   opacity:.6;cursor:not-allowed
 }
 
-/* 달력 아이콘이 너무 밝을 때 */
-input[type="date"]{
-  color-scheme:dark;
-}
+input[type="date"]{color-scheme:dark}
 
 /* 폼 라벨 */
-label{display:block;margin:4px 0 6px;color:#9fb0be;font-size:13px}
+label{display:block;margin:6px 0 8px;color:#9fb0be;font-size:13px}
 
 /* ===============================
    Sections
@@ -115,33 +113,21 @@ label{display:block;margin:4px 0 6px;color:#9fb0be;font-size:13px}
   padding:16px;font-weight:700;color:var(--fg-strong);
   display:flex;align-items:center;gap:8px
 }
-.section-body{padding:18px}
+.section-body{padding:20px 22px}  /* 좌우 여백 강화 */
 
-/* 리스트 앞 점 제거 + 섹션 내 여백 통일 */
-ul.card-list,
-ul.task-list{
-  list-style:none;
-  margin:12px 0 0 0;
-  padding:0;
-  display:flex;flex-direction:column;gap:16px
-}
-
-/* 🔧 동적 리스트(id가 list_로 시작) 공통: 점 제거 + 좌우 패딩 */
-ul[id^="list_"]{
-  list-style:none;
-  margin:0;
-  padding:0 16px;       /* 좌우 여백(gutter) */
+/* 리스트 앞 점 제거 */
+ul.card-list,ul.task-list{
+  list-style:none;margin:16px 0 0 0;
+  padding:0 6px;   /* 리스트 좌우 여백 */
+  display:flex;flex-direction:column;gap:18px;
 }
 
 /* ===============================
    Cards
    =============================== */
 .notice-card,.task{
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:#0f1722;
-  padding:16px 18px;
-  margin:12px 16px;     /* 좌우 가터(너무 붙지 않게) */
+  border:1px solid var(--border);border-radius:12px;background:#0f1722;
+  padding:18px 22px;   /* 여백 늘림 */
 }
 .notice-title,.title{font-weight:700;color:var(--fg-strong);margin-bottom:8px}
 .notice-meta,.meta{color:var(--muted);margin-top:8px}
@@ -174,30 +160,30 @@ input:checked + .slider:before{transform:translateX(24px)}
    Add rows (공지 + 과제/수행/시험 공통)
    =============================== */
 .add-row{
-  display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px;
+  display:grid;grid-template-columns:1fr;gap:14px;margin-top:16px;
   background:#0f1722;border:1px solid var(--border);
-  border-radius:14px;padding:16px;box-shadow:0 4px 14px rgba(0,0,0,.20)
+  border-radius:14px;padding:20px;box-shadow:0 4px 14px rgba(0,0,0,.20)
 }
 .add-row .add{justify-self:end;padding:12px 18px;font-weight:700;border-radius:12px}
 
 /* 과제/수행/시험 : 날짜 2개 + 교시(오른쪽에 붙임) */
 .add-row[data-cat]{
   display:grid;
-  grid-template-columns: 1fr 1fr 1fr auto; /* subj/text/detail 공통 */
-  gap:12px;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap:14px;
 }
 .add-row[data-cat] .row-line{
-  display:grid;gap:12px;
-  grid-template-columns: 1fr 1fr 1fr auto; /* 시작/종료/교시/버튼 */
+  display:grid;gap:14px;
+  grid-template-columns: 1fr 1fr 1fr auto;
 }
 .add-row[data-cat] .row-line .period{min-width:220px}
 .add-row[data-cat] .row-line .add{min-width:88px}
 
 /* 모바일 : 1열 정돈 */
 @media (max-width:820px){
-  .add-row{gap:10px}
+  .add-row{gap:12px}
   .add-row[data-cat]{grid-template-columns:1fr}
-  .add-row[data-cat] .row-line{grid-template-columns:1fr 1fr;grid-template-areas:none}
+  .add-row[data-cat] .row-line{grid-template-columns:1fr 1fr}
   .add-row[data-cat] .row-line .period{grid-column:1 / -1}
   .add-row .add{justify-self:stretch}
 }
@@ -240,21 +226,21 @@ input:checked + .slider:before{transform:translateX(24px)}
 }
 
 /* 수정 폼 그리드 */
-.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 @media (max-width:900px){ .form-grid{grid-template-columns:1fr 1fr} }
 @media (max-width:600px){ .form-grid{grid-template-columns:1fr} }
 .form-grid .full{grid-column:1 / -1}
 
 /* ===============================
-   Lists spacing (모바일에서 too big 방지)
+   Lists spacing
    =============================== */
 @media (max-width:820px){
-  #list_exam .task{padding:12px 14px}
+  #list_exam .task{padding:14px 16px}
   #list_exam .task .title{font-size:18px;margin-bottom:6px}
   #list_exam .task pre{font-size:14px;line-height:1.6}
   #list_exam .task .meta{font-size:13px;margin-top:6px}
   #list_exam .task .dday{padding:1px 6px;font-size:11px}
-  ul#list_exam{gap:12px}
+  ul#list_exam{gap:14px}
 }
 
 /* ===============================
@@ -283,6 +269,6 @@ input:checked + .slider:before{transform:translateX(24px)}
 .col{display:flex;flex-direction:column}
 .gap-8{gap:8px}
 .align-end{align-self:flex-end}
-.grid-2{display:grid;grid-template-columns:1fr 280px;gap:8px}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.grid-2{display:grid;grid-template-columns:1fr 280px;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 @media (max-width:720px){.grid-2,.grid-3{grid-template-columns:1fr}}
