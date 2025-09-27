@@ -117,15 +117,31 @@ label{display:block;margin:4px 0 6px;color:#9fb0be;font-size:13px}
 }
 .section-body{padding:18px}
 
-/* 리스트 앞 점 제거 */
-ul.card-list,ul.task-list{list-style:none;margin:12px 0 0 0;padding:0;display:flex;flex-direction:column;gap:16px}
+/* 리스트 앞 점 제거 + 섹션 내 여백 통일 */
+ul.card-list,
+ul.task-list{
+  list-style:none;
+  margin:12px 0 0 0;
+  padding:0;
+  display:flex;flex-direction:column;gap:16px
+}
+
+/* 🔧 동적 리스트(id가 list_로 시작) 공통: 점 제거 + 좌우 패딩 */
+ul[id^="list_"]{
+  list-style:none;
+  margin:0;
+  padding:0 16px;       /* 좌우 여백(gutter) */
+}
 
 /* ===============================
    Cards
    =============================== */
 .notice-card,.task{
-  border:1px solid var(--border);border-radius:12px;background:#0f1722;
-  padding:16px 18px
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#0f1722;
+  padding:16px 18px;
+  margin:12px 16px;     /* 좌우 가터(너무 붙지 않게) */
 }
 .notice-title,.title{font-weight:700;color:var(--fg-strong);margin-bottom:8px}
 .notice-meta,.meta{color:var(--muted);margin-top:8px}
