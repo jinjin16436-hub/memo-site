@@ -292,3 +292,71 @@ input:checked + .slider:before{transform:translateX(24px)}
 .grid-2{display:grid;grid-template-columns:1fr 280px;gap:10px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 @media (max-width:720px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+
+/* ===== [PATCH] 리스트 불릿 완전 제거 & 안쪽 여백 강화 ===== */
+
+/* 섹션 안의 모든 ul은 점 제거 + 왼쪽 들여쓰기 제거 */
+.sec ul,
+.sec ul li {
+  list-style: none !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+.sec ul li::marker { content: "" !important; }
+
+/* 카드 리스트/태스크 리스트 좌우 여백 + 위아래 간격 증가 */
+ul.card-list,
+ul.task-list {
+  margin: 26px 0 !important;     /* 위/아래 */
+  padding: 0 20px !important;     /* 좌/우 */
+  gap: 24px !important;           /* 카드 사이 간격 */
+}
+
+/* 카드 내부 패딩 약간 증가 */
+.notice-card,
+.task {
+  padding: 24px 28px !important;
+}
+
+/* ===== [PATCH] 추가 폼(수행/숙제/시험) 여백 크게 ===== */
+.add-row {
+  margin-top: 26px !important;   /* 리스트와 폼 사이 */
+  padding: 24px 24px !important; /* 폼 박스 내부 */
+  gap: 18px !important;          /* 필드 사이 */
+}
+
+/* 날짜-날짜-교시 라인 좌우 여백/행 간격 좀 더 */
+.add-row[data-cat] .row-line {
+  gap: 18px !important;
+}
+
+/* 과목/내용 상단 텍스트 인풋의 높이/패딩 좀 더 */
+.add-row input[type="text"],
+.add-row select,
+.add-row textarea,
+.add-row input[type="date"] {
+  padding: 12px 14px !important;
+  background: #121a25 !important;  /* 다크 */
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+
+/* 폼과 폼 사이 간격(여러 폼이 연달아 있을 때) */
+.sec .add-row + .add-row {
+  margin-top: 28px !important;
+}
+
+/* 모바일에서 여백 조금 더 */
+@media (max-width: 820px) {
+  ul.card-list,
+  ul.task-list {
+    padding: 0 16px !important;
+    gap: 18px !important;
+  }
+  .add-row {
+    padding: 20px 16px !important;
+    gap: 14px !important;
+  }
+}
