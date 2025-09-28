@@ -255,3 +255,21 @@ input:checked + .slider:before{transform:translateX(24px)}
 .grid-2{display:grid;grid-template-columns:1fr 280px;gap:8px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 @media (max-width:720px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* 리스트 앞 점 제거 (공지/과제/수행/시험 공통) */
+ul, ol {
+  list-style: none !important;
+  margin: 0;
+  padding: 0;
+}
+
+ul.card-list,
+ul.task-list {
+  list-style: none !important;
+  margin: 16px 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
