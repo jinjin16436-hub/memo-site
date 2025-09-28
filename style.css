@@ -251,3 +251,39 @@ input:checked + .slider:before{transform:translateX(24px)}
 .grid-2{display:grid;grid-template-columns:1fr 280px;gap:8px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 @media (max-width:720px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* ===== 리스트 점(불릿) 완전 제거 - 강제 리셋 ===== */
+/* 모든 리스트 공통 */
+ul.card-list,
+ul.task-list,
+#list_notice,
+#list_exam,
+#list_task,
+#list_homework{
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* ::marker 제거 (브라우저별 안전장치) */
+#list_notice > li::marker,
+#list_exam > li::marker,
+#list_task  > li::marker,
+#list_homework > li::marker,
+ul.card-list > li::marker,
+ul.task-list > li::marker{
+  content: "" !important;
+}
+
+/* 혹시 인라인 스타일/리셋 때문에 들여쓰기 생기는 경우 */
+#list_notice > li,
+#list_exam > li,
+#list_task  > li,
+#list_homework > li,
+ul.card-list > li,
+ul.task-list > li{
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
