@@ -29,7 +29,7 @@ body{
     "Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;
   line-height:1.7;
 }
-.container{max-width:1100px;margin:26px auto;padding:0 20px}
+.container{max-width:1100px;margin:26px auto;padding:0 16px}
 
 /* ===============================
    Top bar
@@ -59,7 +59,7 @@ body{
 .btn--danger{background:var(--danger);border-color:var(--danger);color:#fff}
 
 /* ===============================
-   Inputs / Select / Textarea
+   Inputs / Select / Textarea (다크 톤 통일)
    =============================== */
 input[type="text"],
 input[type="date"],
@@ -68,12 +68,13 @@ input[type="number"],
 textarea,
 select{
   border:1px solid var(--border);
-  background:#121a25;
+  background:#0e1520;
   color:var(--text);
   border-radius:12px;
-  padding:12px 14px;
+  padding:12px 14px;   /* ← padding 넉넉히 */
   font-size:14px;
   width:100%;
+  margin:6px 0;        /* ← 위아래 여백 추가 */
   box-sizing:border-box;
   transition:.15s;
 }
@@ -81,7 +82,11 @@ select{
 textarea{min-height:120px;resize:vertical;line-height:1.7}
 
 input::placeholder,
-textarea::placeholder{color:#9fb0be}
+textarea::placeholder,
+select::placeholder{
+  color:#9fb0be;       /* placeholder 회색 */
+  opacity:1;           /* 일부 브라우저에서 흰색 뜨는 것 방지 */
+}
 
 input:focus,
 textarea:focus,
@@ -97,7 +102,10 @@ select:disabled{
   opacity:.6;cursor:not-allowed
 }
 
-input[type="date"]{color-scheme:dark}
+/* 달력 아이콘 어둡게 */
+input[type="date"]{
+  color-scheme:dark;
+}
 
 /* 폼 라벨 */
 label{display:block;margin:6px 0 8px;color:#9fb0be;font-size:13px}
@@ -112,17 +120,16 @@ label{display:block;margin:6px 0 8px;color:#9fb0be;font-size:13px}
   padding:16px;font-weight:700;color:var(--fg-strong);
   display:flex;align-items:center;gap:8px
 }
-.section-body{padding:22px}
+.section-body{padding:18px}
 
-/* 리스트 앞 점 제거 + 여백 */
-ul.card-list,
-ul.task-list{
+/* 리스트 앞 점 제거 */
+ul.card-list,ul.task-list{
   list-style:none;
-  margin:22px 0;
-  padding:0 14px;
+  margin:16px 0 0 0;
+  padding:0 8px;  /* ← 좌우 여백 */
   display:flex;
   flex-direction:column;
-  gap:22px;
+  gap:18px;
 }
 
 /* ===============================
@@ -130,7 +137,7 @@ ul.task-list{
    =============================== */
 .notice-card,.task{
   border:1px solid var(--border);border-radius:12px;background:#0f1722;
-  padding:22px 26px;
+  padding:18px 20px;   /* ← 카드 내부 여백 */
 }
 .notice-title,.title{font-weight:700;color:var(--fg-strong);margin-bottom:8px}
 .notice-meta,.meta{color:var(--muted);margin-top:8px}
@@ -140,7 +147,7 @@ ul.task-list{
 .kind-alert{background:rgba(34,197,94,.12)}
 
 /* D-day */
-.dday{display:inline-block;margin-left:8px;padding:4px 10px;border-radius:999px;
+.dday{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;
   font-weight:700;font-size:12px;vertical-align:middle}
 .dday.red{background:#ef4444;color:#fff}
 .dday.orange{background:#f59e0b;color:#1b1b1b}
@@ -160,56 +167,17 @@ input:checked + .slider:before{transform:translateX(24px)}
 .slider.round{border-radius:999px}
 
 /* ===============================
-   Add rows (추가창)
+   Add rows
    =============================== */
 .add-row{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:18px;
-  margin-top:20px;
-  background:#0f1722;
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:22px;
+  display:grid;grid-template-columns:1fr;gap:14px;margin-top:16px;
+  background:#0f1722;border:1px solid var(--border);
+  border-radius:14px;padding:18px;box-shadow:0 4px 14px rgba(0,0,0,.20)
 }
-.add-row input,
-.add-row textarea,
-.add-row select{
-  background:#121a25;
-  color:var(--text);
-  border:1px solid var(--border);
-}
-.add-row .add{
-  justify-self:end;
-  padding:12px 20px;
-  font-weight:700;
-  border-radius:12px;
-}
-
-/* 과제/수행/시험 추가 입력줄 */
-.add-row[data-cat]{
-  display:grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
-  gap:16px;
-}
-.add-row[data-cat] .row-line{
-  display:grid;gap:16px;
-  grid-template-columns: 1fr 1fr 1fr auto;
-}
-.add-row[data-cat] .row-line .period{min-width:220px}
-.add-row[data-cat] .row-line .add{min-width:88px}
-
-/* 모바일 */
-@media (max-width:820px){
-  .add-row{gap:12px}
-  .add-row[data-cat]{grid-template-columns:1fr}
-  .add-row[data-cat] .row-line{grid-template-columns:1fr 1fr}
-  .add-row[data-cat] .row-line .period{grid-column:1 / -1}
-  .add-row .add{justify-self:stretch}
-}
+.add-row .add{justify-self:end;padding:12px 18px;font-weight:700;border-radius:12px}
 
 /* ===============================
-   Modal (수정 팝업)
+   Modal
    =============================== */
 .modal{
   position:fixed; inset:0;
@@ -245,27 +213,13 @@ input:checked + .slider:before{transform:translateX(24px)}
   background:rgba(255,255,255,.02)
 }
 
-/* 수정 폼 그리드 */
-.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+/* 수정 폼 */
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 @media (max-width:900px){ .form-grid{grid-template-columns:1fr 1fr} }
 @media (max-width:600px){ .form-grid{grid-template-columns:1fr} }
 .form-grid .full{grid-column:1 / -1}
 
-/* ===============================
-   Lists spacing (모바일)
-   =============================== */
-@media (max-width:820px){
-  #list_exam .task{padding:16px 18px}
-  #list_exam .task .title{font-size:18px;margin-bottom:6px}
-  #list_exam .task pre{font-size:14px;line-height:1.6}
-  #list_exam .task .meta{font-size:13px;margin-top:6px}
-  #list_exam .task .dday{padding:2px 7px;font-size:11px}
-  ul#list_exam{gap:14px}
-}
 
-/* ===============================
-   pre (본문)
-   =============================== */
 .task pre,
 .notice-card pre{
   font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",
@@ -279,84 +233,4 @@ input:checked + .slider:before{transform:translateX(24px)}
   background:transparent;
   padding:0;
   border:none;
-}
-
-/* ===============================
-   Helper layouts
-   =============================== */
-.row{display:flex;gap:8px;align-items:center}
-.row-between{display:flex;align-items:center;justify-content:space-between}
-.col{display:flex;flex-direction:column}
-.gap-8{gap:8px}
-.align-end{align-self:flex-end}
-.grid-2{display:grid;grid-template-columns:1fr 280px;gap:10px}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-@media (max-width:720px){.grid-2,.grid-3{grid-template-columns:1fr}}
-
-
-/* ===== [PATCH] 리스트 불릿 완전 제거 & 안쪽 여백 강화 ===== */
-
-/* 섹션 안의 모든 ul은 점 제거 + 왼쪽 들여쓰기 제거 */
-.sec ul,
-.sec ul li {
-  list-style: none !important;
-  margin-left: 0 !important;
-  padding-left: 0 !important;
-}
-.sec ul li::marker { content: "" !important; }
-
-/* 카드 리스트/태스크 리스트 좌우 여백 + 위아래 간격 증가 */
-ul.card-list,
-ul.task-list {
-  margin: 26px 0 !important;     /* 위/아래 */
-  padding: 0 20px !important;     /* 좌/우 */
-  gap: 24px !important;           /* 카드 사이 간격 */
-}
-
-/* 카드 내부 패딩 약간 증가 */
-.notice-card,
-.task {
-  padding: 24px 28px !important;
-}
-
-/* ===== [PATCH] 추가 폼(수행/숙제/시험) 여백 크게 ===== */
-.add-row {
-  margin-top: 26px !important;   /* 리스트와 폼 사이 */
-  padding: 24px 24px !important; /* 폼 박스 내부 */
-  gap: 18px !important;          /* 필드 사이 */
-}
-
-/* 날짜-날짜-교시 라인 좌우 여백/행 간격 좀 더 */
-.add-row[data-cat] .row-line {
-  gap: 18px !important;
-}
-
-/* 과목/내용 상단 텍스트 인풋의 높이/패딩 좀 더 */
-.add-row input[type="text"],
-.add-row select,
-.add-row textarea,
-.add-row input[type="date"] {
-  padding: 12px 14px !important;
-  background: #121a25 !important;  /* 다크 */
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}
-
-/* 폼과 폼 사이 간격(여러 폼이 연달아 있을 때) */
-.sec .add-row + .add-row {
-  margin-top: 28px !important;
-}
-
-/* 모바일에서 여백 조금 더 */
-@media (max-width: 820px) {
-  ul.card-list,
-  ul.task-list {
-    padding: 0 16px !important;
-    gap: 18px !important;
-  }
-  .add-row {
-    padding: 20px 16px !important;
-    gap: 14px !important;
-  }
 }
