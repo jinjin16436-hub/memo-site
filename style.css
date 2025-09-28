@@ -118,10 +118,16 @@ ul.card-list,ul.task-list{list-style:none;margin:16px 0 0 0;padding:0;display:fl
 /* ===============================
    Cards
    =============================== */
-.notice-card,.task{
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:#0f1722;
+/* 카드 공통 스타일 */
+.notice-card,
+.task {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #0f1722;
+  padding: 20px 24px; /* ← 여백 늘림 */
+  box-sizing: border-box;
+}
+
 
   /* 여백 넉넉하게 */
   padding:28px 32px;
