@@ -1,4 +1,4 @@
-/* app.js - v1.1.5 (full) */
+/* app.js - v1.1.6 (full) */
 
 // ===== 안전 체크: env.js 선 로드 =====
 if (!window.firebaseConfig) {
@@ -73,7 +73,7 @@ const hSubj   = $('#hSubj');
 const hTitle  = $('#hTitle');
 const hDetail = $('#hDetail');
 const hStart  = $('#hStart');
-const hEnd    = $('#hEnd');
+const hEnd    = $('#hEnd']);
 const hPStart = $('#hPStart');
 const hPEnd   = $('#hPEnd');
 const hAddBtn = $('#hAddBtn');
@@ -120,47 +120,74 @@ const renderMeta = (startDate, endDate, pStart, pEnd, legacyPeriod) => {
   return parts.length ? `<div class="meta">${parts.join(' ')}</div>` : '';
 };
 
-/** D-day 배지 */
+// ===== D-day 표시 (규칙: D-n / D-day(하루) / 진행중(기간≥2일) / 종료) =====
 const ddayBadge = (start, end) => {
   const toDate0 = (v) => {
     if (!v) return null;
     const d = v.toDate ? v.toDate() : new Date(v);
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
   };
-  const s0 = toDate0(start);
-  const e0 = toDate0(end);
+  const colorByDiff = (n) => {
+    if (n <= 2) return 'orange';
+    if (n <= 7) return 'yellow';
+    return 'green';
+  };
 
-  if (!s0 && !e0) return '';
+  let s = toDate0(start);
+  let e = toDate0(end);
+  if (!s && !e) return '';
+  if (!e && s) e = s;        // 종료 없으면 단일 하루
+  if (!s && e) s = e;        // 시작 없고 종료만 있으면 단일 하루
 
-  const now = new Date();
-  const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const today = toDate0(new Date());
 
-  if (e0 && t0 > e0) return `<span class="dday gray">종료</span>`;
-  if (e0 && t0 >= s0 && t0 <= e0) return `<span class="dday green">진행중</span>`;
+  // 종료
+  if (today > e) return `<span class="dday gray">종료</span>`;
 
-  const diff = Math.round((s0 - t0) / 86400000);
-  if (diff === 0) return `<span class="dday red">D-DAY</span>`;
-  if (diff <= 2)  return `<span class="dday orange">D-${diff}</span>`;
-  if (diff <= 7)  return `<span class="dday yellow">D-${diff}</span>`;
-  return `<span class="dday green">D-${diff}</span>`;
+  const isSingle = s.getTime() === e.getTime();
+
+  if (isSingle) {
+    const diff = Math.round((s - today) / 86400000);
+    if (diff > 0)  return `<span class="dday ${colorByDiff(diff)}">D-${diff}</span>`;
+    if (diff === 0) return `<span class="dday red">D-day</span>`;
+    return `<span class="dday gray">종료</span>`;
+  } else {
+    if (today < s) {
+      const diff = Math.round((s - today) / 86400000);
+      return `<span class="dday ${colorByDiff(diff)}">D-${diff}</span>`;
+    }
+    // 오늘이 기간 사이
+    return `<span class="dday red">진행중</span>`;
+  }
 };
 
-/** 날짜 비교용 정렬키(디데이 빠른 순) */
+/** 정렬 키: 가까운 D-day → 진행중(0) → 먼 것 → 종료(맨뒤) */
 const sortKeyByDday = (data) => {
-  const to0 = v => v ? (v.toDate ? v.toDate() : new Date(v)) : null;
+  const to0 = (v) => v ? (v.toDate ? v.toDate() : new Date(v)) : null;
+  const dayMs = 86400000;
   const today = new Date(); today.setHours(0,0,0,0);
-  const s = to0(data.startDate);
-  const e = to0(data.endDate);
 
-  // 이미 종료된 건 가장 뒤로
-  if (e && today > e) return 9e8;
+  let s = to0(data.startDate);
+  let e = to0(data.endDate);
 
-  // 시작일/종료일 중 기준일
-  const base = s || e;
-  if (!base) return 9e7;
+  if (!s && !e) return 9e7; // 날짜 없음 → 뒤쪽
+  if (!s && e) s = e;       // 종료만 있으면 단일 하루로 간주
+  if (!e && s) e = s;
 
-  const diff = Math.floor((base - today) / 86400000); // 남은 일수
-  return diff;
+  // 종료는 맨 뒤
+  if (today > e) return 9e8;
+
+  const isSingle = s.getTime() === e.getTime();
+
+  // 진행중(기간형) or D-day(단일 하루 오늘) → 0
+  if (!isSingle && today >= s && today <= e) return 0;
+  if (isSingle && s.getTime() === today.getTime()) return 0;
+
+  // 시작 전: 시작일까지 D-n
+  if (today < s) return Math.floor((s - today)/dayMs);
+
+  // 안전망
+  return 9e7;
 };
 
 // ===== 권한 UI =====
@@ -406,7 +433,6 @@ const delTask = async (cat, id)=>{
 
 // ===== 수정 모달 =====
 const modalRoot = document.querySelector('#modal-root');
-
 const closeModal = ()=> modalRoot.innerHTML = '';
 
 const periodSelectOptions = (val)=>{
