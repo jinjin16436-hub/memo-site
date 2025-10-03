@@ -256,3 +256,27 @@ input:checked + .slider:before{transform:translateX(24px)}
   .section-body{padding:20px}
   .notice-card,.task{padding:22px}
    }
+
+/* === D-day 모바일 가독성 개선 === */
+@media (max-width: 520px){
+  /* 제목 줄 높이/크기 살짝 키우기 */
+  .notice-card .title,
+  .task .title{
+    font-size: clamp(1rem, 4.2vw, 1.15rem);
+    line-height: 1.35;
+  }
+
+  /* D-day 뱃지 크기↑, 여백↑ (작게 보이는 문제 해결) */
+  .dday{
+    font-size: clamp(0.9rem, 3.8vw, 1rem);
+    padding: 5px 12px;       /* ← 기존 3px 10px 보다 커짐 */
+    border-radius: 999px;
+    transform: translateY(-1px); /* 수직정렬 살짝 보정 */
+  }
+
+  /* 카드 안쪽 여백도 모바일에서 약간 키워서 답답함 완화 */
+  .notice-card,
+  .task{
+    padding: 24px 24px;
+  }
+}
