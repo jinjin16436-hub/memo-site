@@ -266,32 +266,53 @@ if (secHead){
 const safeLoadNotices = async ()=>{
   listNotice.innerHTML = '';
   try{
-    const snap = await db.collection(`users/${PUBLIC_UID}/notices`).orderBy('createdAt','desc').get();
+    const snap = await db.collection(`users/${PUBLIC_UID}/notices`)
+                         .orderBy('createdAt','desc')
+                         .get();
+
     if(snap.empty){
       listNotice.innerHTML = '<li class="meta">등록된 전달 사항이 없습니다.</li>';
       return;
     }
-    snap.forEach(doc=>{
-      const d = doc.data();
-      const li = el('li', {class:`notice-card kind-${d.kind || 'notice'}`});
+
+    // 모든 문서를 배열로 변환
+    const docs = [];
+    snap.forEach(doc => docs.push({ id: doc.id, data: doc.data() }));
+
+    // 🔽 정렬 우선순위: 공지(notice) → 안내(info) → 참고(alert)
+    const order = { notice: 1, info: 2, alert: 3 };
+    docs.sort((a, b) => {
+      const ak = order[a.data.kind] || 99;
+      const bk = order[b.data.kind] || 99;
+      if (ak !== bk) return ak - bk;
+      // 같은 분류면 createdAt 내림차순
+      const at = a.data.createdAt?.toMillis?.() || 0;
+      const bt = b.data.createdAt?.toMillis?.() || 0;
+      return bt - at;
+    });
+
+    // 렌더링
+    docs.forEach(({id, data})=>{
+      const li = el('li', {class:`notice-card kind-${data.kind || 'notice'}`});
       li.innerHTML = `
-        <div class="title">${d.title || '(제목 없음)'}</div>
-        ${d.body ? `<div class="content"><pre>${d.body}</pre></div>` : ''}
-        ${renderMeta(d.startDate,d.endDate,d.periodStart,d.periodEnd,d.period)}
+        <div class="title">${data.title || '(제목 없음)'}</div>
+        ${data.body ? `<div class="content"><pre>${data.body}</pre></div>` : ''}
+        ${renderMeta(data.startDate,data.endDate,data.periodStart,data.periodEnd,data.period)}
       `;
 
       if (isAdmin) {
         const row = el('div');
         const b1 = el('button',{class:'btn'}); b1.textContent='수정';
         const b2 = el('button',{class:'btn'}); b2.textContent='삭제';
-        b1.addEventListener('click',()=> openNoticeEdit(doc.id, d));
-        b2.addEventListener('click',()=> delNotice(doc.id));
+        b1.addEventListener('click',()=> openNoticeEdit(id, data));
+        b2.addEventListener('click',()=> delNotice(id));
         row.append(b1,b2);
         li.appendChild(row);
       }
 
       listNotice.appendChild(li);
     });
+
   }catch(err){
     listNotice.innerHTML = `<li class="meta">읽기 오류: ${err.message}</li>`;
   }
