@@ -1,0 +1,10 @@
+# Firebase functions secret
+functions/.env
+
+# Firebase build output
+functions/node_modules
+node_modules
+
+# OS / editor cache
+.DS_Store
+.vscode
