@@ -26,12 +26,11 @@ jobs:
         run: npm i -g firebase-tools
 
       - name: Install Functions deps
+        working-directory: functions
         run: |
-          cd functions
-          npm ci
+          npm install --no-audit --fund=false
 
       - name: Deploy to Firebase
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: firebase deploy --only functions,hosting
-
