@@ -1,4 +1,4 @@
-/* app.js - v1.1.6 (full) */
+/* app.js - v1.1.10 (full, NEIS proxy integrated) */
 
 // ===== 안전 체크: env.js 선 로드 =====
 if (!window.firebaseConfig) {
@@ -6,11 +6,7 @@ if (!window.firebaseConfig) {
   throw new Error("Missing firebaseConfig");
 }
 
-const {
-  firebaseConfig,
-  PUBLIC_UID,
-  ADMIN_UIDS = [],
-} = window;
+const { firebaseConfig, PUBLIC_UID, ADMIN_UIDS = [] } = window;
 
 // ===== Firebase 초기화 =====
 firebase.initializeApp(firebaseConfig);
@@ -110,7 +106,7 @@ const periodText = (start, end, legacy) => {
   return '';
 };
 
-/** 날짜 + 교시 메타 라인(괄호 제거하고 띄어쓰기로 연결) */
+/** 날짜 + 교시 메타 라인 */
 const renderMeta = (startDate, endDate, pStart, pEnd, legacyPeriod) => {
   const range = fmtRange(startDate,endDate);
   const ptxt  = periodText(pStart, pEnd, legacyPeriod);
@@ -120,7 +116,7 @@ const renderMeta = (startDate, endDate, pStart, pEnd, legacyPeriod) => {
   return parts.length ? `<div class="meta">${parts.join(' ')}</div>` : '';
 };
 
-// ===== D-day 표시 (규칙: D-n / D-day(하루) / 진행중(기간≥2일) / 종료) =====
+// ===== D-day 표시 =====
 const ddayBadge = (start, end) => {
   const toDate0 = (v) => {
     if (!v) return null;
@@ -136,12 +132,11 @@ const ddayBadge = (start, end) => {
   let s = toDate0(start);
   let e = toDate0(end);
   if (!s && !e) return '';
-  if (!e && s) e = s;        // 종료 없으면 단일 하루
-  if (!s && e) s = e;        // 시작 없고 종료만 있으면 단일 하루
+  if (!e && s) e = s;
+  if (!s && e) s = e;
 
   const today = toDate0(new Date());
 
-  // 종료
   if (today > e) return `<span class="dday gray">종료</span>`;
 
   const isSingle = s.getTime() === e.getTime();
@@ -156,12 +151,11 @@ const ddayBadge = (start, end) => {
       const diff = Math.round((s - today) / 86400000);
       return `<span class="dday ${colorByDiff(diff)}">D-${diff}</span>`;
     }
-    // 오늘이 기간 사이
     return `<span class="dday red">진행중</span>`;
   }
 };
 
-/** 정렬 키: 가까운 D-day → 진행중(0) → 먼 것 → 종료(맨뒤) */
+/** 정렬 키 (디데이 가까운 순 → 진행중/당일 → 종료 맨뒤) */
 const sortKeyByDday = (data) => {
   const to0 = (v) => v ? (v.toDate ? v.toDate() : new Date(v)) : null;
   const dayMs = 86400000;
@@ -170,23 +164,16 @@ const sortKeyByDday = (data) => {
   let s = to0(data.startDate);
   let e = to0(data.endDate);
 
-  if (!s && !e) return 9e7; // 날짜 없음 → 뒤쪽
-  if (!s && e) s = e;       // 종료만 있으면 단일 하루로 간주
+  if (!s && !e) return 9e7;
+  if (!s && e) s = e;
   if (!e && s) e = s;
 
-  // 종료는 맨 뒤
   if (today > e) return 9e8;
 
   const isSingle = s.getTime() === e.getTime();
-
-  // 진행중(기간형) or D-day(단일 하루 오늘) → 0
   if (!isSingle && today >= s && today <= e) return 0;
   if (isSingle && s.getTime() === today.getTime()) return 0;
-
-  // 시작 전: 시작일까지 D-n
   if (today < s) return Math.floor((s - today)/dayMs);
-
-  // 안전망
   return 9e7;
 };
 
@@ -222,7 +209,6 @@ auth.onAuthStateChanged(async (u)=>{
 
   applyAdminUI();
 
-  // 데이터 로드
   await Promise.all([
     loadNoticeSwitch().then(safeLoadNotices),
     safeLoadTasks('exams'),
@@ -235,7 +221,7 @@ auth.onAuthStateChanged(async (u)=>{
 const loadNoticeSwitch = async ()=>{
   try{
     const doc = await db.doc(`users/${PUBLIC_UID}/settings/app`).get();
-    const on = doc.exists ? (doc.data().showNotices !== false) : true; // default ON
+    const on = doc.exists ? (doc.data().showNotices !== false) : true;
     toggleNotices.checked = !!on;
     $('#sec_notice .section-body').style.display = on ? '' : 'none';
   }catch(e){
@@ -249,12 +235,9 @@ toggleNotices.addEventListener('change', async ()=>{
   await db.doc(`users/${PUBLIC_UID}/settings/app`).set({ showNotices:on }, {merge:true});
   $('#sec_notice .section-body').style.display = on ? '' : 'none';
 });
-
-// 섹션 헤더 클릭으로 토글(관리자만)
 const secHead = $('#sec_notice .section-head');
 if (secHead){
   secHead.addEventListener('click', (e)=>{
-    // 라벨/체크박스 누른 경우는 기본동작 유지
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') return;
     if (!isAdmin) return;
     toggleNotices.checked = !toggleNotices.checked;
@@ -275,23 +258,20 @@ const safeLoadNotices = async ()=>{
       return;
     }
 
-    // 모든 문서를 배열로 변환
     const docs = [];
     snap.forEach(doc => docs.push({ id: doc.id, data: doc.data() }));
 
-    // 🔽 정렬 우선순위: 공지(notice) → 안내(info) → 참고(alert)
+    // 공지 → 안내 → 참고 (동일분류는 최신순)
     const order = { notice: 1, info: 2, alert: 3 };
     docs.sort((a, b) => {
       const ak = order[a.data.kind] || 99;
       const bk = order[b.data.kind] || 99;
       if (ak !== bk) return ak - bk;
-      // 같은 분류면 createdAt 내림차순
       const at = a.data.createdAt?.toMillis?.() || 0;
       const bt = b.data.createdAt?.toMillis?.() || 0;
       return bt - at;
     });
 
-    // 렌더링
     docs.forEach(({id, data})=>{
       const li = el('li', {class:`notice-card kind-${data.kind || 'notice'}`});
       li.innerHTML = `
@@ -299,7 +279,6 @@ const safeLoadNotices = async ()=>{
         ${data.body ? `<div class="content"><pre>${data.body}</pre></div>` : ''}
         ${renderMeta(data.startDate,data.endDate,data.periodStart,data.periodEnd,data.period)}
       `;
-
       if (isAdmin) {
         const row = el('div');
         const b1 = el('button',{class:'btn'}); b1.textContent='수정';
@@ -309,7 +288,6 @@ const safeLoadNotices = async ()=>{
         row.append(b1,b2);
         li.appendChild(row);
       }
-
       listNotice.appendChild(li);
     });
 
@@ -324,7 +302,6 @@ nAddBtn.addEventListener('click', async ()=>{
     title: nTitle.value.trim(),
     kind:  nKind.value,
     body:  nBody.value.trim(),
-    // (선택) 기간/교시도 넣고 싶으면 여기에 추가
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   };
   await db.collection(`users/${PUBLIC_UID}/notices`).add(payload);
@@ -338,7 +315,7 @@ const delNotice = async (id)=>{
   await safeLoadNotices();
 };
 
-// ===== 시험/수행/숙제 로드(디데이 빠른 순 정렬) =====
+// ===== 시험/수행/숙제 로드 =====
 const safeLoadTasks = async (cat)=>{
   const ul = cat==='exams' ? listExam : (cat==='tasks' ? listTask : listHomework);
   ul.innerHTML = '';
@@ -348,15 +325,9 @@ const safeLoadTasks = async (cat)=>{
       ul.innerHTML = `<li class="meta">등록된 ${cat==='exams'?'시험':cat==='tasks'?'수행평가':'숙제'}가 없습니다.</li>`;
       return;
     }
-
-    // 배열화
     const docs = [];
     snap.forEach(doc=> docs.push({ id: doc.id, data: doc.data() }));
-
-    // 디데이 기준 정렬
     docs.sort((a,b)=> sortKeyByDday(a.data) - sortKeyByDday(b.data));
-
-    // 렌더링
     docs.forEach(({id,data})=>{
       const title = (cat==='exams' ? (data.name || '시험') : (data.subject || '과목 없음'));
       const li = el('li',{class:'task'});
@@ -369,7 +340,6 @@ const safeLoadTasks = async (cat)=>{
             data.periodStart, data.periodEnd, data.period
         )}
       `;
-
       if (isAdmin) {
         const row = el('div');
         const b1 = el('button',{class:'btn'}); b1.textContent='수정';
@@ -379,10 +349,8 @@ const safeLoadTasks = async (cat)=>{
         row.append(b1,b2);
         li.appendChild(row);
       }
-
       ul.appendChild(li);
     });
-
   }catch(err){
     ul.innerHTML = `<li class="meta">읽기 오류: ${err.message}</li>`;
   }
@@ -406,7 +374,6 @@ eAddBtn.addEventListener('click', async ()=>{
   ePStart.value = ePEnd.value = '';
   await safeLoadTasks('exams');
 });
-
 tAddBtn.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -425,7 +392,6 @@ tAddBtn.addEventListener('click', async ()=>{
   tPStart.value=tPEnd.value='';
   await safeLoadTasks('tasks');
 });
-
 hAddBtn.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -577,3 +543,68 @@ const openTaskEdit = (cat, id, data)=>{
     await safeLoadTasks(cat);
   };
 };
+
+/* ================================
+   📚 시간표(NEIS) 프록시 연동
+   ================================ */
+const ttList = document.getElementById('ttList');
+const ttBtn  = document.getElementById('ttLoadBtn');
+
+const renderTimetableItem = (r) => {
+  const li = document.createElement('li');
+  li.className = 'task';
+  li.innerHTML = `
+    <div class="title">${r.PERIO}교시 — ${r.ITRT_CNTNT || '(과목 없음)'}
+      ${r.ALL_TI_YMD ? `<span class="dday gray" style="margin-left:8px">${r.ALL_TI_YMD}</span>` : ''}
+    </div>
+    <div class="meta">
+      ${r.CLRM_NM ? `강의실: ${r.CLRM_NM}` : ''}
+      ${r.TECHER ? ` ${r.TECHER} 선생님` : ''}
+    </div>
+  `;
+  return li;
+};
+
+ttBtn?.addEventListener('click', async ()=>{
+  const name = document.getElementById('ttSchoolName').value.trim();
+  const grade= document.getElementById('ttGrade').value.trim();
+  const cls  = document.getElementById('ttClass').value.trim();
+  const date = document.getElementById('ttDate').value; // YYYY-MM-DD
+
+  if(!name || !grade || !cls || !date){
+    alert('학교명/학년/반/날짜를 모두 입력해 주세요.');
+    return;
+  }
+
+  ttList.innerHTML = `<li class="meta">불러오는 중...</li>`;
+
+  try {
+    const ymd = date.replaceAll('-','');
+    const qs = new URLSearchParams({
+      schoolName: name,
+      grade, classNm: cls, ymd
+    });
+    const res = await fetch(`/api/timetable?${qs.toString()}`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if(!res.ok){
+      const text = await res.text();
+      throw new Error(text || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const rows = Array.isArray(data?.rows) ? data.rows : (Array.isArray(data?.data) ? data.data : []);
+
+    ttList.innerHTML = '';
+    if(!rows.length){
+      ttList.innerHTML = '<li class="meta">해당 일자에 시간표가 없습니다.</li>';
+      return;
+    }
+
+    rows.sort((a,b)=> Number(a.PERIO) - Number(b.PERIO));
+    rows.forEach(r => ttList.appendChild(renderTimetableItem(r)));
+
+  } catch (err) {
+    console.error('[NEIS] timetable error:', err);
+    ttList.innerHTML = `<li class="meta">불러오기 실패: ${err.message}</li>`;
+  }
+});
