@@ -1,13 +1,14 @@
 {
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs16"
+  },
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "functions/**"],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
-      { "source": "/api/school", "function": "school" },
-      { "source": "/api/timetable", "function": "timetable" }
+      { "source": "/api/**", "function": "api" },
+      { "source": "**", "destination": "/index.html" }
     ]
-  },
-  "functions": {
-    "source": "functions"
   }
 }
