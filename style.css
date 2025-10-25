@@ -108,7 +108,7 @@ label{display:block;margin:4px 0 6px;color:#9fb0be;font-size:13px}
   font-weight:700;color:var(--fg-strong);
   display:flex;align-items:center;gap:8px
 }
-.section-body{padding:24px 28px} /* ← 섹션 좌우 여백 확장 */
+.section-body{padding:24px 28px}
 
 /* 공통 리스트(섹션 내부 카드 리스트) */
 ul.card-list,
@@ -125,7 +125,7 @@ ul.task-list{
   border:1px solid var(--border);
   border-radius:12px;
   background:#0f1722;
-  padding:28px 32px;               /* ← 카드 안쪽 좌우 여백 확장 */
+  padding:28px 32px;
   box-sizing:border-box;
 }
 .notice-title,.title{font-weight:700;color:var(--fg-strong);margin-bottom:12px}
@@ -165,7 +165,6 @@ input:checked + .slider:before{transform:translateX(24px)}
   background:#0f1722;border:1px solid var(--border);
   border-radius:14px;padding:20px;box-shadow:0 4px 14px rgba(0,0,0,.20)
 }
-.add-row .add{justify-self:end;padding:12px 18px;font-weight:700;border-radius:12px}
 .add-row[data-cat]{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:14px}
 .add-row[data-cat] .row-line{display:grid;gap:14px;grid-template-columns:1fr 1fr 1fr auto}
 .add-row[data-cat] .row-line .period{min-width:220px}
@@ -251,33 +250,24 @@ input:checked + .slider:before{transform:translateX(24px)}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 @media (max-width:720px){.grid-2,.grid-3{grid-template-columns:1fr}}
 
-/* 모바일에서 카드/섹션 패딩 약간 보정(너무 답답하지 않게) */
+/* 모바일에서 카드/섹션 패딩 약간 보정 */
 @media (max-width:520px){
   .section-body{padding:20px}
   .notice-card,.task{padding:22px}
-   }
+}
 
-/* === D-day 모바일 가독성 개선 === */
-/* === D-day 모바일 가독성 강화 버전 === */
+/* === D-day 모바일 가독성 강화 === */
 @media (max-width: 520px){
   .notice-card .title,
   .task .title{
     font-size: clamp(1.05rem, 4.8vw, 1.25rem);
     line-height: 1.4;
   }
-
-  /* 🔥 D-day 뱃지 더 크고 선명하게 */
   .dday{
-    font-size: clamp(1rem, 4.5vw, 1.2rem); /* 글자 크게 */
-    padding: 6px 16px;                     /* 패딩 확장 */
-    font-weight: 800;                      /* 굵게 강조 */
+    font-size: clamp(1.0rem, 4.6vw, 1.25rem);
+    padding: 7px 16px;
+    font-weight: 800;
     border-radius: 999px;
-    transform: translateY(-2px);           /* 수직 보정 */
-  }
-
-  /* 카드 안쪽 여백 살짝 늘리기 */
-  .notice-card,
-  .task{
-    padding: 26px 26px;
+    transform: translateY(-2px);
   }
 }
