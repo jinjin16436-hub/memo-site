@@ -1,0 +1,13 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "functions/**"],
+    "rewrites": [
+      { "source": "/api/school", "function": "school" },
+      { "source": "/api/timetable", "function": "timetable" }
+    ]
+  },
+  "functions": {
+    "source": "functions"
+  }
+}
