@@ -1,0 +1,9 @@
+{
+  "name": "functions",
+  "type": "module",
+  "engines": { "node": "18" },
+  "dependencies": {
+    "firebase-functions": "^4.7.0",
+    "node-fetch": "^3.3.2"
+  }
+}
