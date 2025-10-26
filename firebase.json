@@ -1,15 +1,14 @@
 {
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs16"
-  },
   "hosting": {
     "public": ".",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [
-      { "source": "/api/**", "function": "api" },
-      { "source": "**", "destination": "/index.html" }
+    "headers": [
+      {
+        "source": "**/*.@(js|css|svg|png|jpg|jpeg|gif|webp)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=3600" }
+        ]
+      }
     ]
   }
 }
-
