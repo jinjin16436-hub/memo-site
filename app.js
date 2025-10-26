@@ -149,40 +149,61 @@ if (secHead){
 }
 
 // ===== 공지 로드/정렬(공지>안내>참고) =====
-const KIND_ORDER = { notice:0, info:1, alert:2 };
-const safeLoadNotices = async ()=>{
+const KIND_ORDER = { notice: 0, info: 1, alert: 2 };
+
+const safeLoadNotices = async () => {
   listNotice.innerHTML = '';
-  try{
-    const snap = await db.collection(`users/${PUBLIC_UID}/notices`).orderBy('createdAt','desc').get();
-    const docs=[]; snap.forEach(doc=>docs.push({id:doc.id,data:doc.data()}));
-    // 분류 우선 정렬(공지→안내→참고), 동률이면 최신순
-    docs.sort((a,b)=>{
-      const ka = KIND_ORDER[a.data.kind||'notice'] ?? 3;
-      const kb = KIND_ORDER[b.data.kind||'notice'] ?? 3;
-      if (ka!==kb) return ka-kb;
-      const ta = (a.data.createdAt?.toMillis?.() ?? 0);
-      const tb = (b.data.createdAt?.toMillis?.() ?? 0);
-      return tb-ta;
+  try {
+    const snap = await db
+      .collection(`users/${PUBLIC_UID}/notices`)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    const docs = [];
+    snap.forEach(doc => {
+      // 데이터가 없거나 비정상이면 빈 객체로 처리
+      const data = doc.data() || {};
+      docs.push({ id: doc.id, data });
     });
-    if(!docs.length){ listNotice.innerHTML = '<li class="meta">등록된 전달 사항이 없습니다.</li>'; return; }
-    docs.forEach(({id,d})=>{
-      const li = el('li',{class:`notice-card kind-${d.kind || 'notice'}`});
+
+    if (!docs.length) {
+      listNotice.innerHTML = '<li class="meta">등록된 전달 사항이 없습니다.</li>';
+      return;
+    }
+
+    // 분류 우선 정렬(공지→안내→참고), 동률이면 최신순
+    docs.sort((a, b) => {
+      const ka = KIND_ORDER[a?.data?.kind ?? 'notice'] ?? 3;
+      const kb = KIND_ORDER[b?.data?.kind ?? 'notice'] ?? 3;
+      if (ka !== kb) return ka - kb;
+
+      const ta = a?.data?.createdAt?.toMillis?.() ?? 0;
+      const tb = b?.data?.createdAt?.toMillis?.() ?? 0;
+      return tb - ta;
+    });
+
+    // 렌더링
+    docs.forEach(({ id, data }) => {
+      const d = data || {}; // 재확인 (극단적 방어)
+      const li = el('li', { class: `notice-card kind-${d.kind || 'notice'}` });
       li.innerHTML = `
         <div class="title">${d.title || '(제목 없음)'}</div>
         ${d.body ? `<div class="content"><pre>${d.body}</pre></div>` : ''}
-        ${renderMeta(d.startDate,d.endDate,d.periodStart,d.periodEnd,d.period)}
+        ${renderMeta(d.startDate, d.endDate, d.periodStart, d.periodEnd, d.period)}
       `;
+
       if (isAdmin) {
         const row = el('div');
-        const b1 = el('button',{class:'btn'}); b1.textContent='수정';
-        const b2 = el('button',{class:'btn'}); b2.textContent='삭제';
-        b1.addEventListener('click',()=> openNoticeEdit(id, d));
-        b2.addEventListener('click',()=> delNotice(id));
-        row.append(b1,b2); li.appendChild(row);
+        const b1 = el('button', { class: 'btn' }); b1.textContent = '수정';
+        const b2 = el('button', { class: 'btn' }); b2.textContent = '삭제';
+        b1.addEventListener('click', () => openNoticeEdit(id, d));
+        b2.addEventListener('click', () => delNotice(id));
+        row.append(b1, b2);
+        li.appendChild(row);
       }
       listNotice.appendChild(li);
     });
-  }catch(err){
+  } catch (err) {
     listNotice.innerHTML = `<li class="meta">읽기 오류: ${err.message}</li>`;
   }
 };
