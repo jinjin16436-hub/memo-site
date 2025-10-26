@@ -1,4 +1,4 @@
-name: Deploy Firebase (Functions + Hosting)
+name: Deploy Firebase Hosting (Free)
 
 on:
   push:
@@ -7,7 +7,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,29 +16,10 @@ jobs:
         with:
           node-version: 18
 
-      - name: Create functions/.env
-        run: |
-          mkdir -p functions
-          echo "NEIS_API_KEY=${{ secrets.NEIS_API_KEY }}" > functions/.env
-
       - name: Install Firebase CLI
         run: npm i -g firebase-tools
 
-      # 디버그: 현재 파일 구조 확인 (문제시 도움)
-      - name: Show tree
-        run: |
-          pwd
-          ls -la
-          echo "--- functions ---"
-          ls -la functions
-
-      # ⬇⬇ 핵심: functions 폴더에서 설치
-      - name: Install Functions deps
-        working-directory: functions
-        run: npm install --no-audit --fund=false
-
-      - name: Deploy to Firebase
+      - name: Deploy Hosting only
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-        run: firebase deploy --only functions,hosting
-
+        run: firebase deploy --only hosting
