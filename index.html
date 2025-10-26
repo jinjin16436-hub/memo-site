@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.2.0">
-  <!-- Firebase v8 -->
+  <link rel="stylesheet" href="style.css?v=1.1.8">
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -12,20 +11,21 @@
 </head>
 <body>
   <header class="topbar">
-    <h1>사이트 버전 v1.1.10 (부광고.웹.한국)</h1>
+    <h1>사이트 버전 v1.1.8 (부광고.웹.한국)</h1>
     <div class="auth">
-      <span id="userInfo">관리자만 로그인</span>
+      <span id="userInfo">로그인 필요</span>
       <button id="loginBtn" class="btn">로그인</button>
-      <button id="logoutBtn" class="btn btn--ghost" style="display:none">로그아웃</button>
+      <button id="logoutBtn" class="btn" style="display:none">로그아웃</button>
     </div>
   </header>
 
-  <main class="container">
+  <div class="container">
+
     <!-- 전달 사항 -->
     <section id="sec_notice" class="sec">
       <div class="section-head">
         <h2>📢 중요 전달 사항</h2>
-        <label class="row" style="gap:6px"><input type="checkbox" id="toggleNotices"> 표시</label>
+        <label class="row"><input type="checkbox" id="toggleNotices"> 표시</label>
       </div>
       <div class="section-body">
         <ul id="list_notice" class="card-list"></ul>
@@ -47,30 +47,20 @@
       <div class="section-head"><h2>📝 시험</h2></div>
       <div class="section-body">
         <ul id="list_exam" class="card-list"></ul>
-        <div class="admin-only add-row">
-          <input id="eName" placeholder="시험 이름">
-          <textarea id="eDetail" placeholder="상세 내용"></textarea>
-          <div class="row gap-8">
-            <input id="eStart" type="date">
-            <input id="eEnd" type="date">
+        <div class="admin-only add-row" data-cat>
+          <div class="row-line">
+            <input id="eName" placeholder="시험 이름">
+            <textarea id="eDetail" placeholder="상세 내용"></textarea>
+            <div class="period">
+              <input id="eStart" type="date">
+              <input id="eEnd" type="date">
+            </div>
+            <div class="row">
+              <select id="ePStart"><option value="">교시 시작</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+              <select id="ePEnd"><option value="">교시 끝</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+              <button id="eAddBtn" class="btn btn--primary add">+ 추가</button>
+            </div>
           </div>
-          <div class="row gap-8">
-            <select id="ePStart">
-              <option value="">교시 시작</option>
-              <option value="1">1교시</option><option value="2">2교시</option>
-              <option value="3">3교시</option><option value="4">4교시</option>
-              <option value="5">5교시</option><option value="6">6교시</option>
-              <option value="7">7교시</option>
-            </select>
-            <select id="ePEnd">
-              <option value="">교시 끝</option>
-              <option value="1">1교시</option><option value="2">2교시</option>
-              <option value="3">3교시</option><option value="4">4교시</option>
-              <option value="5">5교시</option><option value="6">6교시</option>
-              <option value="7">7교시</option>
-            </select>
-          </div>
-          <button id="eAddBtn" class="btn btn--primary">+ 추가</button>
         </div>
       </div>
     </section>
@@ -80,31 +70,21 @@
       <div class="section-head"><h2>📄 수행평가</h2></div>
       <div class="section-body">
         <ul id="list_task" class="card-list"></ul>
-        <div class="admin-only add-row">
-          <input id="tSubj" placeholder="과목">
-          <input id="tTitle" placeholder="내용">
-          <textarea id="tDetail" placeholder="상세 내용"></textarea>
-          <div class="row gap-8">
-            <input id="tStart" type="date">
-            <input id="tEnd" type="date">
+        <div class="admin-only add-row" data-cat>
+          <div class="row-line">
+            <input id="tSubj" placeholder="과목">
+            <input id="tTitle" placeholder="내용">
+            <textarea id="tDetail" placeholder="상세 내용"></textarea>
+            <div class="period">
+              <input id="tStart" type="date">
+              <input id="tEnd" type="date">
+            </div>
+            <div class="row">
+              <select id="tPStart"><option value="">교시 시작</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+              <select id="tPEnd"><option value="">교시 끝</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+              <button id="tAddBtn" class="btn btn--primary add">+ 추가</button>
+            </div>
           </div>
-          <div class="row gap-8">
-            <select id="tPStart">
-              <option value="">교시 시작</option>
-              <option value="1">1교시</option><option value="2">2교시</option>
-              <option value="3">3교시</option><option value="4">4교시</option>
-              <option value="5">5교시</option><option value="6">6교시</option>
-              <option value="7">7교시</option>
-            </select>
-            <select id="tPEnd">
-              <option value="">교시 끝</option>
-              <option value="1">1교시</option><option value="2">2교시</option>
-              <option value="3">3교시</option><option value="4">4교시</option>
-              <option value="5">5교시</option><option value="6">6교시</option>
-              <option value="7">7교시</option>
-            </select>
-          </div>
-          <button id="tAddBtn" class="btn btn--primary">+ 추가</button>
         </div>
       </div>
     </section>
@@ -114,54 +94,46 @@
       <div class="section-head"><h2>📌 숙제</h2></div>
       <div class="section-body">
         <ul id="list_homework" class="card-list"></ul>
-        <div class="admin-only add-row">
-          <input id="hSubj" placeholder="과목">
-          <input id="hTitle" placeholder="내용">
-          <textarea id="hDetail" placeholder="상세 내용"></textarea>
-          <div class="row gap-8">
-            <input id="hStart" type="date">
-            <input id="hEnd" type="date">
+        <div class="admin-only add-row" data-cat>
+          <div class="row-line">
+            <input id="hSubj" placeholder="과목">
+            <input id="hTitle" placeholder="내용">
+            <textarea id="hDetail" placeholder="상세 내용"></textarea>
+            <div class="period">
+              <input id="hStart" type="date">
+              <input id="hEnd" type="date">
+            </div>
+            <div class="row">
+              <select id="hPStart"><option value="">교시 시작</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+              <select id="hPEnd"><option value="">교시 끝</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+              <button id="hAddBtn" class="btn btn--primary add">+ 추가</button>
+            </div>
           </div>
-          <div class="row gap-8">
-            <select id="hPStart">
-              <option value="">교시 시작</option>
-              <option value="1">1교시</option><option value="2">2교시</option>
-              <option value="3">3교시</option><option value="4">4교시</option>
-              <option value="5">5교시</option><option value="6">6교시</option>
-              <option value="7">7교시</option>
-            </select>
-            <select id="hPEnd">
-              <option value="">교시 끝</option>
-              <option value="1">1교시</option><option value="2">2교시</option>
-              <option value="3">3교시</option><option value="4">4교시</option>
-              <option value="5">5교시</option><option value="6">6교시</option>
-              <option value="7">7교시</option>
-            </select>
-          </div>
-          <button id="hAddBtn" class="btn btn--primary">+ 추가</button>
         </div>
       </div>
     </section>
 
-    <!-- 📚 시간표(NEIS) -->
+    <!-- 시간표(NEIS) -->
     <section class="sec">
-      <div class="section-head"><h2>📚 시간표(NEIS)</h2></div>
+      <div class="section-head"><h2>📚 시간표 (나이스+)</h2></div>
       <div class="section-body">
         <div class="grid-3">
-          <input id="ttSchoolName" placeholder="학교명 (예: 부광고)">
-          <input id="ttGrade" placeholder="학년 (예: 1)">
-          <input id="ttClass" placeholder="반 (예: 3)">
-        </div>
-        <div class="row gap-8" style="margin-top:10px">
+          <input id="ttSchool" placeholder="학교명 (예: 부광고)">
           <input id="ttDate" type="date">
-          <button id="ttLoadBtn" class="btn btn--primary">불러오기</button>
+          <div class="row">
+            <input id="ttGrade" type="number" min="1" max="3" placeholder="학년" style="max-width:100px">
+            <input id="ttClass" type="number" min="1" max="30" placeholder="반" style="max-width:100px">
+            <button id="ttBtn" class="btn btn--primary">불러오기</button>
+          </div>
         </div>
         <ul id="ttList" class="card-list" style="margin-top:16px"></ul>
+        <div class="meta">* env.js의 <code>NEIS_PROXY_BASE</code>에 Worker URL을 넣어야 동작합니다.</div>
       </div>
     </section>
-  </main>
+
+  </div>
 
   <div id="modal-root"></div>
-  <script src="app.js?v=1.2.0"></script>
+  <script src="app.js?v=1.1.8"></script>
 </body>
 </html>
