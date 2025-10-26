@@ -1,5 +1,3 @@
 {
-  "projects": {
-    "default": "my-memo-site"
-  }
+  "projects": { "default": "my-memo-site" }
 }
