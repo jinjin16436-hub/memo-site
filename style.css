@@ -5,20 +5,19 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{
-  margin:0; color:var(--fg-base); background:var(--bg);
-  font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;
-  line-height:1.7;
-}
+body{margin:0;color:var(--fg-base);background:var(--bg);
+  font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;line-height:1.7}
 .container{max-width:1100px;margin:26px auto;padding:0 16px}
 ul,ol{list-style:none;margin:0;padding:0}
 
+/* Topbar */
 .topbar{position:sticky;top:0;z-index:20;background:rgba(15,22,32,.9);
   backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--border);
   padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
 .topbar h1{margin:0;font-size:20px;color:var(--fg-strong)}
 .auth{display:flex;gap:10px;align-items:center}
 
+/* Buttons */
 .btn{cursor:pointer;background:#1e293b;border:1px solid #2b3a52;color:var(--text);
   border-radius:12px;padding:10px 14px;font-size:14px;transition:.15s}
 .btn:hover{background:#263547}
@@ -28,6 +27,7 @@ ul,ol{list-style:none;margin:0;padding:0}
 .btn--danger{background:var(--danger);border-color:var(--danger);color:#fff}
 .w-full{width:100%}
 
+/* Inputs */
 input[type="text"],input[type="date"],input[type="search"],input[type="number"],textarea,select{
   border:1px solid var(--border);background:#0e1520;color:var(--text);
   border-radius:12px;padding:12px 14px;font-size:15px;width:100%;transition:.15s
@@ -36,84 +36,88 @@ textarea{min-height:90px;resize:vertical;line-height:1.7}
 input::placeholder,textarea::placeholder{color:#9fb0be}
 input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.25);outline:none}
 input[type="date"]{color-scheme:dark}
+label.label{display:block;font-size:12px;color:#9fb0be;margin:2px 2px 8px}
 
+/* Sections */
 .sec{margin:36px 0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--card)}
 .section-head{width:100%;text-align:left;background:rgba(255,255,255,.03);
   border-bottom:1px dashed var(--border);padding:18px;font-weight:700;color:var(--fg-strong);
   display:flex;align-items:center;gap:8px}
 .section-body{padding:22px 24px}
 
+/* List Cards */
 ul.card-list{margin-top:16px;display:flex;flex-direction:column;gap:16px}
-
 .notice-card,.task{border:1px solid var(--border);border-radius:12px;background:#0f1722;padding:20px 24px}
 .notice-title,.title{font-weight:700;color:var(--fg-strong);margin-bottom:10px}
 .notice-meta,.meta{color:var(--muted);margin-top:10px}
-
 .kind-notice{background:rgba(239,68,68,.12)}
 .kind-info{background:rgba(234,179,8,.12)}
 .kind-alert{background:rgba(34,197,94,.12)}
 
-.dday{
-  display:inline-block;margin-left:8px;padding:4px 12px;border-radius:999px;
-  font-weight:700;font-size:15px;vertical-align:middle
-}
+/* D-day */
+.dday{display:inline-block;margin-left:8px;padding:4px 12px;border-radius:999px;font-weight:700;font-size:15px;vertical-align:middle}
 .dday.red{background:#ef4444;color:#fff}
 .dday.orange{background:#f59e0b;color:#1b1b1b}
 .dday.yellow{background:#fde047;color:#1b1b1b}
 .dday.green{background:#22c55e;color:#0b1720}
 .dday.gray{background:#9aa6b2;color:#0b1720}
 
-/* ============ 깔끔 폼 ============ */
+/* Form Card (base) */
 .task-form{
-  margin-top:14px;
-  display:grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap:12px;
-  padding:14px;
-  background:#0f1722;
-  border:1px solid var(--border);
-  border-radius:14px;
+  margin-top:14px;display:grid;grid-template-columns:repeat(12,1fr);gap:12px;
+  padding:14px;background:#0f1722;border:1px solid var(--border);border-radius:14px;
   box-shadow:0 4px 14px rgba(0,0,0,.15)
 }
-.task-form.compact{grid-template-columns: repeat(10, 1fr)}
-.task-form .f{grid-column: span 2}
-.task-form .col-span-5{grid-column: span 5}
-.task-form .col-span-6{grid-column: span 6}
-.task-form .col-span-12{grid-column: 1 / -1}
-.task-form .col-end{grid-column: -3 / -1}
-.task-form .label{display:block;font-size:12px;color:#9fb0be;margin:2px 2px 8px}
+.task-form.compact{grid-template-columns:repeat(10,1fr)}
+.task-form .f{grid-column:span 2}
+.task-form .col-span-5{grid-column:span 5}
+.task-form .col-span-6{grid-column:span 6}
+.task-form .col-span-12{grid-column:1 / -1}
+.task-form .col-end{grid-column:-3 / -1}
 
+/* ▶ 3줄 레이아웃(요청 반영) */
+.layout-3row{grid-template-columns:repeat(12,1fr)}
+/* 1열: 과목(4) / 내용(8) */
+.layout-3row .r1-subj{grid-column:span 4}
+.layout-3row .r1-content{grid-column:span 8}
+/* 2열: 상세(가로 전체 + 높이 크게) */
+.layout-3row .r2-detail{grid-column:1 / -1}
+.layout-3row .r2-detail textarea{min-height:140px}
+/* 3열: 시작/종료/교시시작/교시끝 (각 3칸) */
+.layout-3row .r3-item{grid-column:span 3}
+
+/* Responsive */
 @media (max-width:980px){
-  .task-form{grid-template-columns: repeat(8,1fr)}
-  .task-form .col-end{grid-column: -3 / -1}
+  .task-form{grid-template-columns:repeat(8,1fr)}
+  .task-form .col-end{grid-column:-3 / -1}
+  .layout-3row .r1-subj{grid-column:span 8}
+  .layout-3row .r1-content{grid-column:span 8}
+  .layout-3row .r3-item{grid-column:span 4}
 }
 @media (max-width:720px){
-  .task-form{grid-template-columns: 1fr}
-  .task-form .f, .task-form .col-span-5, .task-form .col-span-6,
-  .task-form .col-span-12, .task-form .col-end{grid-column: 1 / -1}
+  .task-form{grid-template-columns:1fr}
+  .task-form .f,.task-form .col-span-5,.task-form .col-span-6,
+  .task-form .col-span-12,.task-form .col-end{grid-column:1 / -1}
+  .layout-3row .r1-subj,.layout-3row .r1-content,.layout-3row .r3-item{grid-column:1 / -1}
   textarea{min-height:110px}
 }
 
-/* modal, helper 등 기존 스타일 */
+/* Modal (기존) */
 .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
   background:radial-gradient(100% 100% at 0% 0%, rgba(0,0,0,.65), rgba(0,0,0,.45));backdrop-filter:blur(6px);z-index:50}
 .modal.show{display:flex}
 .modal__dialog{width:min(760px,94vw);background:linear-gradient(180deg,#0f1722 0%,#0b1323 100%);
   border:1px solid #213042;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden}
-.modal__head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(255,255,255,.03);
-  border-bottom:1px solid var(--border)}
+.modal__head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
 .modal__head strong{font-size:18px;color:#e9ecf1}
 .modal__close{cursor:pointer;border:1px solid #2a3a51;background:#121a25;color:#cfd6de;border-radius:10px;padding:6px 10px}
 .modal__close:hover{background:#1a2431}
 .modal__body{padding:16px 16px 6px}
-.modal__foot{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--border);
-  background:rgba(255,255,255,.02)}
+.modal__foot{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--border);background:rgba(255,255,255,.02)}
 
-.task pre,.notice-card pre{
-  font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;
-  font-size:.95rem;line-height:1.8;color:var(--text);white-space:pre-wrap;word-break:break-word;background:transparent;padding:0;border:none
-}
+.task pre,.notice-card pre{font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;font-size:.95rem;line-height:1.8;color:var(--text);white-space:pre-wrap;word-break:break-word;background:transparent;padding:0;border:none}
 
+/* helpers */
 .row{display:flex;gap:8px;align-items:center}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 @media (max-width:720px){.grid-3{grid-template-columns:1fr}}
