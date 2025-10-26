@@ -18,4 +18,4 @@ window.ADMIN_EMAILS = [];
 
 // ✅ Cloudflare Worker 프록시 기본 주소(마지막 슬래시 없이)
 //    예: https://neis-proxy-xxxx.workers.dev
-window.NEIS_PROXY_BASE = "https://memo-site-auo.pages.dev";
+window.NEIS_PROXY_BASE = "https://neis-proxy.jinjin16436.workers.dev";
