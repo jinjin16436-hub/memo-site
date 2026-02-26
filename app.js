@@ -1,5 +1,9 @@
-/* app.js - v1.1.8 (Spark+Worker) */
-// 변경사항: Cloudflare Worker 프록시 사용(NEIS), Hosting만 배포, D-day 크기 조정
+/* app.js - v1.1.12 (Spark+Worker)
+ * 변경사항:
+ * - 탭 추가: 일정(schedule), 휴일(holiday)
+ * - 배치 순서: [일정]-[휴일]-[시험]-[수행]-[숙제]-[시간표]
+ * - 기존 Firestore 경로/권한/NEIS 프록시/모달 수정 기능 유지
+ */
 
 if (!window.firebaseConfig) {
   alert("firebaseConfig가 로드되지 않았어요. env.js 순서를 확인해주세요.");
@@ -23,10 +27,29 @@ const loginBtn  = $('#loginBtn');
 const logoutBtn = $('#logoutBtn');
 
 const listNotice   = $('#list_notice');
+const listSchedule = $('#list_schedule');
+const listHoliday  = $('#list_holiday');
 const listExam     = $('#list_exam');
 const listTask     = $('#list_task');
 const listHomework = $('#list_homework');
 const toggleNotices = $('#toggleNotices');
+
+// 일정/휴일 입력
+const sTitle  = $('#sTitle');
+const sDetail = $('#sDetail');
+const sStart  = $('#sStart');
+const sEnd    = $('#sEnd');
+const sPStart = $('#sPStart');
+const sPEnd   = $('#sPEnd');
+const sAddBtn = $('#sAddBtn');
+
+const hoTitle  = $('#hoTitle');
+const hoDetail = $('#hoDetail');
+const hoStart  = $('#hoStart');
+const hoEnd    = $('#hoEnd');
+const hoPStart = $('#hoPStart');
+const hoPEnd   = $('#hoPEnd');
+const hoAddBtn = $('#hoAddBtn');
 
 // 시간표 UI
 const ttSchool = $('#ttSchool');
@@ -100,6 +123,36 @@ const applyAdminUI = ()=>{
   else { document.body.classList.remove('is-admin'); $$('.admin-only').forEach(n=>n.style.display='none'); }
 };
 
+// ===== ✅ 탭 =====
+const initTabs = ()=>{
+  const tabs = $('#tabs');
+  if(!tabs) return;
+
+  const setTab = (name)=>{
+    $$('.tab-btn', tabs).forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+    const map = {
+      schedule: $('#panel_schedule'),
+      holiday: $('#panel_holiday'),
+      exam: $('#panel_exam'),
+      task: $('#panel_task'),
+      homework: $('#panel_homework'),
+      timetable: $('#panel_timetable'),
+    };
+    Object.entries(map).forEach(([k, panel])=>{
+      if(panel) panel.classList.toggle('active', k===name);
+    });
+  };
+
+  tabs.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.tab-btn');
+    if(!btn) return;
+    setTab(btn.dataset.tab);
+  });
+
+  // 기본 탭: 일정
+  setTab('schedule');
+};
+
 // ===== 로그인 =====
 loginBtn.addEventListener('click', async ()=>{ await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); });
 logoutBtn.addEventListener('click', async ()=>{ await auth.signOut(); });
@@ -111,12 +164,18 @@ auth.onAuthStateChanged(async (u)=>{
   loginBtn.style.display = u ? 'none' : '';
   logoutBtn.style.display = u ? '' : 'none';
   applyAdminUI();
+
+  initTabs();
+
   await Promise.all([
     loadNoticeSwitch().then(safeLoadNotices),
+    safeLoadTasks('schedules'),
+    safeLoadTasks('holidays'),
     safeLoadTasks('exams'),
     safeLoadTasks('tasks'),
     safeLoadTasks('homeworks'),
   ]);
+
   // 시간표 기본 날짜: 오늘
   const d=new Date(); ttDate.value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
 });
@@ -161,7 +220,6 @@ const safeLoadNotices = async () => {
 
     const docs = [];
     snap.forEach(doc => {
-      // 데이터가 없거나 비정상이면 빈 객체로 처리
       const data = doc.data() || {};
       docs.push({ id: doc.id, data });
     });
@@ -171,7 +229,6 @@ const safeLoadNotices = async () => {
       return;
     }
 
-    // 분류 우선 정렬(공지→안내→참고), 동률이면 최신순
     docs.sort((a, b) => {
       const ka = KIND_ORDER[a?.data?.kind ?? 'notice'] ?? 3;
       const kb = KIND_ORDER[b?.data?.kind ?? 'notice'] ?? 3;
@@ -182,9 +239,8 @@ const safeLoadNotices = async () => {
       return tb - ta;
     });
 
-    // 렌더링
     docs.forEach(({ id, data }) => {
-      const d = data || {}; // 재확인 (극단적 방어)
+      const d = data || {};
       const li = el('li', { class: `notice-card kind-${d.kind || 'notice'}` });
       li.innerHTML = `
         <div class="title">${d.title || '(제목 없음)'}</div>
@@ -207,6 +263,7 @@ const safeLoadNotices = async () => {
     listNotice.innerHTML = `<li class="meta">읽기 오류: ${err.message}</li>`;
   }
 };
+
 $('#nAddBtn')?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -221,36 +278,72 @@ $('#nAddBtn')?.addEventListener('click', async ()=>{
 });
 const delNotice = async (id)=>{ if(!confirm('삭제할까요?')) return; await db.doc(`users/${PUBLIC_UID}/notices/${id}`).delete(); await safeLoadNotices(); };
 
-// ===== 시험/수행/숙제 =====
+// ===== ✅ 시험/수행/숙제/일정/휴일 =====
+const getListForCat = (cat)=>{
+  if(cat==='exams') return listExam;
+  if(cat==='tasks') return listTask;
+  if(cat==='homeworks') return listHomework;
+  if(cat==='schedules') return listSchedule;
+  if(cat==='holidays') return listHoliday;
+  return null;
+};
+
+const isExamCat = (cat)=> cat==='exams';
+const isSubjCat = (cat)=> (cat==='tasks' || cat==='homeworks'); // 수행/숙제만 과목 표시
+
 const safeLoadTasks = async (cat)=>{
-  const ul = cat==='exams' ? listExam : (cat==='tasks' ? listTask : listHomework);
+  const ul = getListForCat(cat);
+  if(!ul) return;
+
   ul.innerHTML = '';
   try{
     const snap = await db.collection(`users/${PUBLIC_UID}/tasks/${cat}/items`).get();
-    if(snap.empty){ ul.innerHTML = `<li class="meta">등록된 ${cat==='exams'?'시험':cat==='tasks'?'수행평가':'숙제'}가 없습니다.</li>`; return; }
+    if(snap.empty){
+      const label = (cat==='exams'?'시험':cat==='tasks'?'수행평가':cat==='homeworks'?'숙제':cat==='schedules'?'일정':'휴일');
+      ul.innerHTML = `<li class="meta">등록된 ${label}가 없습니다.</li>`;
+      return;
+    }
     const docs=[]; snap.forEach(doc=>docs.push({id:doc.id,data:doc.data()}));
     docs.sort((a,b)=> sortKeyByDday(a.data) - sortKeyByDday(b.data));
+
     docs.forEach(({id,data})=>{
-      const title = (cat==='exams' ? (data.name || '시험') : (data.subject || '과목 없음'));
+      const d = data || {};
+      let titleText = '';
+      if (isExamCat(cat)) titleText = (d.name || '시험');
+      else if (isSubjCat(cat)) titleText = (d.subject || '과목 없음');
+      else titleText = (d.title || d.name || d.content || '항목');
+
+      // 본문 구성(카테고리별로 최대한 기존 스타일 유지)
       const li = el('li',{class:'task'});
+      const mainTitle = (cat==='exams')
+        ? `${(d.name || '시험')} ${ddayBadge(d.startDate, d.endDate)}`
+        : (cat==='schedules' || cat==='holidays')
+          ? `${(d.title || '제목 없음')} ${ddayBadge(d.startDate, d.endDate)}`
+          : `${titleText} ${ddayBadge(d.startDate, d.endDate)}`;
+
       li.innerHTML = `
-        <div class="title">${title} ${ddayBadge(data.startDate, data.endDate)}</div>
-        ${data.content ? `<div class="content"><pre>${data.content}</pre></div>` : ''}
-        ${data.detail  ? `<div class="content"><pre>${data.detail}</pre></div>` : ''}
-        ${renderMeta(data.startDate,data.endDate,data.periodStart,data.periodEnd,data.period)}
+        <div class="title">${mainTitle}</div>
+        ${d.content ? `<div class="content"><pre>${d.content}</pre></div>` : ''}
+        ${d.detail  ? `<div class="content"><pre>${d.detail}</pre></div>` : ''}
+        ${renderMeta(d.startDate,d.endDate,d.periodStart,d.periodEnd,d.period)}
       `;
+
       if (isAdmin) {
         const row = el('div');
         const b1 = el('button',{class:'btn'}); b1.textContent='수정';
         const b2 = el('button',{class:'btn'}); b2.textContent='삭제';
-        b1.addEventListener('click',()=> openTaskEdit(cat,id,data));
+        b1.addEventListener('click',()=> openTaskEdit(cat,id,d));
         b2.addEventListener('click',()=> delTask(cat,id));
         row.append(b1,b2); li.appendChild(row);
       }
       ul.appendChild(li);
     });
-  }catch(err){ ul.innerHTML = `<li class="meta">읽기 오류: ${err.message}</li>`; }
+  }catch(err){
+    ul.innerHTML = `<li class="meta">읽기 오류: ${err.message}</li>`;
+  }
 };
+
+// --- 추가 버튼들 ---
 $('#eAddBtn')?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -266,6 +359,7 @@ $('#eAddBtn')?.addEventListener('click', async ()=>{
   ['eName','eDetail','eStart','eEnd','ePStart','ePEnd'].forEach(id=>$('#'+id).value='');
   await safeLoadTasks('exams');
 });
+
 $('#tAddBtn')?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -282,6 +376,7 @@ $('#tAddBtn')?.addEventListener('click', async ()=>{
   ['tSubj','tTitle','tDetail','tStart','tEnd','tPStart','tPEnd'].forEach(id=>$('#'+id).value='');
   await safeLoadTasks('tasks');
 });
+
 $('#hAddBtn')?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -298,14 +393,62 @@ $('#hAddBtn')?.addEventListener('click', async ()=>{
   ['hSubj','hTitle','hDetail','hStart','hEnd','hPStart','hPEnd'].forEach(id=>$('#'+id).value='');
   await safeLoadTasks('homeworks');
 });
-const delTask = async (cat,id)=>{ if(!confirm('삭제할까요?')) return; await db.doc(`users/${PUBLIC_UID}/tasks/${cat}/items/${id}`).delete(); await safeLoadTasks(cat); };
+
+// ✅ 일정 추가
+sAddBtn?.addEventListener('click', async ()=>{
+  if(!isAdmin) return;
+  const payload = {
+    title: sTitle.value.trim(),
+    detail: sDetail.value.trim(),
+    startDate: sStart.value ? new Date(sStart.value) : null,
+    endDate:   sEnd.value   ? new Date(sEnd.value)   : null,
+    periodStart: asIntOrNull(sPStart.value),
+    periodEnd:   asIntOrNull(sPEnd.value),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  if(!payload.title){ alert('일정 제목을 입력해주세요.'); return; }
+  await db.collection(`users/${PUBLIC_UID}/tasks/schedules/items`).add(payload);
+  ['sTitle','sDetail','sStart','sEnd','sPStart','sPEnd'].forEach(id=>$('#'+id).value='');
+  await safeLoadTasks('schedules');
+});
+
+// ✅ 휴일 추가
+hoAddBtn?.addEventListener('click', async ()=>{
+  if(!isAdmin) return;
+  const payload = {
+    title: hoTitle.value.trim(),
+    detail: hoDetail.value.trim(),
+    startDate: hoStart.value ? new Date(hoStart.value) : null,
+    endDate:   hoEnd.value   ? new Date(hoEnd.value)   : null,
+    periodStart: asIntOrNull(hoPStart.value),
+    periodEnd:   asIntOrNull(hoPEnd.value),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  if(!payload.title){ alert('휴일 이름을 입력해주세요.'); return; }
+  // 종료일 비었으면 시작일로 맞춤(단일 휴일)
+  if(payload.startDate && !payload.endDate) payload.endDate = payload.startDate;
+
+  await db.collection(`users/${PUBLIC_UID}/tasks/holidays/items`).add(payload);
+  ['hoTitle','hoDetail','hoStart','hoEnd','hoPStart','hoPEnd'].forEach(id=>$('#'+id).value='');
+  await safeLoadTasks('holidays');
+});
+
+const delTask = async (cat,id)=>{
+  if(!confirm('삭제할까요?')) return;
+  await db.doc(`users/${PUBLIC_UID}/tasks/${cat}/items/${id}`).delete();
+  await safeLoadTasks(cat);
+};
 
 // ===== 수정 모달 (공지/항목) =====
 const modalRoot = document.querySelector('#modal-root');
 const closeModal = ()=> modalRoot.innerHTML = '';
 const periodSelectOptions = (val)=>{
-  const v = asIntOrNull(val); const opts=['<option value="">선택</option>']; for(let i=1;i<=7;i++){ opts.push(`<option value="${i}" ${v===i?'selected':''}>${i}교시</option>`); } return opts.join('');
+  const v = asIntOrNull(val);
+  const opts=['<option value="">선택</option>'];
+  for(let i=1;i<=7;i++){ opts.push(`<option value="${i}" ${v===i?'selected':''}>${i}교시</option>`); }
+  return opts.join('');
 };
+
 const openNoticeEdit = (id,data)=>{
   if(!isAdmin) return;
   modalRoot.innerHTML = `
@@ -328,21 +471,43 @@ const openNoticeEdit = (id,data)=>{
     </div></div>`;
   $('#mClose').onclick = $('#mCancel').onclick = closeModal;
   $('#mSave').onclick = async ()=>{
-    await db.doc(`users/${PUBLIC_UID}/notices/${id}`).update({ title:$('#mTitle').value.trim(), kind:$('#mKind').value, body:$('#mBody').value.trim() });
+    await db.doc(`users/${PUBLIC_UID}/notices/${id}`).update({
+      title:$('#mTitle').value.trim(),
+      kind:$('#mKind').value,
+      body:$('#mBody').value.trim()
+    });
     closeModal(); await safeLoadNotices();
   };
 };
-const toDateInputValue = ts => { if(!ts) return ''; const d=ts.toDate?ts.toDate():new Date(ts); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; };
+
+const toDateInputValue = ts => {
+  if(!ts) return '';
+  const d=ts.toDate?ts.toDate():new Date(ts);
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+};
+
 const openTaskEdit = (cat,id,data)=>{
   if(!isAdmin) return;
-  const withSubj = (cat !== 'exams');
+
+  const withSubj = (cat === 'tasks' || cat === 'homeworks');
+  const isExam   = (cat === 'exams');
+  const isSimpleTitle = (cat === 'schedules' || cat === 'holidays');
+
+  const titleLabel = isExam ? '시험 이름' : (withSubj ? '내용' : '제목');
+
+  const titleValue = isExam
+    ? (data.name || '')
+    : isSimpleTitle
+      ? (data.title || '')
+      : (data.content || '');
+
   modalRoot.innerHTML = `
   <div class="modal show" id="m"><div class="modal__dialog">
     <div class="modal__head"><strong>항목 수정</strong><button class="modal__close" id="mClose">닫기</button></div>
     <div class="modal__body">
       <div class="form-grid">
         ${withSubj ? `<label>과목 <input id="mSubj" value="${data.subject||''}"></label>`:''}
-        <label>${cat==='exams'?'시험 이름':'내용'} <input id="mTitle" value="${(cat==='exams'?data.name:data.content)||''}"></label>
+        <label>${titleLabel} <input id="mTitle" value="${titleValue}"></label>
         <label class="full">상세 내용 <textarea id="mDetail">${data.detail||''}</textarea></label>
         <label>시작일 <input id="mStart" type="date" value="${toDateInputValue(data.startDate)}"></label>
         <label>종료일 <input id="mEnd" type="date" value="${toDateInputValue(data.endDate)}"></label>
@@ -352,6 +517,7 @@ const openTaskEdit = (cat,id,data)=>{
     </div>
     <div class="modal__foot"><button class="btn btn--ghost" id="mCancel">취소</button><button class="btn btn--primary" id="mSave">저장</button></div>
   </div></div>`;
+
   $('#mClose').onclick = $('#mCancel').onclick = closeModal;
   $('#mSave').onclick = async ()=>{
     const payload = {
@@ -361,8 +527,18 @@ const openTaskEdit = (cat,id,data)=>{
       periodStart: asIntOrNull($('#mPStart').value),
       periodEnd:   asIntOrNull($('#mPEnd').value),
     };
-    if(cat==='exams'){ payload.name = $('#mTitle').value.trim(); }
-    else { payload.subject = $('#mSubj').value.trim(); payload.content = $('#mTitle').value.trim(); }
+
+    if(isExam){
+      payload.name = $('#mTitle').value.trim();
+    }else if(withSubj){
+      payload.subject = $('#mSubj').value.trim();
+      payload.content = $('#mTitle').value.trim();
+    }else if(isSimpleTitle){
+      payload.title = $('#mTitle').value.trim();
+    }else{
+      payload.content = $('#mTitle').value.trim();
+    }
+
     await db.doc(`users/${PUBLIC_UID}/tasks/${cat}/items/${id}`).update(payload);
     closeModal(); await safeLoadTasks(cat);
   };
