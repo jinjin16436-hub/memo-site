@@ -544,17 +544,54 @@ const openTaskEdit = (cat,id,data)=>{
   };
 };
 
-// ===== 시간표(NEIS) - Cloudflare Worker 프록시 사용 =====
+// ===== 시간표(NEIS) - Cloudflare Worker 프록시 사용 (FIX) =====
 const PROXY = (NEIS_PROXY_BASE || '').replace(/\/+$/,'');
-const ymdFromInput = (v)=>{ if(!v) return ''; const d=new Date(v); return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`; };
-const getJSON = async (url)=>{
-  const r = await fetch(url,{headers:{'Accept':'application/json'}});
-  const text = await r.text();
-  try{ return JSON.parse(text); }catch{ return { raw:text }; }
+
+const ymdFromInput = (v)=>{
+  if(!v) return '';
+  const d=new Date(v);
+  return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
 };
+
+// ✅ 응답이 어떤 형태든 row 배열을 뽑아내기
+const extractRows = (data)=>{
+  if(!data) return [];
+
+  // 1) 우리가 기대한 형태
+  if(Array.isArray(data.rows)) return data.rows;
+
+  // 2) NEIS 원본 형태: hisTimetable / misTimetable / elsTimetable 등
+  const keys = ["hisTimetable","misTimetable","elsTimetable"];
+  for (const k of keys) {
+    const block = data[k];
+    if (Array.isArray(block)) {
+      const rowObj = block.find(x => x && Array.isArray(x.row));
+      if (rowObj && Array.isArray(rowObj.row)) return rowObj.row;
+    }
+  }
+
+  // 3) 혹시 row가 바로 있는 형태
+  if(Array.isArray(data.row)) return data.row;
+
+  return [];
+};
+
+// ✅ 실패 시 원문도 같이 보여주기
+const getJSON = async (url)=>{
+  const r = await fetch(url, { headers:{'Accept':'application/json'} });
+  const text = await r.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch {}
+  return { ok: r.ok, status: r.status, text, json };
+};
+
 const renderTT = (rows=[])=>{
   ttList.innerHTML = '';
-  if(!rows.length){ ttList.innerHTML = `<li class="meta">해당 조건의 시간표가 없습니다.</li>`; return; }
+  if(!rows.length){
+    ttList.innerHTML = `<li class="meta">해당 조건의 시간표가 없습니다. (주말/공휴일/학교명/날짜 확인)</li>`;
+    return;
+  }
+
   rows.sort((a,b)=> (parseInt(a.PERIO||a.ORD||'0') - parseInt(b.PERIO||b.ORD||'0')));
   rows.forEach(r=>{
     const li = el('li',{class:'task'});
@@ -565,21 +602,59 @@ const renderTT = (rows=[])=>{
     ttList.appendChild(li);
   });
 };
+
 ttBtn?.addEventListener('click', async ()=>{
-  if(!PROXY){ alert('env.js의 NEIS_PROXY_BASE를 설정해주세요(Cloudflare Worker URL).'); return; }
+  if(!PROXY){
+    alert('env.js의 NEIS_PROXY_BASE를 설정해주세요(Cloudflare Worker URL).');
+    return;
+  }
+
   const schoolName = ttSchool.value.trim();
   const ymd = ymdFromInput(ttDate.value);
   const grade = ttGrade.value.trim();
   const classNm = ttClass.value.trim();
-  if(!schoolName || !ymd || !grade || !classNm){ alert('학교명/날짜/학년/반을 모두 입력해주세요.'); return; }
-  ttBtn.disabled = true; ttBtn.textContent = '불러오는 중...';
+
+  if(!schoolName || !ymd || !grade || !classNm){
+    alert('학교명/날짜/학년/반을 모두 입력해주세요.');
+    return;
+  }
+
+  ttBtn.disabled = true;
+  ttBtn.textContent = '불러오는 중...';
+  ttList.innerHTML = `<li class="meta">불러오는 중...</li>`;
+
   try{
     const url = `${PROXY}/api/timetable?schoolName=${encodeURIComponent(schoolName)}&ymd=${ymd}&grade=${grade}&classNm=${classNm}`;
-    const data = await getJSON(url);
-    renderTT(data.rows || []);
+    const res = await getJSON(url);
+
+    // ✅ 서버 에러면 원문 보여주기
+    if(!res.ok){
+      ttList.innerHTML = `
+        <li class="meta">서버 오류 (HTTP ${res.status})</li>
+        <li class="task"><pre>${(res.text || '').slice(0, 2000)}</pre></li>
+      `;
+      return;
+    }
+
+    const data = res.json;
+    const rows = extractRows(data);
+
+    // ✅ rows 추출 실패 시 json/원문 일부 보여주기
+    if(!rows.length){
+      const preview = res.text ? res.text.slice(0, 2000) : '(empty)';
+      ttList.innerHTML = `
+        <li class="meta">시간표 데이터가 비어있거나 형식이 달라요.</li>
+        <li class="meta">학교명/날짜(평일)/학년/반을 확인해줘.</li>
+        <li class="task"><pre>${preview}</pre></li>
+      `;
+      return;
+    }
+
+    renderTT(rows);
   }catch(e){
     ttList.innerHTML = `<li class="meta">오류: ${e.message||e}</li>`;
   }finally{
-    ttBtn.disabled = false; ttBtn.textContent = '불러오기';
+    ttBtn.disabled = false;
+    ttBtn.textContent = '불러오기';
   }
 });
