@@ -1,8 +1,7 @@
-/* app.js - v1.1.12 (Spark+Worker)
+/* app.js - v1.1.13
  * 변경사항:
- * - 탭 추가: 일정(schedule), 휴일(holiday)
- * - 배치 순서: [일정]-[휴일]-[시험]-[수행]-[숙제]-[시간표]
- * - 기존 Firestore 경로/권한/NEIS 프록시/모달 수정 기능 유지
+ * - 탭 추가: 관리자(admin) (관리자만 표시)
+ * - 관리자 메모(도메인/연장일/운영메모) Firestore 저장/로드
  */
 
 if (!window.firebaseConfig) {
@@ -21,6 +20,8 @@ let isAdmin = false;
 const $  = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 const el = (name, attrs={}) => { const node = document.createElement(name); Object.entries(attrs).forEach(([k,v])=>node.setAttribute(k,v)); return node; };
+
+const pad2 = n => String(n).padStart(2,'0');
 
 const userInfo  = $('#userInfo');
 const loginBtn  = $('#loginBtn');
@@ -59,8 +60,15 @@ const ttClass  = $('#ttClass');
 const ttBtn    = $('#ttBtn');
 const ttList   = $('#ttList');
 
+// ✅ 관리자 UI
+const adDomain = $('#adDomain');
+const adRenew = $('#adRenew');
+const adNotes = $('#adNotes');
+const adSaveBtn = $('#adSaveBtn');
+const adStatus = $('#adStatus');
+const adRenewHint = $('#adRenewHint');
+
 // ===== 유틸 =====
-const pad2 = n => String(n).padStart(2,'0');
 const fmtDate = (ts) => {
   if (!ts) return '';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -119,8 +127,13 @@ const sortKeyByDday = (data)=>{
 
 // ===== 권한 UI =====
 const applyAdminUI = ()=>{
-  if(isAdmin){ document.body.classList.add('is-admin'); $$('.admin-only').forEach(n=>n.style.display=''); }
-  else { document.body.classList.remove('is-admin'); $$('.admin-only').forEach(n=>n.style.display='none'); }
+  if(isAdmin){
+    document.body.classList.add('is-admin');
+    $$('.admin-only').forEach(n=>n.style.display='');
+  } else {
+    document.body.classList.remove('is-admin');
+    $$('.admin-only').forEach(n=>n.style.display='none');
+  }
 };
 
 // ===== ✅ 탭 =====
@@ -129,7 +142,11 @@ const initTabs = ()=>{
   if(!tabs) return;
 
   const setTab = (name)=>{
+    // 관리자가 아니면 admin 탭 강제 차단
+    if(name === 'admin' && !isAdmin) name = 'schedule';
+
     $$('.tab-btn', tabs).forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+
     const map = {
       schedule: $('#panel_schedule'),
       holiday: $('#panel_holiday'),
@@ -137,6 +154,7 @@ const initTabs = ()=>{
       task: $('#panel_task'),
       homework: $('#panel_homework'),
       timetable: $('#panel_timetable'),
+      admin: $('#panel_admin'),
     };
     Object.entries(map).forEach(([k, panel])=>{
       if(panel) panel.classList.toggle('active', k===name);
@@ -146,39 +164,17 @@ const initTabs = ()=>{
   tabs.addEventListener('click', (e)=>{
     const btn = e.target.closest('.tab-btn');
     if(!btn) return;
-    setTab(btn.dataset.tab);
+    const tab = btn.dataset.tab;
+    if(tab === 'admin' && !isAdmin) return;
+    setTab(tab);
   });
 
-  // 기본 탭: 일정
   setTab('schedule');
 };
 
 // ===== 로그인 =====
 loginBtn.addEventListener('click', async ()=>{ await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); });
 logoutBtn.addEventListener('click', async ()=>{ await auth.signOut(); });
-
-auth.onAuthStateChanged(async (u)=>{
-  currentUser = u;
-  isAdmin = !!(u && ADMIN_UIDS.includes(u.uid));
-  userInfo.textContent = isAdmin ? `${u.displayName} (관리자)` : (u ? u.email : '로그인 필요');
-  loginBtn.style.display = u ? 'none' : '';
-  logoutBtn.style.display = u ? '' : 'none';
-  applyAdminUI();
-
-  initTabs();
-
-  await Promise.all([
-    loadNoticeSwitch().then(safeLoadNotices),
-    safeLoadTasks('schedules'),
-    safeLoadTasks('holidays'),
-    safeLoadTasks('exams'),
-    safeLoadTasks('tasks'),
-    safeLoadTasks('homeworks'),
-  ]);
-
-  // 시간표 기본 날짜: 오늘
-  const d=new Date(); ttDate.value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-});
 
 // ===== 전달 사항 ON/OFF =====
 const loadNoticeSwitch = async ()=>{
@@ -207,7 +203,7 @@ if (secHead){
   });
 }
 
-// ===== 공지 로드/정렬(공지>안내>참고) =====
+// ===== 공지 =====
 const KIND_ORDER = { notice: 0, info: 1, alert: 2 };
 
 const safeLoadNotices = async () => {
@@ -219,10 +215,7 @@ const safeLoadNotices = async () => {
       .get();
 
     const docs = [];
-    snap.forEach(doc => {
-      const data = doc.data() || {};
-      docs.push({ id: doc.id, data });
-    });
+    snap.forEach(doc => docs.push({ id: doc.id, data: doc.data() || {} }));
 
     if (!docs.length) {
       listNotice.innerHTML = '<li class="meta">등록된 전달 사항이 없습니다.</li>';
@@ -233,28 +226,23 @@ const safeLoadNotices = async () => {
       const ka = KIND_ORDER[a?.data?.kind ?? 'notice'] ?? 3;
       const kb = KIND_ORDER[b?.data?.kind ?? 'notice'] ?? 3;
       if (ka !== kb) return ka - kb;
-
       const ta = a?.data?.createdAt?.toMillis?.() ?? 0;
       const tb = b?.data?.createdAt?.toMillis?.() ?? 0;
       return tb - ta;
     });
 
     docs.forEach(({ id, data }) => {
-      const d = data || {};
-      const li = el('li', { class: `notice-card kind-${d.kind || 'notice'}` });
+      const li = el('li', { class: `notice-card kind-${data.kind || 'notice'}` });
       li.innerHTML = `
-        <div class="title">${d.title || '(제목 없음)'}</div>
-        ${d.body ? `<div class="content"><pre>${d.body}</pre></div>` : ''}
-        ${renderMeta(d.startDate, d.endDate, d.periodStart, d.periodEnd, d.period)}
+        <div class="title">${data.title || '(제목 없음)'}</div>
+        ${data.body ? `<div class="content"><pre>${data.body}</pre></div>` : ''}
       `;
 
       if (isAdmin) {
         const row = el('div');
-        const b1 = el('button', { class: 'btn' }); b1.textContent = '수정';
         const b2 = el('button', { class: 'btn' }); b2.textContent = '삭제';
-        b1.addEventListener('click', () => openNoticeEdit(id, d));
-        b2.addEventListener('click', () => delNotice(id));
-        row.append(b1, b2);
+        b2.addEventListener('click', async ()=>{ if(!confirm('삭제할까요?')) return; await db.doc(`users/${PUBLIC_UID}/notices/${id}`).delete(); await safeLoadNotices(); });
+        row.append(b2);
         li.appendChild(row);
       }
       listNotice.appendChild(li);
@@ -276,9 +264,8 @@ $('#nAddBtn')?.addEventListener('click', async ()=>{
   $('#nTitle').value=''; $('#nBody').value='';
   await safeLoadNotices();
 });
-const delNotice = async (id)=>{ if(!confirm('삭제할까요?')) return; await db.doc(`users/${PUBLIC_UID}/notices/${id}`).delete(); await safeLoadNotices(); };
 
-// ===== ✅ 시험/수행/숙제/일정/휴일 =====
+// ===== 공통 로더 =====
 const getListForCat = (cat)=>{
   if(cat==='exams') return listExam;
   if(cat==='tasks') return listTask;
@@ -287,9 +274,8 @@ const getListForCat = (cat)=>{
   if(cat==='holidays') return listHoliday;
   return null;
 };
-
 const isExamCat = (cat)=> cat==='exams';
-const isSubjCat = (cat)=> (cat==='tasks' || cat==='homeworks'); // 수행/숙제만 과목 표시
+const isSubjCat = (cat)=> (cat==='tasks' || cat==='homeworks');
 
 const safeLoadTasks = async (cat)=>{
   const ul = getListForCat(cat);
@@ -308,18 +294,14 @@ const safeLoadTasks = async (cat)=>{
 
     docs.forEach(({id,data})=>{
       const d = data || {};
-      let titleText = '';
-      if (isExamCat(cat)) titleText = (d.name || '시험');
-      else if (isSubjCat(cat)) titleText = (d.subject || '과목 없음');
-      else titleText = (d.title || d.name || d.content || '항목');
-
-      // 본문 구성(카테고리별로 최대한 기존 스타일 유지)
       const li = el('li',{class:'task'});
-      const mainTitle = (cat==='exams')
-        ? `${(d.name || '시험')} ${ddayBadge(d.startDate, d.endDate)}`
-        : (cat==='schedules' || cat==='holidays')
-          ? `${(d.title || '제목 없음')} ${ddayBadge(d.startDate, d.endDate)}`
-          : `${titleText} ${ddayBadge(d.startDate, d.endDate)}`;
+
+      const mainTitle =
+        (cat==='exams')
+          ? `${(d.name || '시험')} ${ddayBadge(d.startDate, d.endDate)}`
+          : (cat==='schedules' || cat==='holidays')
+            ? `${(d.title || '제목 없음')} ${ddayBadge(d.startDate, d.endDate)}`
+            : `${(isSubjCat(cat) ? (d.subject || '과목 없음') : '항목')} ${ddayBadge(d.startDate, d.endDate)}`;
 
       li.innerHTML = `
         <div class="title">${mainTitle}</div>
@@ -330,11 +312,14 @@ const safeLoadTasks = async (cat)=>{
 
       if (isAdmin) {
         const row = el('div');
-        const b1 = el('button',{class:'btn'}); b1.textContent='수정';
         const b2 = el('button',{class:'btn'}); b2.textContent='삭제';
-        b1.addEventListener('click',()=> openTaskEdit(cat,id,d));
-        b2.addEventListener('click',()=> delTask(cat,id));
-        row.append(b1,b2); li.appendChild(row);
+        b2.addEventListener('click', async ()=>{
+          if(!confirm('삭제할까요?')) return;
+          await db.doc(`users/${PUBLIC_UID}/tasks/${cat}/items/${id}`).delete();
+          await safeLoadTasks(cat);
+        });
+        row.append(b2);
+        li.appendChild(row);
       }
       ul.appendChild(li);
     });
@@ -394,7 +379,7 @@ $('#hAddBtn')?.addEventListener('click', async ()=>{
   await safeLoadTasks('homeworks');
 });
 
-// ✅ 일정 추가
+// 일정 추가
 sAddBtn?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -412,7 +397,7 @@ sAddBtn?.addEventListener('click', async ()=>{
   await safeLoadTasks('schedules');
 });
 
-// ✅ 휴일 추가
+// 휴일 추가
 hoAddBtn?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -425,236 +410,140 @@ hoAddBtn?.addEventListener('click', async ()=>{
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   };
   if(!payload.title){ alert('휴일 이름을 입력해주세요.'); return; }
-  // 종료일 비었으면 시작일로 맞춤(단일 휴일)
   if(payload.startDate && !payload.endDate) payload.endDate = payload.startDate;
-
   await db.collection(`users/${PUBLIC_UID}/tasks/holidays/items`).add(payload);
   ['hoTitle','hoDetail','hoStart','hoEnd','hoPStart','hoPEnd'].forEach(id=>$('#'+id).value='');
   await safeLoadTasks('holidays');
 });
 
-const delTask = async (cat,id)=>{
-  if(!confirm('삭제할까요?')) return;
-  await db.doc(`users/${PUBLIC_UID}/tasks/${cat}/items/${id}`).delete();
-  await safeLoadTasks(cat);
+// ===== ✅ 관리자 메모 저장/로드 =====
+const adminDocRef = ()=> db.doc(`users/${PUBLIC_UID}/settings/admin`);
+
+const daysUntil = (yyyyMMdd)=>{
+  if(!yyyyMMdd) return null;
+  const [y,m,d]=yyyyMMdd.split('-').map(n=>parseInt(n,10));
+  if(!y||!m||!d) return null;
+  const target=new Date(y,m-1,d); target.setHours(0,0,0,0);
+  const today=new Date(); today.setHours(0,0,0,0);
+  return Math.round((target - today)/86400000);
 };
 
-// ===== 수정 모달 (공지/항목) =====
-const modalRoot = document.querySelector('#modal-root');
-const closeModal = ()=> modalRoot.innerHTML = '';
-const periodSelectOptions = (val)=>{
-  const v = asIntOrNull(val);
-  const opts=['<option value="">선택</option>'];
-  for(let i=1;i<=7;i++){ opts.push(`<option value="${i}" ${v===i?'selected':''}>${i}교시</option>`); }
-  return opts.join('');
+const updateRenewHint = ()=>{
+  if(!adRenewHint || !adRenew) return;
+  const v = adRenew.value;
+  if(!v){ adRenewHint.textContent=''; return; }
+  const diff = daysUntil(v);
+  if(diff === null){ adRenewHint.textContent=''; return; }
+  if(diff > 0) adRenewHint.textContent = `만료까지 D-${diff}`;
+  else if(diff === 0) adRenewHint.textContent = `오늘 만료(D-day)`;
+  else adRenewHint.textContent = `만료일이 ${Math.abs(diff)}일 지났어요`;
 };
 
-const openNoticeEdit = (id,data)=>{
+adRenew?.addEventListener('change', updateRenewHint);
+
+const loadAdminMemo = async ()=>{
   if(!isAdmin) return;
-  modalRoot.innerHTML = `
-    <div class="modal show" id="m"><div class="modal__dialog">
-      <div class="modal__head"><strong>전달 사항 수정</strong><button class="modal__close" id="mClose">닫기</button></div>
-      <div class="modal__body">
-        <div class="form-grid">
-          <label class="full">제목 <input id="mTitle" value="${data.title||''}"></label>
-          <label>분류
-            <select id="mKind">
-              <option value="notice" ${data.kind==='notice'?'selected':''}>공지(빨강)</option>
-              <option value="info" ${data.kind==='info'?'selected':''}>안내(노랑)</option>
-              <option value="alert" ${data.kind==='alert'?'selected':''}>참고(초록)</option>
-            </select>
-          </label>
-          <label class="full">내용 <textarea id="mBody">${data.body||''}</textarea></label>
-        </div>
-      </div>
-      <div class="modal__foot"><button class="btn btn--ghost" id="mCancel">취소</button><button class="btn btn--primary" id="mSave">저장</button></div>
-    </div></div>`;
-  $('#mClose').onclick = $('#mCancel').onclick = closeModal;
-  $('#mSave').onclick = async ()=>{
-    await db.doc(`users/${PUBLIC_UID}/notices/${id}`).update({
-      title:$('#mTitle').value.trim(),
-      kind:$('#mKind').value,
-      body:$('#mBody').value.trim()
-    });
-    closeModal(); await safeLoadNotices();
-  };
-};
-
-const toDateInputValue = ts => {
-  if(!ts) return '';
-  const d=ts.toDate?ts.toDate():new Date(ts);
-  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-};
-
-const openTaskEdit = (cat,id,data)=>{
-  if(!isAdmin) return;
-
-  const withSubj = (cat === 'tasks' || cat === 'homeworks');
-  const isExam   = (cat === 'exams');
-  const isSimpleTitle = (cat === 'schedules' || cat === 'holidays');
-
-  const titleLabel = isExam ? '시험 이름' : (withSubj ? '내용' : '제목');
-
-  const titleValue = isExam
-    ? (data.name || '')
-    : isSimpleTitle
-      ? (data.title || '')
-      : (data.content || '');
-
-  modalRoot.innerHTML = `
-  <div class="modal show" id="m"><div class="modal__dialog">
-    <div class="modal__head"><strong>항목 수정</strong><button class="modal__close" id="mClose">닫기</button></div>
-    <div class="modal__body">
-      <div class="form-grid">
-        ${withSubj ? `<label>과목 <input id="mSubj" value="${data.subject||''}"></label>`:''}
-        <label>${titleLabel} <input id="mTitle" value="${titleValue}"></label>
-        <label class="full">상세 내용 <textarea id="mDetail">${data.detail||''}</textarea></label>
-        <label>시작일 <input id="mStart" type="date" value="${toDateInputValue(data.startDate)}"></label>
-        <label>종료일 <input id="mEnd" type="date" value="${toDateInputValue(data.endDate)}"></label>
-        <label>교시 시작 <select id="mPStart">${periodSelectOptions(data.periodStart)}</select></label>
-        <label>교시 끝 <select id="mPEnd">${periodSelectOptions(data.periodEnd)}</select></label>
-      </div>
-    </div>
-    <div class="modal__foot"><button class="btn btn--ghost" id="mCancel">취소</button><button class="btn btn--primary" id="mSave">저장</button></div>
-  </div></div>`;
-
-  $('#mClose').onclick = $('#mCancel').onclick = closeModal;
-  $('#mSave').onclick = async ()=>{
-    const payload = {
-      detail: $('#mDetail').value.trim(),
-      startDate: $('#mStart').value ? new Date($('#mStart').value) : null,
-      endDate:   $('#mEnd').value   ? new Date($('#mEnd').value)   : null,
-      periodStart: asIntOrNull($('#mPStart').value),
-      periodEnd:   asIntOrNull($('#mPEnd').value),
-    };
-
-    if(isExam){
-      payload.name = $('#mTitle').value.trim();
-    }else if(withSubj){
-      payload.subject = $('#mSubj').value.trim();
-      payload.content = $('#mTitle').value.trim();
-    }else if(isSimpleTitle){
-      payload.title = $('#mTitle').value.trim();
-    }else{
-      payload.content = $('#mTitle').value.trim();
+  try{
+    const doc = await adminDocRef().get();
+    if(doc.exists){
+      const d = doc.data() || {};
+      if(adDomain) adDomain.value = d.domain || '';
+      if(adRenew)  adRenew.value  = d.renewDate || '';
+      if(adNotes)  adNotes.value  = d.notes || '';
+      updateRenewHint();
+      if(adStatus) adStatus.textContent = d.updatedAt?.toDate ? `마지막 저장: ${fmtDate(d.updatedAt)}` : '';
+    } else {
+      if(adStatus) adStatus.textContent = '저장된 관리자 메모가 아직 없어요.';
     }
-
-    await db.doc(`users/${PUBLIC_UID}/tasks/${cat}/items/${id}`).update(payload);
-    closeModal(); await safeLoadTasks(cat);
-  };
+  }catch(e){
+    if(adStatus) adStatus.textContent = `불러오기 오류: ${e.message}`;
+  }
 };
 
-// ===== 시간표(NEIS) - Cloudflare Worker 프록시 사용 (FIX) =====
-const PROXY = (NEIS_PROXY_BASE || '').replace(/\/+$/,'');
+adSaveBtn?.addEventListener('click', async ()=>{
+  if(!isAdmin) return;
+  try{
+    const payload = {
+      domain: (adDomain?.value || '').trim(),
+      renewDate: (adRenew?.value || '').trim(),
+      notes: (adNotes?.value || '').trim(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await adminDocRef().set(payload, { merge: true });
+    if(adStatus) adStatus.textContent = '저장 완료!';
+    await loadAdminMemo();
+  }catch(e){
+    if(adStatus) adStatus.textContent = `저장 오류: ${e.message}`;
+  }
+});
 
+// ===== 시간표(NEIS 프록시) =====
+const PROXY = (NEIS_PROXY_BASE || '').replace(/\/+$/,'');
 const ymdFromInput = (v)=>{
   if(!v) return '';
   const d=new Date(v);
   return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
 };
-
-// ✅ 응답이 어떤 형태든 row 배열을 뽑아내기
-const extractRows = (data)=>{
-  if(!data) return [];
-
-  // 1) 우리가 기대한 형태
-  if(Array.isArray(data.rows)) return data.rows;
-
-  // 2) NEIS 원본 형태: hisTimetable / misTimetable / elsTimetable 등
-  const keys = ["hisTimetable","misTimetable","elsTimetable"];
-  for (const k of keys) {
-    const block = data[k];
-    if (Array.isArray(block)) {
-      const rowObj = block.find(x => x && Array.isArray(x.row));
-      if (rowObj && Array.isArray(rowObj.row)) return rowObj.row;
-    }
-  }
-
-  // 3) 혹시 row가 바로 있는 형태
-  if(Array.isArray(data.row)) return data.row;
-
-  return [];
-};
-
-// ✅ 실패 시 원문도 같이 보여주기
 const getJSON = async (url)=>{
-  const r = await fetch(url, { headers:{'Accept':'application/json'} });
+  const r = await fetch(url,{headers:{'Accept':'application/json'}});
   const text = await r.text();
-  let json = null;
-  try { json = JSON.parse(text); } catch {}
-  return { ok: r.ok, status: r.status, text, json };
+  try{ return JSON.parse(text); }catch{ return { raw:text }; }
 };
-
 const renderTT = (rows=[])=>{
   ttList.innerHTML = '';
-  if(!rows.length){
-    ttList.innerHTML = `<li class="meta">해당 조건의 시간표가 없습니다. (주말/공휴일/학교명/날짜 확인)</li>`;
-    return;
-  }
-
+  if(!rows.length){ ttList.innerHTML = `<li class="meta">해당 조건의 시간표가 없습니다.</li>`; return; }
   rows.sort((a,b)=> (parseInt(a.PERIO||a.ORD||'0') - parseInt(b.PERIO||b.ORD||'0')));
   rows.forEach(r=>{
     const li = el('li',{class:'task'});
     const perio = r.PERIO || r.ORD || '';
     const name  = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '';
-    const room  = r.CLRM_NM || '';
-    li.innerHTML = `<div class="title">${perio}교시 - ${name}${room?` (${room})`:''}</div>`;
+    li.innerHTML = `<div class="title">${perio}교시 - ${name}</div>`;
     ttList.appendChild(li);
   });
 };
-
 ttBtn?.addEventListener('click', async ()=>{
-  if(!PROXY){
-    alert('env.js의 NEIS_PROXY_BASE를 설정해주세요(Cloudflare Worker URL).');
-    return;
-  }
-
+  if(!PROXY){ alert('env.js의 NEIS_PROXY_BASE를 설정해주세요(Cloudflare Worker URL).'); return; }
   const schoolName = ttSchool.value.trim();
   const ymd = ymdFromInput(ttDate.value);
   const grade = ttGrade.value.trim();
   const classNm = ttClass.value.trim();
-
-  if(!schoolName || !ymd || !grade || !classNm){
-    alert('학교명/날짜/학년/반을 모두 입력해주세요.');
-    return;
-  }
-
-  ttBtn.disabled = true;
-  ttBtn.textContent = '불러오는 중...';
-  ttList.innerHTML = `<li class="meta">불러오는 중...</li>`;
-
+  if(!schoolName || !ymd || !grade || !classNm){ alert('학교명/날짜/학년/반을 모두 입력해주세요.'); return; }
+  ttBtn.disabled = true; ttBtn.textContent = '불러오는 중...';
   try{
     const url = `${PROXY}/api/timetable?schoolName=${encodeURIComponent(schoolName)}&ymd=${ymd}&grade=${grade}&classNm=${classNm}`;
-    const res = await getJSON(url);
-
-    // ✅ 서버 에러면 원문 보여주기
-    if(!res.ok){
-      ttList.innerHTML = `
-        <li class="meta">서버 오류 (HTTP ${res.status})</li>
-        <li class="task"><pre>${(res.text || '').slice(0, 2000)}</pre></li>
-      `;
-      return;
-    }
-
-    const data = res.json;
-    const rows = extractRows(data);
-
-    // ✅ rows 추출 실패 시 json/원문 일부 보여주기
-    if(!rows.length){
-      const preview = res.text ? res.text.slice(0, 2000) : '(empty)';
-      ttList.innerHTML = `
-        <li class="meta">시간표 데이터가 비어있거나 형식이 달라요.</li>
-        <li class="meta">학교명/날짜(평일)/학년/반을 확인해줘.</li>
-        <li class="task"><pre>${preview}</pre></li>
-      `;
-      return;
-    }
-
+    const data = await getJSON(url);
+    const rows = data.rows || [];
     renderTT(rows);
   }catch(e){
     ttList.innerHTML = `<li class="meta">오류: ${e.message||e}</li>`;
   }finally{
-    ttBtn.disabled = false;
-    ttBtn.textContent = '불러오기';
+    ttBtn.disabled = false; ttBtn.textContent = '불러오기';
   }
+});
+
+// ===== 시작 =====
+auth.onAuthStateChanged(async (u)=>{
+  currentUser = u;
+  isAdmin = !!(u && ADMIN_UIDS.includes(u.uid));
+  userInfo.textContent = isAdmin ? `${u.displayName} (관리자)` : (u ? u.email : '로그인 필요');
+  loginBtn.style.display = u ? 'none' : '';
+  logoutBtn.style.display = u ? '' : 'none';
+
+  applyAdminUI();
+  initTabs();
+
+  // 시간표 기본 날짜: 오늘
+  const d=new Date();
+  if(ttDate) ttDate.value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+
+  await Promise.all([
+    loadNoticeSwitch().then(safeLoadNotices),
+    safeLoadTasks('schedules'),
+    safeLoadTasks('holidays'),
+    safeLoadTasks('exams'),
+    safeLoadTasks('tasks'),
+    safeLoadTasks('homeworks'),
+  ]);
+
+  await loadAdminMemo();
 });
