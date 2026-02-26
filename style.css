@@ -45,7 +45,7 @@ label.label{display:block;font-size:12px;color:#9fb0be;margin:2px 2px 8px}
   display:flex;align-items:center;gap:8px}
 .section-body{padding:22px 24px}
 
-/* ✅ Tabs */
+/* Tabs */
 .tabs{
   margin: 14px 0 4px;
   display:flex; flex-wrap:wrap; gap:10px;
@@ -70,15 +70,15 @@ label.label{display:block;font-size:12px;color:#9fb0be;margin:2px 2px 8px}
   border-color: rgba(37,99,235,.55);
 }
 
-/* ✅ Panels (탭 전환용) */
+/* Panels */
 .panel{display:none}
 .panel.active{display:block}
 
 /* List Cards */
 ul.card-list{margin-top:16px;display:flex;flex-direction:column;gap:16px}
 .notice-card,.task{border:1px solid var(--border);border-radius:12px;background:#0f1722;padding:20px 24px}
-.notice-title,.title{font-weight:700;color:var(--fg-strong);margin-bottom:10px}
-.notice-meta,.meta{color:var(--muted);margin-top:10px}
+.title{font-weight:700;color:var(--fg-strong);margin-bottom:10px}
+.meta{color:var(--muted);margin-top:10px}
 .kind-notice{background:rgba(239,68,68,.12)}
 .kind-info{background:rgba(234,179,8,.12)}
 .kind-alert{background:rgba(34,197,94,.12)}
@@ -91,7 +91,7 @@ ul.card-list{margin-top:16px;display:flex;flex-direction:column;gap:16px}
 .dday.green{background:#22c55e;color:#0b1720}
 .dday.gray{background:#9aa6b2;color:#0b1720}
 
-/* Form Card (base) */
+/* Form Card */
 .task-form{
   margin-top:14px;display:grid;grid-template-columns:repeat(12,1fr);gap:12px;
   padding:14px;background:#0f1722;border:1px solid var(--border);border-radius:14px;
@@ -104,16 +104,21 @@ ul.card-list{margin-top:16px;display:flex;flex-direction:column;gap:16px}
 .task-form .col-span-12{grid-column:1 / -1}
 .task-form .col-end{grid-column:-3 / -1}
 
-/* ▶ 3줄 레이아웃(요청 반영) */
+/* 3줄 레이아웃 */
 .layout-3row{grid-template-columns:repeat(12,1fr)}
-/* 1열: 과목(4) / 내용(8) */
 .layout-3row .r1-subj{grid-column:span 4}
 .layout-3row .r1-content{grid-column:span 8}
-/* 2열: 상세(가로 전체 + 높이 크게) */
 .layout-3row .r2-detail{grid-column:1 / -1}
 .layout-3row .r2-detail textarea{min-height:140px}
-/* 3열: 시작/종료/교시시작/교시끝 (각 3칸) */
 .layout-3row .r3-item{grid-column:span 3}
+
+/* ✅ 관리자 박스(살짝 강조) */
+.admin-box{
+  border:1px solid rgba(37,99,235,.35);
+  background: rgba(37,99,235,.06);
+  padding: 16px;
+  border-radius: 14px;
+}
 
 /* Responsive */
 @media (max-width:980px){
@@ -131,22 +136,5 @@ ul.card-list{margin-top:16px;display:flex;flex-direction:column;gap:16px}
   textarea{min-height:110px}
 }
 
-/* Modal (기존) */
-.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-  background:radial-gradient(100% 100% at 0% 0%, rgba(0,0,0,.65), rgba(0,0,0,.45));backdrop-filter:blur(6px);z-index:50}
-.modal.show{display:flex}
-.modal__dialog{width:min(760px,94vw);background:linear-gradient(180deg,#0f1722 0%,#0b1323 100%);
-  border:1px solid #213042;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden}
-.modal__head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
-.modal__head strong{font-size:18px;color:#e9ecf1}
-.modal__close{cursor:pointer;border:1px solid #2a3a51;background:#121a25;color:#cfd6de;border-radius:10px;padding:6px 10px}
-.modal__close:hover{background:#1a2431}
-.modal__body{padding:16px 16px 6px}
-.modal__foot{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--border);background:rgba(255,255,255,.02)}
-
 .task pre,.notice-card pre{font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;font-size:.95rem;line-height:1.8;color:var(--text);white-space:pre-wrap;word-break:break-word;background:transparent;padding:0;border:none}
-
-/* helpers */
 .row{display:flex;gap:8px;align-items:center}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-@media (max-width:720px){.grid-3{grid-template-columns:1fr}}
