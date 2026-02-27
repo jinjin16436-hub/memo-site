@@ -91,6 +91,19 @@ ul.card-list{margin-top:16px;display:flex;flex-direction:column;gap:16px}
 .dday.green{background:#22c55e;color:#0b1720}
 .dday.gray{background:#9aa6b2;color:#0b1720}
 
+/* Admin warning */
+.warn-line{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.warn-badge{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 10px; border-radius:999px; font-weight:800;
+  border:1px solid rgba(239,68,68,.65);
+  background: rgba(239,68,68,.14);
+  color: #ffd1d1;
+}
+.warn-badge small{opacity:.85; font-weight:700}
+
 /* Form Card */
 .task-form{
   margin-top:14px;display:grid;grid-template-columns:repeat(12,1fr);gap:12px;
@@ -146,9 +159,7 @@ ul.card-list{margin-top:16px;display:flex;flex-direction:column;gap:16px}
 .modal-title{font-weight:800;color:var(--fg-strong);font-size:16px}
 .modal-body{padding:16px 18px}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;padding:14px 18px;border-top:1px dashed var(--border)}
-.modal-body .grid{
-  display:grid; grid-template-columns:repeat(12,1fr); gap:12px;
-}
+.modal-body .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:12px}
 .modal-body .grid .f{grid-column:span 6}
 .modal-body .grid .f.full{grid-column:1/-1}
 .modal-body textarea{min-height:160px}
@@ -176,4 +187,8 @@ ul.card-list{margin-top:16px;display:flex;flex-direction:column;gap:16px}
   .modal-body .grid .f,.modal-body .grid .f.full{grid-column:1/-1}
 }
 
-.task pre,.notice-card pre{font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;font-size:.95rem;line-height:1.8;color:var(--text);white-space:pre-wrap;word-break:break-word;background:transparent;padding:0;border:none}
+.task pre,.notice-card pre{
+  font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Noto Sans",sans-serif;
+  font-size:.95rem;line-height:1.8;color:var(--text);
+  white-space:pre-wrap;word-break:break-word;background:transparent;padding:0;border:none
+}
