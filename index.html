@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.1.15">
+  <link rel="stylesheet" href="style.css?v=1.1.16" />
+
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="env.js"></script>
 </head>
+
 <body>
   <header class="topbar">
-    <h1>사이트 버전 v1.1.15 (부광고.웹.한국)</h1>
+    <h1>사이트 버전 v1.1.16 (부광고.웹.한국)</h1>
     <div class="auth">
       <span id="userInfo">비로그인 상태</span>
       <button id="loginBtn" class="btn">로그인</button>
@@ -31,8 +33,9 @@
         <ul id="list_notice" class="card-list"></ul>
 
         <div class="admin-only task-form">
-          <div class="f"><label class="label">제목</label><input id="nTitle" placeholder="제목을 입력하세요"></div>
-          <div class="f"><label class="label">분류</label>
+          <div class="f"><label class="label">제목</label><input id="nTitle" placeholder="제목을 입력하세요" /></div>
+          <div class="f">
+            <label class="label">분류</label>
             <select id="nKind">
               <option value="notice">공지(빨강)</option>
               <option value="info">안내(노랑)</option>
@@ -48,8 +51,8 @@
       </div>
     </section>
 
-    <!-- ✅ 탭 (요청 순서 + 관리자) -->
-    <nav class="tabs" id="tabs">
+    <!-- 탭 -->
+    <div id="tabs" class="tabs">
       <button class="tab-btn active" data-tab="schedule">일정</button>
       <button class="tab-btn" data-tab="holiday">휴일</button>
       <button class="tab-btn" data-tab="exam">시험</button>
@@ -57,24 +60,33 @@
       <button class="tab-btn" data-tab="homework">숙제</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
       <button class="tab-btn admin-only" data-tab="admin">관리자</button>
-    </nav>
+    </div>
 
-    <!-- ===================== 일정 ===================== -->
-    <section class="sec panel active" id="panel_schedule">
+    <!-- 일정 -->
+    <section id="panel_schedule" class="sec panel active">
       <div class="section-head"><h2>🗓️ 일정</h2></div>
       <div class="section-body">
         <ul id="list_schedule" class="card-list"></ul>
 
-        <div class="admin-only task-form">
-          <div class="f col-span-6"><label class="label">일정 제목</label><input id="sTitle" placeholder="예: 동아리 대회"></div>
-          <div class="f col-span-6"><label class="label">상세</label><input id="sDetail" placeholder="예: 준비물/장소 등"></div>
+        <div class="admin-only task-form layout-3row">
+          <div class="f r1-content">
+            <label class="label">제목</label>
+            <input id="sTitle" placeholder="예: 학급 행사 / 동아리 일정" />
+          </div>
 
-          <div class="f"><label class="label">시작일</label><input id="sStart" type="date"></div>
-          <div class="f"><label class="label">종료일</label><input id="sEnd" type="date"></div>
-          <div class="f"><label class="label">교시 시작(선택)</label>
+          <div class="f r2-detail">
+            <label class="label">상세</label>
+            <textarea id="sDetail" placeholder="상세(줄바꿈 가능)"></textarea>
+          </div>
+
+          <div class="f r3-item"><label class="label">시작일</label><input id="sStart" type="date" /></div>
+          <div class="f r3-item"><label class="label">종료일</label><input id="sEnd" type="date" /></div>
+          <div class="f r3-item">
+            <label class="label">교시 시작</label>
             <select id="sPStart"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
           </div>
-          <div class="f"><label class="label">교시 끝(선택)</label>
+          <div class="f r3-item">
+            <label class="label">교시 끝</label>
             <select id="sPEnd"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
           </div>
 
@@ -83,34 +95,41 @@
       </div>
     </section>
 
-    <!-- ===================== 휴일 ===================== -->
-    <section class="sec panel" id="panel_holiday">
+    <!-- 휴일 -->
+    <section id="panel_holiday" class="sec panel">
       <div class="section-head"><h2>🏖️ 휴일</h2></div>
       <div class="section-body">
         <ul id="list_holiday" class="card-list"></ul>
 
-        <div class="admin-only task-form">
-          <div class="f col-span-6"><label class="label">휴일 이름</label><input id="hoTitle" placeholder="예: 어린이날 / 재량휴업일"></div>
-          <div class="f col-span-6"><label class="label">상세</label><input id="hoDetail" placeholder="예: 학교 안내/메모"></div>
+        <div class="admin-only task-form layout-3row">
+          <div class="f r1-content">
+            <label class="label">이름</label>
+            <input id="hoTitle" placeholder="예: 재량휴업일 / 공휴일" />
+          </div>
 
-          <div class="f"><label class="label">시작일</label><input id="hoStart" type="date"></div>
-          <div class="f"><label class="label">종료일(연휴면)</label><input id="hoEnd" type="date"></div>
-          <div class="f"><label class="label">교시 시작(선택)</label>
+          <div class="f r2-detail">
+            <label class="label">상세</label>
+            <textarea id="hoDetail" placeholder="상세(줄바꿈 가능)"></textarea>
+          </div>
+
+          <div class="f r3-item"><label class="label">시작일</label><input id="hoStart" type="date" /></div>
+          <div class="f r3-item"><label class="label">종료일</label><input id="hoEnd" type="date" /></div>
+          <div class="f r3-item">
+            <label class="label">교시 시작</label>
             <select id="hoPStart"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
           </div>
-          <div class="f"><label class="label">교시 끝(선택)</label>
+          <div class="f r3-item">
+            <label class="label">교시 끝</label>
             <select id="hoPEnd"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
           </div>
 
           <div class="f col-end"><label class="label">&nbsp;</label><button id="hoAddBtn" class="btn btn--primary w-full">+ 추가</button></div>
         </div>
-
-        <div class="meta">* 휴일은 시작/종료일이 같아도 됩니다.</div>
       </div>
     </section>
 
-    <!-- ===================== 시험 ===================== -->
-    <section class="sec panel" id="panel_exam">
+    <!-- 시험 -->
+    <section id="panel_exam" class="sec panel">
       <div class="section-head"><h2>📝 시험</h2></div>
       <div class="section-body">
         <ul id="list_exam" class="card-list"></ul>
@@ -121,6 +140,7 @@
 
           <div class="f"><label class="label">시작일</label><input id="eStart" type="date"></div>
           <div class="f"><label class="label">종료일</label><input id="eEnd" type="date"></div>
+
           <div class="f"><label class="label">교시 시작</label>
             <select id="ePStart"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
           </div>
@@ -133,8 +153,8 @@
       </div>
     </section>
 
-    <!-- ===================== 수행 ===================== -->
-    <section class="sec panel" id="panel_task">
+    <!-- 수행평가 -->
+    <section id="panel_task" class="sec panel">
       <div class="section-head"><h2>📄 수행평가</h2></div>
       <div class="section-body">
         <ul id="list_task" class="card-list"></ul>
@@ -142,7 +162,9 @@
         <div class="admin-only task-form layout-3row">
           <div class="f r1-subj"><label class="label">과목</label><input id="tSubj" placeholder="예: 국어"></div>
           <div class="f r1-content"><label class="label">내용</label><input id="tTitle" placeholder="예: 발표 준비"></div>
-          <div class="f r2-detail"><label class="label">상세</label><textarea id="tDetail" placeholder="상세 지시사항"></textarea></div>
+
+          <div class="f r2-detail"><label class="label">상세</label><textarea id="tDetail" placeholder="상세 지시사항(줄바꿈 가능)"></textarea></div>
+
           <div class="f r3-item"><label class="label">시작일</label><input id="tStart" type="date"></div>
           <div class="f r3-item"><label class="label">종료일</label><input id="tEnd" type="date"></div>
           <div class="f r3-item"><label class="label">교시 시작</label>
@@ -151,13 +173,14 @@
           <div class="f r3-item"><label class="label">교시 끝</label>
             <select id="tPEnd"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
           </div>
+
           <div class="f col-end"><label class="label">&nbsp;</label><button id="tAddBtn" class="btn btn--primary w-full">+ 추가</button></div>
         </div>
       </div>
     </section>
 
-    <!-- ===================== 숙제 ===================== -->
-    <section class="sec panel" id="panel_homework">
+    <!-- 숙제 -->
+    <section id="panel_homework" class="sec panel">
       <div class="section-head"><h2>📌 숙제</h2></div>
       <div class="section-body">
         <ul id="list_homework" class="card-list"></ul>
@@ -165,7 +188,9 @@
         <div class="admin-only task-form layout-3row">
           <div class="f r1-subj"><label class="label">과목</label><input id="hSubj" placeholder="예: 수학"></div>
           <div class="f r1-content"><label class="label">내용</label><input id="hTitle" placeholder="예: 문제집 50~80쪽"></div>
-          <div class="f r2-detail"><label class="label">상세</label><textarea id="hDetail" placeholder="상세 지시사항"></textarea></div>
+
+          <div class="f r2-detail"><label class="label">상세</label><textarea id="hDetail" placeholder="상세 지시사항(줄바꿈 가능)"></textarea></div>
+
           <div class="f r3-item"><label class="label">시작일</label><input id="hStart" type="date"></div>
           <div class="f r3-item"><label class="label">종료일</label><input id="hEnd" type="date"></div>
           <div class="f r3-item"><label class="label">교시 시작</label>
@@ -174,13 +199,14 @@
           <div class="f r3-item"><label class="label">교시 끝</label>
             <select id="hPEnd"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
           </div>
+
           <div class="f col-end"><label class="label">&nbsp;</label><button id="hAddBtn" class="btn btn--primary w-full">+ 추가</button></div>
         </div>
       </div>
     </section>
 
-    <!-- ===================== 시간표 ===================== -->
-    <section class="sec panel" id="panel_timetable">
+    <!-- 시간표 -->
+    <section id="panel_timetable" class="sec panel">
       <div class="section-head"><h2>📚 시간표 (NEIS 프록시)</h2></div>
       <div class="section-body">
         <div class="task-form compact">
@@ -190,48 +216,52 @@
           <div class="f"><label class="label">반</label><input id="ttClass" type="number" min="1" max="30" placeholder="1~30"></div>
           <div class="f col-end"><label class="label">&nbsp;</label><button id="ttBtn" class="btn btn--primary w-full">불러오기</button></div>
         </div>
+
         <ul id="ttList" class="card-list" style="margin-top:16px"></ul>
         <div class="meta">* env.js의 <code>NEIS_PROXY_BASE</code>에 Worker URL을 넣어야 동작합니다.</div>
       </div>
     </section>
 
-    <!-- ===================== ✅ 관리자 ===================== -->
-    <section class="sec panel admin-only" id="panel_admin">
-      <div class="section-head"><h2>🛠️ 관리자</h2></div>
+    <!-- 관리자 -->
+    <section id="panel_admin" class="sec panel admin-only">
+      <div class="section-head"><h2>🛡️ 관리자</h2></div>
       <div class="section-body">
+
         <div class="admin-box">
-          <div class="meta">이 탭은 관리자만 볼 수 있어요.</div>
+          <div class="title">도메인 만료 관리</div>
 
           <div class="task-form">
             <div class="f col-span-6">
               <label class="label">도메인</label>
-              <input id="adDomain" placeholder="예: bugwang-web.kr">
+              <input id="domName" placeholder="예: example.com" />
             </div>
             <div class="f col-span-6">
-              <label class="label">도메인 연장(만료) 일자</label>
-              <input id="adRenew" type="date">
-              <div id="adRenewHint" class="meta" style="margin-top:6px"></div>
+              <label class="label">연장(만료) 일자</label>
+              <input id="domRenew" type="date" />
             </div>
 
             <div class="f col-span-12">
-              <label class="label">운영 메모</label>
-              <textarea id="adNotes" placeholder="예: 2026-08-01 도메인 갱신, DNS 확인, 인증서 만료 체크 등"></textarea>
+              <label class="label">메모</label>
+              <textarea id="domNotes" placeholder="예: 어디서 결제하는지 / 자동갱신 여부 등 (줄바꿈 가능)"></textarea>
             </div>
 
             <div class="f col-end">
-              <label class="label">&nbsp;</label>
-              <button id="adSaveBtn" class="btn btn--primary w-full">저장</button>
+              <button id="domAddBtn" class="btn btn--primary w-full">+ 도메인 추가</button>
             </div>
           </div>
 
-          <div id="adStatus" class="meta" style="margin-top:12px"></div>
+          <ul id="domList" class="card-list" style="margin-top:16px"></ul>
+
+          <div id="domStatus" class="meta"></div>
+          <div class="meta">* D-7 이하이면 빨간 경고로 표시됩니다.</div>
         </div>
+
       </div>
     </section>
 
   </div>
 
   <div id="modal-root"></div>
-  <script src="app.js?v=1.1.15"></script>
+  <script src="app.js?v=1.1.16"></script>
 </body>
 </html>
