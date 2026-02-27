@@ -1,7 +1,8 @@
-/* app.js - v1.1.15
+/* app.js - v1.1.16
  * 변경사항:
- * - "수정"을 팝업(모달) 편집으로 변경 (줄바꿈 가능 textarea)
- * - 추가(등록) 폼은 기존 그대로 유지
+ * - 관리자 탭: 도메인 2개 이상 저장/관리(추가/수정/삭제)
+ * - 만료 D-7 이하이면 빨간 경고 표시
+ * - 수정은 팝업(모달) + textarea 줄바꿈 유지
  */
 
 if (!window.firebaseConfig) {
@@ -45,13 +46,13 @@ const ttClass  = $('#ttClass');
 const ttBtn    = $('#ttBtn');
 const ttList   = $('#ttList');
 
-// 관리자 메모
-const adDomain = $('#adDomain');
-const adRenew = $('#adRenew');
-const adNotes = $('#adNotes');
-const adSaveBtn = $('#adSaveBtn');
-const adStatus = $('#adStatus');
-const adRenewHint = $('#adRenewHint');
+// 관리자: 도메인 관리
+const domName   = $('#domName');
+const domRenew  = $('#domRenew');
+const domNotes  = $('#domNotes');
+const domAddBtn = $('#domAddBtn');
+const domList   = $('#domList');
+const domStatus = $('#domStatus');
 
 // ===== 유틸 =====
 const toDateOnly = (v)=>{
@@ -88,7 +89,19 @@ const renderMeta = (startDate,endDate,pStart,pEnd,legacyPeriod)=>{
   return parts.length ? `<div class="meta">${parts.join(' ')}</div>` : '';
 };
 
-// ===== D-day =====
+// 만료일까지 남은 일수(오늘=0)
+const daysUntilDateString = (yyyyMMdd) => {
+  if(!yyyyMMdd) return null;
+  const [y,m,d] = yyyyMMdd.split('-').map(n=>parseInt(n,10));
+  if(!y || !m || !d) return null;
+  const target = new Date(y, m-1, d);
+  target.setHours(0,0,0,0);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return Math.round((target - today)/86400000);
+};
+
+// ===== D-day(과제용) =====
 const ddayBadge = (start,end)=>{
   let s=toDateOnly(start), e=toDateOnly(end);
   if(!s && !e) return '';
@@ -297,19 +310,16 @@ const openModal = ({ title, fields, onSave })=>{
   modalRoot.innerHTML = '';
   modalRoot.appendChild(backdrop);
 
-  // ESC 닫기
   const onKey = (e)=>{ if(e.key === 'Escape'){ window.removeEventListener('keydown', onKey); closeModal(); } };
   window.addEventListener('keydown', onKey);
 
-  // 첫 입력 포커스
   const first = modal.querySelector('input, textarea, select');
   first?.focus();
 };
 
 /* =========================
-   공지/과제 렌더 + 수정 팝업
+   공지
 ========================= */
-
 const KIND_ORDER = { notice: 0, info: 1, alert: 2 };
 
 const safeLoadNotices = async () => {
@@ -387,7 +397,7 @@ const safeLoadNotices = async () => {
   }
 };
 
-// 공지 추가(기존 폼)
+// 공지 추가
 $('#nAddBtn')?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -402,7 +412,9 @@ $('#nAddBtn')?.addEventListener('click', async ()=>{
   await safeLoadNotices();
 });
 
-// 공통 task 로드
+/* =========================
+   과제/일정/휴일 공통
+========================= */
 const getListForCat = (cat)=>{
   if(cat==='exams') return listExam;
   if(cat==='tasks') return listTask;
@@ -414,6 +426,161 @@ const getListForCat = (cat)=>{
 const isSubjCat = (cat)=> (cat==='tasks' || cat==='homeworks');
 const catLabel = (cat)=>
   cat==='exams'?'시험':cat==='tasks'?'수행평가':cat==='homeworks'?'숙제':cat==='schedules'?'일정':'휴일';
+
+const periodOptions = [
+  {value:'', label:'선택'},
+  {value:'1', label:'1'}, {value:'2', label:'2'}, {value:'3', label:'3'},
+  {value:'4', label:'4'}, {value:'5', label:'5'}, {value:'6', label:'6'}, {value:'7', label:'7'},
+];
+
+const openTaskEditModal = (cat, id, d)=>{
+  if(cat === 'schedules'){
+    openModal({
+      title: '일정 수정',
+      fields: [
+        { key:'title', label:'제목', type:'text', required:true, value: d.title || '', full:true },
+        { key:'detail', label:'상세(줄바꿈 가능)', type:'textarea', value: d.detail || '', full:true },
+        { key:'start', label:'시작일', type:'date', value: toInputDate(d.startDate) },
+        { key:'end', label:'종료일', type:'date', value: toInputDate(d.endDate) },
+        { key:'pStart', label:'교시 시작', type:'select', value: (d.periodStart ?? '') === null ? '' : String(d.periodStart ?? ''), options:periodOptions },
+        { key:'pEnd', label:'교시 끝', type:'select', value: (d.periodEnd ?? '') === null ? '' : String(d.periodEnd ?? ''), options:periodOptions },
+      ],
+      onSave: async (v)=>{
+        const payload = {
+          title: v.title.trim(),
+          detail: v.detail,
+          startDate: v.start ? new Date(v.start) : null,
+          endDate:   v.end   ? new Date(v.end)   : null,
+          periodStart: asIntOrNull(v.pStart),
+          periodEnd:   asIntOrNull(v.pEnd),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.doc(`users/${PUBLIC_UID}/tasks/schedules/items/${id}`).set(payload,{merge:true});
+        await safeLoadTasks('schedules');
+      }
+    });
+    return;
+  }
+
+  if(cat === 'holidays'){
+    openModal({
+      title: '휴일 수정',
+      fields: [
+        { key:'title', label:'이름', type:'text', required:true, value: d.title || '', full:true },
+        { key:'detail', label:'상세(줄바꿈 가능)', type:'textarea', value: d.detail || '', full:true },
+        { key:'start', label:'시작일', type:'date', value: toInputDate(d.startDate) },
+        { key:'end', label:'종료일', type:'date', value: toInputDate(d.endDate) },
+        { key:'pStart', label:'교시 시작', type:'select', value: (d.periodStart ?? '') === null ? '' : String(d.periodStart ?? ''), options:periodOptions },
+        { key:'pEnd', label:'교시 끝', type:'select', value: (d.periodEnd ?? '') === null ? '' : String(d.periodEnd ?? ''), options:periodOptions },
+      ],
+      onSave: async (v)=>{
+        const startDate = v.start ? new Date(v.start) : null;
+        let endDate = v.end ? new Date(v.end) : null;
+        if(startDate && !endDate) endDate = startDate;
+
+        const payload = {
+          title: v.title.trim(),
+          detail: v.detail,
+          startDate,
+          endDate,
+          periodStart: asIntOrNull(v.pStart),
+          periodEnd:   asIntOrNull(v.pEnd),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.doc(`users/${PUBLIC_UID}/tasks/holidays/items/${id}`).set(payload,{merge:true});
+        await safeLoadTasks('holidays');
+      }
+    });
+    return;
+  }
+
+  if(cat === 'exams'){
+    openModal({
+      title: '시험 수정',
+      fields: [
+        { key:'name', label:'시험 이름', type:'text', required:true, value: d.name || '', full:true },
+        { key:'detail', label:'상세(줄바꿈 가능)', type:'textarea', value: d.detail || '', full:true },
+        { key:'start', label:'시작일', type:'date', value: toInputDate(d.startDate) },
+        { key:'end', label:'종료일', type:'date', value: toInputDate(d.endDate) },
+        { key:'pStart', label:'교시 시작', type:'select', value: (d.periodStart ?? '') === null ? '' : String(d.periodStart ?? ''), options:periodOptions },
+        { key:'pEnd', label:'교시 끝', type:'select', value: (d.periodEnd ?? '') === null ? '' : String(d.periodEnd ?? ''), options:periodOptions },
+      ],
+      onSave: async (v)=>{
+        const payload = {
+          name: v.name.trim(),
+          detail: v.detail,
+          startDate: v.start ? new Date(v.start) : null,
+          endDate:   v.end   ? new Date(v.end)   : null,
+          periodStart: asIntOrNull(v.pStart),
+          periodEnd:   asIntOrNull(v.pEnd),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.doc(`users/${PUBLIC_UID}/tasks/exams/items/${id}`).set(payload,{merge:true});
+        await safeLoadTasks('exams');
+      }
+    });
+    return;
+  }
+
+  if(cat === 'tasks'){
+    openModal({
+      title: '수행평가 수정',
+      fields: [
+        { key:'subject', label:'과목', type:'text', required:true, value: d.subject || '' },
+        { key:'content', label:'내용', type:'text', required:true, value: d.content || '', full:true },
+        { key:'detail', label:'상세(줄바꿈 가능)', type:'textarea', value: d.detail || '', full:true },
+        { key:'start', label:'시작일', type:'date', value: toInputDate(d.startDate) },
+        { key:'end', label:'종료일', type:'date', value: toInputDate(d.endDate) },
+        { key:'pStart', label:'교시 시작', type:'select', value: (d.periodStart ?? '') === null ? '' : String(d.periodStart ?? ''), options:periodOptions },
+        { key:'pEnd', label:'교시 끝', type:'select', value: (d.periodEnd ?? '') === null ? '' : String(d.periodEnd ?? ''), options:periodOptions },
+      ],
+      onSave: async (v)=>{
+        const payload = {
+          subject: v.subject.trim(),
+          content: v.content.trim(),
+          detail: v.detail,
+          startDate: v.start ? new Date(v.start) : null,
+          endDate:   v.end   ? new Date(v.end)   : null,
+          periodStart: asIntOrNull(v.pStart),
+          periodEnd:   asIntOrNull(v.pEnd),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.doc(`users/${PUBLIC_UID}/tasks/tasks/items/${id}`).set(payload,{merge:true});
+        await safeLoadTasks('tasks');
+      }
+    });
+    return;
+  }
+
+  if(cat === 'homeworks'){
+    openModal({
+      title: '숙제 수정',
+      fields: [
+        { key:'subject', label:'과목', type:'text', required:true, value: d.subject || '' },
+        { key:'content', label:'내용', type:'text', required:true, value: d.content || '', full:true },
+        { key:'detail', label:'상세(줄바꿈 가능)', type:'textarea', value: d.detail || '', full:true },
+        { key:'start', label:'시작일', type:'date', value: toInputDate(d.startDate) },
+        { key:'end', label:'종료일', type:'date', value: toInputDate(d.endDate) },
+        { key:'pStart', label:'교시 시작', type:'select', value: (d.periodStart ?? '') === null ? '' : String(d.periodStart ?? ''), options:periodOptions },
+        { key:'pEnd', label:'교시 끝', type:'select', value: (d.periodEnd ?? '') === null ? '' : String(d.periodEnd ?? ''), options:periodOptions },
+      ],
+      onSave: async (v)=>{
+        const payload = {
+          subject: v.subject.trim(),
+          content: v.content.trim(),
+          detail: v.detail,
+          startDate: v.start ? new Date(v.start) : null,
+          endDate:   v.end   ? new Date(v.end)   : null,
+          periodStart: asIntOrNull(v.pStart),
+          periodEnd:   asIntOrNull(v.pEnd),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.doc(`users/${PUBLIC_UID}/tasks/homeworks/items/${id}`).set(payload,{merge:true});
+        await safeLoadTasks('homeworks');
+      }
+    });
+  }
+};
 
 const safeLoadTasks = async (cat)=>{
   const ul = getListForCat(cat);
@@ -452,9 +619,7 @@ const safeLoadTasks = async (cat)=>{
         const row = el('div', { class:'row' });
 
         const editBtn = el('button',{class:'btn'}); editBtn.textContent='수정';
-        editBtn.addEventListener('click', ()=>{
-          openTaskEditModal(cat, id, d);
-        });
+        editBtn.addEventListener('click', ()=> openTaskEditModal(cat, id, d));
 
         const delBtn = el('button',{class:'btn'}); delBtn.textContent='삭제';
         delBtn.addEventListener('click', async ()=>{
@@ -474,166 +639,9 @@ const safeLoadTasks = async (cat)=>{
   }
 };
 
-// ✅ 과제 수정 모달(줄바꿈 가능)
-const periodOptions = [
-  {value:'', label:'선택'},
-  {value:'1', label:'1'}, {value:'2', label:'2'}, {value:'3', label:'3'},
-  {value:'4', label:'4'}, {value:'5', label:'5'}, {value:'6', label:'6'}, {value:'7', label:'7'},
-];
-
-const openTaskEditModal = (cat, id, d)=>{
-  if(cat === 'schedules'){
-    openModal({
-      title: '일정 수정',
-      fields: [
-        { key:'title', label:'일정 제목', type:'text', required:true, value: d.title || '', full:true },
-        { key:'detail', label:'상세(줄바꿈 가능)', type:'textarea', value: d.detail || '', full:true },
-        { key:'start', label:'시작일', type:'date', value: toInputDate(d.startDate), full:false },
-        { key:'end', label:'종료일', type:'date', value: toInputDate(d.endDate), full:false },
-        { key:'pStart', label:'교시 시작(선택)', type:'select', value: (d.periodStart ?? '') === null ? '' : String(d.periodStart ?? ''), options:periodOptions, full:false },
-        { key:'pEnd', label:'교시 끝(선택)', type:'select', value: (d.periodEnd ?? '') === null ? '' : String(d.periodEnd ?? ''), options:periodOptions, full:false },
-      ],
-      onSave: async (v)=>{
-        const payload = {
-          title: v.title.trim(),
-          detail: v.detail,
-          startDate: v.start ? new Date(v.start) : null,
-          endDate:   v.end   ? new Date(v.end)   : null,
-          periodStart: asIntOrNull(v.pStart),
-          periodEnd:   asIntOrNull(v.pEnd),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        await db.doc(`users/${PUBLIC_UID}/tasks/schedules/items/${id}`).set(payload,{merge:true});
-        await safeLoadTasks('schedules');
-      }
-    });
-    return;
-  }
-
-  if(cat === 'holidays'){
-    openModal({
-      title: '휴일 수정',
-      fields: [
-        { key:'title', label:'휴일 이름', type:'text', required:true, value: d.title || '', full:true },
-        { key:'detail', label:'상세(줄바꿈 가능)', type:'textarea', value: d.detail || '', full:true },
-        { key:'start', label:'시작일', type:'date', value: toInputDate(d.startDate), full:false },
-        { key:'end', label:'종료일', type:'date', value: toInputDate(d.endDate), full:false },
-        { key:'pStart', label:'교시 시작(선택)', type:'select', value: (d.periodStart ?? '') === null ? '' : String(d.periodStart ?? ''), options:periodOptions, full:false },
-        { key:'pEnd', label:'교시 끝(선택)', type:'select', value: (d.periodEnd ?? '') === null ? '' : String(d.periodEnd ?? ''), options:periodOptions, full:false },
-      ],
-      onSave: async (v)=>{
-        const startDate = v.start ? new Date(v.start) : null;
-        let endDate = v.end ? new Date(v.end) : null;
-        if(startDate && !endDate) endDate = startDate;
-
-        const payload = {
-          title: v.title.trim(),
-          detail: v.detail,
-          startDate,
-          endDate,
-          periodStart: asIntOrNull(v.pStart),
-          periodEnd:   asIntOrNull(v.pEnd),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        await db.doc(`users/${PUBLIC_UID}/tasks/holidays/items/${id}`).set(payload,{merge:true});
-        await safeLoadTasks('holidays');
-      }
-    });
-    return;
-  }
-
-  if(cat === 'exams'){
-    openModal({
-      title: '시험 수정',
-      fields: [
-        { key:'name', label:'시험 이름', type:'text', required:true, value: d.name || '', full:true },
-        { key:'detail', label:'상세(줄바꿈 가능)', type:'textarea', value: d.detail || '', full:true },
-        { key:'start', label:'시작일', type:'date', value: toInputDate(d.startDate), full:false },
-        { key:'end', label:'종료일', type:'date', value: toInputDate(d.endDate), full:false },
-        { key:'pStart', label:'교시 시작', type:'select', value: (d.periodStart ?? '') === null ? '' : String(d.periodStart ?? ''), options:periodOptions, full:false },
-        { key:'pEnd', label:'교시 끝', type:'select', value: (d.periodEnd ?? '') === null ? '' : String(d.periodEnd ?? ''), options:periodOptions, full:false },
-      ],
-      onSave: async (v)=>{
-        const payload = {
-          name: v.name.trim(),
-          detail: v.detail,
-          startDate: v.start ? new Date(v.start) : null,
-          endDate:   v.end   ? new Date(v.end)   : null,
-          periodStart: asIntOrNull(v.pStart),
-          periodEnd:   asIntOrNull(v.pEnd),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        await db.doc(`users/${PUBLIC_UID}/tasks/exams/items/${id}`).set(payload,{merge:true});
-        await safeLoadTasks('exams');
-      }
-    });
-    return;
-  }
-
-  if(cat === 'tasks'){
-    openModal({
-      title: '수행평가 수정',
-      fields: [
-        { key:'subject', label:'과목', type:'text', required:true, value: d.subject || '', full:false },
-        { key:'content', label:'내용', type:'text', required:true, value: d.content || '', full:true },
-        { key:'detail', label:'상세(줄바꿈 가능)', type:'textarea', value: d.detail || '', full:true },
-        { key:'start', label:'시작일', type:'date', value: toInputDate(d.startDate), full:false },
-        { key:'end', label:'종료일', type:'date', value: toInputDate(d.endDate), full:false },
-        { key:'pStart', label:'교시 시작', type:'select', value: (d.periodStart ?? '') === null ? '' : String(d.periodStart ?? ''), options:periodOptions, full:false },
-        { key:'pEnd', label:'교시 끝', type:'select', value: (d.periodEnd ?? '') === null ? '' : String(d.periodEnd ?? ''), options:periodOptions, full:false },
-      ],
-      onSave: async (v)=>{
-        const payload = {
-          subject: v.subject.trim(),
-          content: v.content.trim(),
-          detail: v.detail,
-          startDate: v.start ? new Date(v.start) : null,
-          endDate:   v.end   ? new Date(v.end)   : null,
-          periodStart: asIntOrNull(v.pStart),
-          periodEnd:   asIntOrNull(v.pEnd),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        await db.doc(`users/${PUBLIC_UID}/tasks/tasks/items/${id}`).set(payload,{merge:true});
-        await safeLoadTasks('tasks');
-      }
-    });
-    return;
-  }
-
-  if(cat === 'homeworks'){
-    openModal({
-      title: '숙제 수정',
-      fields: [
-        { key:'subject', label:'과목', type:'text', required:true, value: d.subject || '', full:false },
-        { key:'content', label:'내용', type:'text', required:true, value: d.content || '', full:true },
-        { key:'detail', label:'상세(줄바꿈 가능)', type:'textarea', value: d.detail || '', full:true },
-        { key:'start', label:'시작일', type:'date', value: toInputDate(d.startDate), full:false },
-        { key:'end', label:'종료일', type:'date', value: toInputDate(d.endDate), full:false },
-        { key:'pStart', label:'교시 시작', type:'select', value: (d.periodStart ?? '') === null ? '' : String(d.periodStart ?? ''), options:periodOptions, full:false },
-        { key:'pEnd', label:'교시 끝', type:'select', value: (d.periodEnd ?? '') === null ? '' : String(d.periodEnd ?? ''), options:periodOptions, full:false },
-      ],
-      onSave: async (v)=>{
-        const payload = {
-          subject: v.subject.trim(),
-          content: v.content.trim(),
-          detail: v.detail,
-          startDate: v.start ? new Date(v.start) : null,
-          endDate:   v.end   ? new Date(v.end)   : null,
-          periodStart: asIntOrNull(v.pStart),
-          periodEnd:   asIntOrNull(v.pEnd),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        await db.doc(`users/${PUBLIC_UID}/tasks/homeworks/items/${id}`).set(payload,{merge:true});
-        await safeLoadTasks('homeworks');
-      }
-    });
-  }
-};
-
 /* =========================
-   기존 "추가(등록)" 버튼 로직 유지
+   추가(등록) 버튼들
 ========================= */
-// 시험 추가
 $('#eAddBtn')?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -651,7 +659,6 @@ $('#eAddBtn')?.addEventListener('click', async ()=>{
   await safeLoadTasks('exams');
 });
 
-// 수행 추가
 $('#tAddBtn')?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -670,7 +677,6 @@ $('#tAddBtn')?.addEventListener('click', async ()=>{
   await safeLoadTasks('tasks');
 });
 
-// 숙제 추가
 $('#hAddBtn')?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -689,7 +695,6 @@ $('#hAddBtn')?.addEventListener('click', async ()=>{
   await safeLoadTasks('homeworks');
 });
 
-// 일정 추가
 $('#sAddBtn')?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const payload = {
@@ -707,7 +712,6 @@ $('#sAddBtn')?.addEventListener('click', async ()=>{
   await safeLoadTasks('schedules');
 });
 
-// 휴일 추가
 $('#hoAddBtn')?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
   const start = $('#hoStart').value ? new Date($('#hoStart').value) : null;
@@ -730,67 +734,148 @@ $('#hoAddBtn')?.addEventListener('click', async ()=>{
 });
 
 /* =========================
-   ✅ 관리자 메모(기존 유지)
+   ✅ 관리자: 도메인 여러개 관리
+   Firestore 경로:
+   users/{PUBLIC_UID}/settings/domains/items/{docId}
 ========================= */
-const adminDocRef = ()=> db.doc(`users/${PUBLIC_UID}/settings/admin`);
-const daysUntil = (yyyyMMdd)=>{
-  if(!yyyyMMdd) return null;
-  const [y,m,d]=yyyyMMdd.split('-').map(n=>parseInt(n,10));
-  if(!y||!m||!d) return null;
-  const target=new Date(y,m-1,d); target.setHours(0,0,0,0);
-  const today=new Date(); today.setHours(0,0,0,0);
-  return Math.round((target - today)/86400000);
-};
-const updateRenewHint = ()=>{
-  if(!adRenewHint || !adRenew) return;
-  const v = adRenew.value;
-  if(!v){ adRenewHint.textContent=''; return; }
-  const diff = daysUntil(v);
-  if(diff === null){ adRenewHint.textContent=''; return; }
-  if(diff > 0) adRenewHint.textContent = `만료까지 D-${diff}`;
-  else if(diff === 0) adRenewHint.textContent = `오늘 만료(D-day)`;
-  else adRenewHint.textContent = `만료일이 ${Math.abs(diff)}일 지났어요`;
-};
-adRenew?.addEventListener('change', updateRenewHint);
+const domainsCol = ()=> db.collection(`users/${PUBLIC_UID}/settings/domains/items`);
 
-const loadAdminMemo = async ()=>{
+const renderDomainWarnBadge = (renewDateStr) => {
+  const diff = daysUntilDateString(renewDateStr);
+  if(diff === null) return '';
+  if(diff < 0) return `<span class="dday gray">만료</span>`;
+  if(diff === 0) return `<span class="warn-badge">만료 D-day</span>`;
+  if(diff <= 7) return `<span class="warn-badge">만료 임박 <small>D-${diff}</small></span>`;
+  return `<span class="dday green">D-${diff}</span>`;
+};
+
+const safeLoadDomains = async ()=>{
   if(!isAdmin) return;
+  domList.innerHTML = '';
+  domStatus.textContent = '';
+
   try{
-    const doc = await adminDocRef().get();
-    if(doc.exists){
-      const d = doc.data() || {};
-      if(adDomain) adDomain.value = d.domain || '';
-      if(adRenew)  adRenew.value  = d.renewDate || '';
-      if(adNotes)  adNotes.value  = d.notes || '';
-      updateRenewHint();
-      if(adStatus) adStatus.textContent = d.updatedAt?.toDate ? `마지막 저장: ${fmtDate(d.updatedAt)}` : '';
-    } else {
-      if(adStatus) adStatus.textContent = '저장된 관리자 메모가 아직 없어요.';
+    const snap = await domainsCol().get();
+    if(snap.empty){
+      domList.innerHTML = `<li class="meta">저장된 도메인이 없습니다.</li>`;
+      return;
     }
+
+    const docs = [];
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      docs.push({ id: doc.id, data: d });
+    });
+
+    // 정렬: 만료 임박 -> 가까운 순 -> 나머지
+    docs.sort((a,b)=>{
+      const da = daysUntilDateString(a.data.renewDate);
+      const dbb = daysUntilDateString(b.data.renewDate);
+      const aa = (da === null) ? 999999 : da;
+      const bb = (dbb === null) ? 999999 : dbb;
+      // 만료 지난 건(음수)은 뒤로
+      const ka = aa < 0 ? 999999 + Math.abs(aa) : aa;
+      const kb = bb < 0 ? 999999 + Math.abs(bb) : bb;
+      return ka - kb;
+    });
+
+    docs.forEach(({id, data})=>{
+      const li = el('li', { class:'task' });
+
+      const name = (data.domain || '(도메인 없음)').trim();
+      const renew = (data.renewDate || '').trim();
+      const badge = renderDomainWarnBadge(renew);
+
+      li.innerHTML = `
+        <div class="warn-line">
+          <div class="title">${name}</div>
+          ${badge}
+        </div>
+        ${renew ? `<div class="meta">만료일: ${renew}</div>` : `<div class="meta">만료일: (없음)</div>`}
+        ${data.notes ? `<div class="content"><pre>${data.notes}</pre></div>` : ``}
+      `;
+
+      const row = el('div', { class:'row' });
+
+      const editBtn = el('button', { class:'btn' }); editBtn.textContent = '수정';
+      editBtn.addEventListener('click', ()=>{
+        openModal({
+          title: '도메인 수정',
+          fields: [
+            { key:'domain', label:'도메인', type:'text', required:true, value: data.domain || '', full:true },
+            { key:'renewDate', label:'만료(연장) 일자', type:'date', required:false, value: data.renewDate || '', full:true },
+            { key:'notes', label:'메모(줄바꿈 가능)', type:'textarea', required:false, value: data.notes || '', full:true },
+          ],
+          onSave: async (v)=>{
+            const payload = {
+              domain: v.domain.trim(),
+              renewDate: (v.renewDate || '').trim(),
+              notes: v.notes || '',
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+            await domainsCol().doc(id).set(payload, { merge:true });
+            await safeLoadDomains();
+          }
+        });
+      });
+
+      const delBtn = el('button', { class:'btn' }); delBtn.textContent = '삭제';
+      delBtn.addEventListener('click', async ()=>{
+        if(!confirm('이 도메인 항목을 삭제할까요?')) return;
+        await domainsCol().doc(id).delete();
+        await safeLoadDomains();
+      });
+
+      row.append(editBtn, delBtn);
+      li.appendChild(row);
+
+      domList.appendChild(li);
+    });
+
   }catch(e){
-    if(adStatus) adStatus.textContent = `불러오기 오류: ${e.message}`;
+    domStatus.textContent = `불러오기 오류: ${e.message || e}`;
   }
 };
 
-adSaveBtn?.addEventListener('click', async ()=>{
+domAddBtn?.addEventListener('click', async ()=>{
   if(!isAdmin) return;
+
+  const domain = (domName?.value || '').trim();
+  const renewDate = (domRenew?.value || '').trim();
+  const notes = (domNotes?.value || '');
+
+  if(!domain){
+    alert('도메인을 입력해주세요.');
+    return;
+  }
+
+  domAddBtn.disabled = true;
+  domAddBtn.textContent = '추가 중...';
+
   try{
-    const payload = {
-      domain: (adDomain?.value || '').trim(),
-      renewDate: (adRenew?.value || '').trim(),
-      notes: (adNotes?.value || ''),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    await adminDocRef().set(payload, { merge: true });
-    if(adStatus) adStatus.textContent = '저장 완료!';
-    await loadAdminMemo();
+    await domainsCol().add({
+      domain,
+      renewDate,
+      notes,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+
+    domName.value = '';
+    domRenew.value = '';
+    domNotes.value = '';
+    domStatus.textContent = '추가 완료!';
+    await safeLoadDomains();
   }catch(e){
-    if(adStatus) adStatus.textContent = `저장 오류: ${e.message}`;
+    domStatus.textContent = `추가 오류: ${e.message || e}`;
+  }finally{
+    domAddBtn.disabled = false;
+    domAddBtn.textContent = '+ 도메인 추가';
   }
 });
 
 /* =========================
-   ✅ 시간표(기존 유지)
+   ✅ 시간표(NEIS)
 ========================= */
 const PROXY = (NEIS_PROXY_BASE || '').replace(/\/+$/,'');
 const ymdFromInput = (v)=>{
@@ -858,5 +943,5 @@ auth.onAuthStateChanged(async (u)=>{
     safeLoadTasks('homeworks'),
   ]);
 
-  await loadAdminMemo();
+  await safeLoadDomains();
 });
