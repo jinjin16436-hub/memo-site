@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.1.16" />
+  <link rel="stylesheet" href="style.css?v=1.1.17" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -13,7 +13,7 @@
 
 <body>
   <header class="topbar">
-    <h1>사이트 버전 v1.1.16 (부광고.웹.한국)</h1>
+    <h1>사이트 버전 v1.1.17 (부광고.웹.한국)</h1>
     <div class="auth">
       <span id="userInfo">비로그인 상태</span>
       <button id="loginBtn" class="btn">로그인</button>
@@ -32,7 +32,8 @@
       <div class="section-body">
         <ul id="list_notice" class="card-list"></ul>
 
-        <div class="admin-only task-form">
+        <!-- ✅ 부관리자도 추가 가능 -->
+        <div class="editor-only task-form">
           <div class="f"><label class="label">제목</label><input id="nTitle" placeholder="제목을 입력하세요" /></div>
           <div class="f">
             <label class="label">분류</label>
@@ -59,6 +60,7 @@
       <button class="tab-btn" data-tab="task">수행</button>
       <button class="tab-btn" data-tab="homework">숙제</button>
       <button class="tab-btn" data-tab="timetable">시간표</button>
+      <!-- ✅ 관리자만 -->
       <button class="tab-btn admin-only" data-tab="admin">관리자</button>
     </div>
 
@@ -68,7 +70,8 @@
       <div class="section-body">
         <ul id="list_schedule" class="card-list"></ul>
 
-        <div class="admin-only task-form layout-3row">
+        <!-- ✅ 부관리자도 추가 가능 -->
+        <div class="editor-only task-form layout-3row">
           <div class="f r1-content">
             <label class="label">제목</label>
             <input id="sTitle" placeholder="예: 학급 행사 / 동아리 일정" />
@@ -101,7 +104,8 @@
       <div class="section-body">
         <ul id="list_holiday" class="card-list"></ul>
 
-        <div class="admin-only task-form layout-3row">
+        <!-- ✅ 부관리자도 추가 가능 -->
+        <div class="editor-only task-form layout-3row">
           <div class="f r1-content">
             <label class="label">이름</label>
             <input id="hoTitle" placeholder="예: 재량휴업일 / 공휴일" />
@@ -134,7 +138,8 @@
       <div class="section-body">
         <ul id="list_exam" class="card-list"></ul>
 
-        <div class="admin-only task-form">
+        <!-- ✅ 부관리자도 추가 가능 -->
+        <div class="editor-only task-form">
           <div class="f col-span-6"><label class="label">시험 이름</label><input id="eName" placeholder="예: 2학기 중간고사"></div>
           <div class="f col-span-6"><label class="label">상세</label><input id="eDetail" placeholder="예: 범위/유의사항 등"></div>
 
@@ -159,7 +164,8 @@
       <div class="section-body">
         <ul id="list_task" class="card-list"></ul>
 
-        <div class="admin-only task-form layout-3row">
+        <!-- ✅ 부관리자도 추가 가능 -->
+        <div class="editor-only task-form layout-3row">
           <div class="f r1-subj"><label class="label">과목</label><input id="tSubj" placeholder="예: 국어"></div>
           <div class="f r1-content"><label class="label">내용</label><input id="tTitle" placeholder="예: 발표 준비"></div>
 
@@ -185,7 +191,8 @@
       <div class="section-body">
         <ul id="list_homework" class="card-list"></ul>
 
-        <div class="admin-only task-form layout-3row">
+        <!-- ✅ 부관리자도 추가 가능 -->
+        <div class="editor-only task-form layout-3row">
           <div class="f r1-subj"><label class="label">과목</label><input id="hSubj" placeholder="예: 수학"></div>
           <div class="f r1-content"><label class="label">내용</label><input id="hTitle" placeholder="예: 문제집 50~80쪽"></div>
 
@@ -262,6 +269,6 @@
   </div>
 
   <div id="modal-root"></div>
-  <script src="app.js?v=1.1.16"></script>
+  <script src="app.js?v=1.1.17"></script>
 </body>
 </html>
