@@ -16,6 +16,12 @@ window.PUBLIC_UID = "vv0bADtWdqQUnqFMy8k01dhO13t2";
 window.ADMIN_UIDS   = ["vv0bADtWdqQUnqFMy8k01dhO13t2"];
 window.ADMIN_EMAILS = [];
 
+// ✅ 부관리자(에디터) UID 목록 (도메인 제외 수정/삭제/추가 가능)
+window.EDITOR_UIDS = [
+  "K4D2Kn9WxyVBI24nshSHhD1uvY13", // 내 계정
+  // "부관리자UID2",
+];
+
 // ✅ Cloudflare Worker 프록시 기본 주소(마지막 슬래시 없이)
 //    예: https://neis-proxy-xxxx.workers.dev
 window.NEIS_PROXY_BASE = "https://neis-proxy.jinjin16436.workers.dev";
