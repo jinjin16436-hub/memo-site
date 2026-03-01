@@ -1,7 +1,9 @@
-/* app.js - v1.1.16
+/* app.js - v1.1.17
  * 변경사항:
- * - 관리자 탭: 도메인 2개 이상 저장/관리(추가/수정/삭제)
- * - 만료 D-7 이하이면 빨간 경고 표시
+ * - 권한 등급 추가: 관리자(Admin) / 부관리자(Editor)
+ * - 부관리자: 공지/일정/휴일/시험/수행/숙제 추가/수정/삭제 가능
+ * - 관리자만: 관리자 탭(도메인 만료 관리) 접근/수정 가능
+ * - editor-only 클래스 도입(관리자+부관리자 표시)
  * - 수정은 팝업(모달) + textarea 줄바꿈 유지
  */
 
@@ -9,7 +11,14 @@ if (!window.firebaseConfig) {
   alert("firebaseConfig가 로드되지 않았어요. env.js 순서를 확인해주세요.");
   throw new Error("Missing firebaseConfig");
 }
-const { firebaseConfig, PUBLIC_UID, ADMIN_UIDS = [], NEIS_PROXY_BASE } = window;
+
+const {
+  firebaseConfig,
+  PUBLIC_UID,
+  ADMIN_UIDS = [],
+  EDITOR_UIDS = [],
+  NEIS_PROXY_BASE
+} = window;
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -17,6 +26,8 @@ const db   = firebase.firestore();
 
 let currentUser = null;
 let isAdmin = false;
+let isEditor = false;
+let canEdit = false;
 
 const $  = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -140,12 +151,16 @@ const sortKeyByDday = (data)=>{
 };
 
 // ===== 권한 UI =====
-const applyAdminUI = ()=>{
-  if(isAdmin){
-    $$('.admin-only').forEach(n=>n.style.display='');
-  } else {
-    $$('.admin-only').forEach(n=>n.style.display='none');
-  }
+const applyRoleUI = ()=>{
+  // 관리자 전용
+  $$('.admin-only').forEach(n=>{
+    n.style.display = isAdmin ? '' : 'none';
+  });
+
+  // 관리자 + 부관리자
+  $$('.editor-only').forEach(n=>{
+    n.style.display = canEdit ? '' : 'none';
+  });
 };
 
 // ===== 탭 =====
@@ -200,7 +215,7 @@ const loadNoticeSwitch = async ()=>{
   }
 };
 toggleNotices.addEventListener('change', async ()=>{
-  if(!isAdmin) return;
+  if(!canEdit) return; // ✅ 부관리자도 가능
   const on = toggleNotices.checked;
   await db.doc(`users/${PUBLIC_UID}/settings/app`).set({ showNotices:on }, {merge:true});
   $('#sec_notice .section-body').style.display = on ? '' : 'none';
@@ -209,7 +224,7 @@ const secHead = $('#sec_notice .section-head');
 if (secHead){
   secHead.addEventListener('click', (e)=>{
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') return;
-    if (!isAdmin) return;
+    if (!canEdit) return; // ✅ 부관리자도 가능
     toggleNotices.checked = !toggleNotices.checked;
     toggleNotices.dispatchEvent(new Event('change'));
   });
@@ -350,7 +365,7 @@ const safeLoadNotices = async () => {
         ${data.body ? `<div class="content"><pre>${data.body}</pre></div>` : ''}
       `;
 
-      if (isAdmin) {
+      if (canEdit) {
         const row = el('div', { class:'row' });
 
         const editBtn = el('button', { class:'btn' }); editBtn.textContent = '수정';
@@ -399,7 +414,7 @@ const safeLoadNotices = async () => {
 
 // 공지 추가
 $('#nAddBtn')?.addEventListener('click', async ()=>{
-  if(!isAdmin) return;
+  if(!canEdit) return;
   const payload = {
     title: ($('#nTitle')?.value || '').trim(),
     kind:  $('#nKind')?.value || 'notice',
@@ -615,7 +630,7 @@ const safeLoadTasks = async (cat)=>{
         ${renderMeta(d.startDate,d.endDate,d.periodStart,d.periodEnd,d.period)}
       `;
 
-      if (isAdmin) {
+      if (canEdit) {
         const row = el('div', { class:'row' });
 
         const editBtn = el('button',{class:'btn'}); editBtn.textContent='수정';
@@ -643,7 +658,7 @@ const safeLoadTasks = async (cat)=>{
    추가(등록) 버튼들
 ========================= */
 $('#eAddBtn')?.addEventListener('click', async ()=>{
-  if(!isAdmin) return;
+  if(!canEdit) return;
   const payload = {
     name: ($('#eName')?.value || '').trim(),
     detail: ($('#eDetail')?.value || ''),
@@ -660,7 +675,7 @@ $('#eAddBtn')?.addEventListener('click', async ()=>{
 });
 
 $('#tAddBtn')?.addEventListener('click', async ()=>{
-  if(!isAdmin) return;
+  if(!canEdit) return;
   const payload = {
     subject: ($('#tSubj')?.value || '').trim(),
     content: ($('#tTitle')?.value || '').trim(),
@@ -678,7 +693,7 @@ $('#tAddBtn')?.addEventListener('click', async ()=>{
 });
 
 $('#hAddBtn')?.addEventListener('click', async ()=>{
-  if(!isAdmin) return;
+  if(!canEdit) return;
   const payload = {
     subject: ($('#hSubj')?.value || '').trim(),
     content: ($('#hTitle')?.value || '').trim(),
@@ -696,7 +711,7 @@ $('#hAddBtn')?.addEventListener('click', async ()=>{
 });
 
 $('#sAddBtn')?.addEventListener('click', async ()=>{
-  if(!isAdmin) return;
+  if(!canEdit) return;
   const payload = {
     title: ($('#sTitle')?.value || '').trim(),
     detail: ($('#sDetail')?.value || ''),
@@ -713,7 +728,7 @@ $('#sAddBtn')?.addEventListener('click', async ()=>{
 });
 
 $('#hoAddBtn')?.addEventListener('click', async ()=>{
-  if(!isAdmin) return;
+  if(!canEdit) return;
   const start = $('#hoStart').value ? new Date($('#hoStart').value) : null;
   let end = $('#hoEnd').value ? new Date($('#hoEnd').value) : null;
   if(start && !end) end = start;
@@ -734,9 +749,7 @@ $('#hoAddBtn')?.addEventListener('click', async ()=>{
 });
 
 /* =========================
-   ✅ 관리자: 도메인 여러개 관리
-   Firestore 경로:
-   users/{PUBLIC_UID}/settings/domains/items/{docId}
+   ✅ 관리자: 도메인 여러개 관리 (관리자만)
 ========================= */
 const domainsCol = ()=> db.collection(`users/${PUBLIC_UID}/settings/domains/items`);
 
@@ -767,13 +780,11 @@ const safeLoadDomains = async ()=>{
       docs.push({ id: doc.id, data: d });
     });
 
-    // 정렬: 만료 임박 -> 가까운 순 -> 나머지
     docs.sort((a,b)=>{
       const da = daysUntilDateString(a.data.renewDate);
       const dbb = daysUntilDateString(b.data.renewDate);
       const aa = (da === null) ? 999999 : da;
       const bb = (dbb === null) ? 999999 : dbb;
-      // 만료 지난 건(음수)은 뒤로
       const ka = aa < 0 ? 999999 + Math.abs(aa) : aa;
       const kb = bb < 0 ? 999999 + Math.abs(bb) : bb;
       return ka - kb;
@@ -923,12 +934,23 @@ ttBtn?.addEventListener('click', async ()=>{
 // ===== 시작 =====
 auth.onAuthStateChanged(async (u)=>{
   currentUser = u;
+
   isAdmin = !!(u && ADMIN_UIDS.includes(u.uid));
-  userInfo.textContent = isAdmin ? `${u.displayName} (관리자)` : (u ? u.email : '비로그인 상태');
+  isEditor = !!(u && EDITOR_UIDS.includes(u.uid));
+  canEdit = !!(isAdmin || isEditor);
+
+  if (isAdmin) {
+    userInfo.textContent = `${u.displayName} (관리자)`;
+  } else if (isEditor) {
+    userInfo.textContent = `${u.displayName} (부관리자)`;
+  } else {
+    userInfo.textContent = (u ? u.email : '비로그인 상태');
+  }
+
   loginBtn.style.display = u ? 'none' : '';
   logoutBtn.style.display = u ? '' : 'none';
 
-  applyAdminUI();
+  applyRoleUI();
   initTabs();
 
   const d=new Date();
