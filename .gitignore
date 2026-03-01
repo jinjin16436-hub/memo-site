@@ -8,3 +8,5 @@ node_modules
 
 # Old functions (not used)
 functions/
+
+env.js
