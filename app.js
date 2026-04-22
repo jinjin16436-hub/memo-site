@@ -759,7 +759,7 @@ const renderDomainWarnBadge = (renewDateStr) => {
   if(diff === null) return '';
   if(diff < 0) return `<span class="dday gray">만료</span>`;
   if(diff === 0) return `<span class="warn-badge">만료 D-day</span>`;
-  if(diff <= 7) return `<span class="warn-badge">만료 임박 <small>D-${diff}</small></span>`;
+  if(diff <= 30) return `<span class="warn-badge">만료 임박 <small>D-${diff}</small></span>`;
   return `<span class="dday green">D-${diff}</span>`;
 };
 
