@@ -1,5 +1,7 @@
-/* app.js - v1.1.17
+/* app.js - v1.1.18
  * 변경사항:
+ * - 같은 D-day/같은 날짜 항목은 교시 시작 → 교시 끝 순으로 정렬되도록 수정
+ * - 시작일과 종료일이 같은 경우 날짜 범위를 한 번만 표시하도록 수정
  * - 권한 등급 추가: 관리자(Admin) / 부 관리자(Editor)
  * - 부관리자: 공지/일정/휴일/시험/수행/숙제 추가/수정/삭제 가능
  * - 관리자만: 관리자 탭(도메인 만료 관리) 접근/수정 가능
@@ -84,7 +86,17 @@ const fmtDate = (ts) => {
   const w = ['일','월','화','수','목','금','토'][d.getDay()];
   return `${y}-${pad2(m)}-${pad2(dd)} (${w})`;
 };
-const fmtRange = (s,e)=>{ if(!s && !e) return ''; if(s && !e) return `${fmtDate(s)}`; if(!s && e) return `${fmtDate(e)}`; return `${fmtDate(s)} ~ ${fmtDate(e)}`; };
+const fmtRange = (s,e)=>{
+  if(!s && !e) return '';
+  if(s && !e) return `${fmtDate(s)}`;
+  if(!s && e) return `${fmtDate(e)}`;
+
+  const sd = toDateOnly(s);
+  const ed = toDateOnly(e);
+  if(sd && ed && sd.getTime() === ed.getTime()) return `${fmtDate(s)}`;
+
+  return `${fmtDate(s)} ~ ${fmtDate(e)}`;
+};
 const asIntOrNull = v => (v === '' || v === null || v === undefined) ? null : (parseInt(v,10) || null);
 const normPeriod  = n => (n>=1 && n<=7) ? n : null;
 const periodText = (start, end, legacy) => {
@@ -149,6 +161,34 @@ const sortKeyByDday = (data)=>{
   if(isSingle && s.getTime()===today.getTime()) return 0;
   if(today<s) return Math.floor((s-today)/dayMs);
   return 9e7;
+};
+const dateSortValue = (data)=>{
+  const d = toDateOnly(data.startDate || data.endDate);
+  return d ? d.getTime() : 9e15;
+};
+const periodSortValue = (v)=>{
+  const n = normPeriod(asIntOrNull(v));
+  return n ?? 99;
+};
+const createdAtSortValue = (data)=> data?.createdAt?.toMillis?.() ?? 0;
+const compareTaskItems = (a,b)=>{
+  const ak = sortKeyByDday(a.data);
+  const bk = sortKeyByDday(b.data);
+  if(ak !== bk) return ak - bk;
+
+  const ad = dateSortValue(a.data);
+  const bd = dateSortValue(b.data);
+  if(ad !== bd) return ad - bd;
+
+  const aps = periodSortValue(a.data.periodStart);
+  const bps = periodSortValue(b.data.periodStart);
+  if(aps !== bps) return aps - bps;
+
+  const ape = periodSortValue(a.data.periodEnd);
+  const bpe = periodSortValue(b.data.periodEnd);
+  if(ape !== bpe) return ape - bpe;
+
+  return createdAtSortValue(a.data) - createdAtSortValue(b.data);
 };
 
 // ===== 권한 UI =====
@@ -611,7 +651,7 @@ const safeLoadTasks = async (cat)=>{
     }
 
     const docs=[]; snap.forEach(doc=>docs.push({id:doc.id,data:doc.data()||{}}));
-    docs.sort((a,b)=> sortKeyByDday(a.data) - sortKeyByDday(b.data));
+    docs.sort(compareTaskItems);
 
     docs.forEach(({id,data})=>{
       const d = data || {};
