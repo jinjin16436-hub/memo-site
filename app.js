@@ -1,13 +1,13 @@
-/* app.js - v1.1.18
+/* app.js - v1.1.19
  * 변경사항:
- * - 같은 D-day/같은 날짜 항목은 교시 시작 → 교시 끝 순으로 정렬되도록 수정
+ * - 같은 날짜 항목 정렬을 교시 시작 → 교시 끝 순으로 보정
  * - 시작일과 종료일이 같은 경우 날짜 범위를 한 번만 표시하도록 수정
+ * - 시간표를 기준 날짜가 포함된 주간(월~금) 단위로 조회하도록 수정
  * - 권한 등급 추가: 관리자(Admin) / 부 관리자(Editor)
  * - 부관리자: 공지/일정/휴일/시험/수행/숙제 추가/수정/삭제 가능
  * - 관리자만: 관리자 탭(도메인 만료 관리) 접근/수정 가능
  * - editor-only 클래스 도입(관리자+부 관리자 표시)
  * - 수정은 팝업(모달) + textarea 줄바꿈 유지
- * - 배포 되라 제발 6트
  */
 
 if (!window.firebaseConfig) {
@@ -190,6 +190,7 @@ const compareTaskItems = (a,b)=>{
 
   return createdAtSortValue(a.data) - createdAtSortValue(b.data);
 };
+
 
 // ===== 권한 UI =====
 const applyRoleUI = ()=>{
@@ -930,45 +931,114 @@ domAddBtn?.addEventListener('click', async ()=>{
    ✅ 시간표(NEIS)
 ========================= */
 const PROXY = (NEIS_PROXY_BASE || '').replace(/\/+$/,'');
-const ymdFromInput = (v)=>{
-  if(!v) return '';
-  const d=new Date(v);
+
+const ymdFromDate = (d)=>{
   return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
 };
+
+const getWeekdaysFromInput = (v)=>{
+  const base = new Date(v);
+  if(Number.isNaN(base.getTime())) return [];
+
+  const day = base.getDay(); // 일0 월1 ... 토6
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+
+  const monday = new Date(base);
+  monday.setDate(base.getDate() + diffToMonday);
+
+  return Array.from({ length: 5 }, (_, i)=>{
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+};
+
+const weekdayText = ['일','월','화','수','목','금','토'];
+
+const fmtTTDate = (d)=>{
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())} (${weekdayText[d.getDay()]})`;
+};
+
 const getJSON = async (url)=>{
   const r = await fetch(url,{headers:{'Accept':'application/json'}});
   const text = await r.text();
   try{ return JSON.parse(text); }catch{ return { raw:text }; }
 };
-const renderTT = (rows=[])=>{
+
+const renderTTWeek = (items=[])=>{
   ttList.innerHTML = '';
-  if(!rows.length){ ttList.innerHTML = `<li class="meta">해당 조건의 시간표가 없습니다.</li>`; return; }
-  rows.sort((a,b)=> (parseInt(a.PERIO||a.ORD||'0') - parseInt(b.PERIO||b.ORD||'0')));
-  rows.forEach(r=>{
-    const li = el('li',{class:'task'});
-    const perio = r.PERIO || r.ORD || '';
-    const name  = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '';
-    li.innerHTML = `<div class="title">${perio}교시 - ${name}</div>`;
-    ttList.appendChild(li);
+
+  if(!items.length){
+    ttList.innerHTML = `<li class="meta">해당 주의 시간표가 없습니다.</li>`;
+    return;
+  }
+
+  let hasAnyRow = false;
+
+  items.forEach(({ date, rows })=>{
+    const dayTitle = el('li',{class:'meta'});
+    dayTitle.innerHTML = `<strong>${fmtTTDate(date)}</strong>`;
+    ttList.appendChild(dayTitle);
+
+    if(!rows.length){
+      const empty = el('li',{class:'task'});
+      empty.innerHTML = `<div class="title">시간표 없음</div>`;
+      ttList.appendChild(empty);
+      return;
+    }
+
+    hasAnyRow = true;
+    rows.sort((a,b)=> parseInt(a.PERIO||a.ORD||'0') - parseInt(b.PERIO||b.ORD||'0'));
+
+    rows.forEach(r=>{
+      const li = el('li',{class:'task'});
+      const perio = r.PERIO || r.ORD || '';
+      const name  = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '';
+      li.innerHTML = `<div class="title">${perio}교시 - ${name}</div>`;
+      ttList.appendChild(li);
+    });
   });
+
+  if(!hasAnyRow){
+    const note = el('li',{class:'meta'});
+    note.textContent = '월~금 전체에 등록된 시간표가 없습니다.';
+    ttList.appendChild(note);
+  }
 };
+
 ttBtn?.addEventListener('click', async ()=>{
-  if(!PROXY){ alert('env.js의 NEIS_PROXY_BASE를 설정해주세요(Cloudflare Worker URL).'); return; }
+  if(!PROXY){
+    alert('env.js의 NEIS_PROXY_BASE를 설정해주세요(Cloudflare Worker URL).');
+    return;
+  }
+
   const schoolName = ttSchool.value.trim();
-  const ymd = ymdFromInput(ttDate.value);
+  const days = getWeekdaysFromInput(ttDate.value);
   const grade = ttGrade.value.trim();
   const classNm = ttClass.value.trim();
-  if(!schoolName || !ymd || !grade || !classNm){ alert('학교명/날짜/학년/반을 모두 입력해주세요.'); return; }
-  ttBtn.disabled = true; ttBtn.textContent = '불러오는 중...';
+
+  if(!schoolName || !days.length || !grade || !classNm){
+    alert('학교명/기준 날짜/학년/반을 모두 입력해주세요.');
+    return;
+  }
+
+  ttBtn.disabled = true;
+  ttBtn.textContent = '주간 시간표 불러오는 중...';
+
   try{
-    const url = `${PROXY}/api/timetable?schoolName=${encodeURIComponent(schoolName)}&ymd=${ymd}&grade=${grade}&classNm=${classNm}`;
-    const data = await getJSON(url);
-    const rows = data.rows || [];
-    renderTT(rows);
+    const items = await Promise.all(days.map(async (date)=>{
+      const ymd = ymdFromDate(date);
+      const url = `${PROXY}/api/timetable?schoolName=${encodeURIComponent(schoolName)}&ymd=${ymd}&grade=${grade}&classNm=${classNm}`;
+      const data = await getJSON(url);
+      return { date, rows: data.rows || [] };
+    }));
+
+    renderTTWeek(items);
   }catch(e){
     ttList.innerHTML = `<li class="meta">오류: ${e.message||e}</li>`;
   }finally{
-    ttBtn.disabled = false; ttBtn.textContent = '불러오기';
+    ttBtn.disabled = false;
+    ttBtn.textContent = '불러오기';
   }
 });
 
