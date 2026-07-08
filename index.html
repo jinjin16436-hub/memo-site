@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.1.19" />
+  <link rel="stylesheet" href="style.css?v=1.1.20" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -13,7 +13,7 @@
 
 <body>
   <header class="topbar">
-    <h1>사이트 버전 v1.1.19 (부광고.웹.한국)</h1>
+    <h1>사이트 버전 v1.1.20 (부광고.웹.한국)</h1>
     <div class="auth">
       <span id="userInfo">비로그인 상태</span>
       <button id="loginBtn" class="btn">로그인</button>
@@ -46,6 +46,10 @@
           <div class="f col-span-12">
             <label class="label">내용</label>
             <textarea id="nBody" placeholder="내용 (줄바꿈 가능)"></textarea>
+          </div>
+          <div class="f col-span-12">
+            <label class="label">이미지 URL (선택)</label>
+            <input id="nImageUrl" placeholder="GitHub raw 이미지 URL을 입력하세요" />
           </div>
           <div class="f col-end"><button id="nAddBtn" class="btn btn--primary w-full">+ 추가</button></div>
         </div>
@@ -269,7 +273,7 @@
   </div>
 
   <div id="modal-root"></div>
-  <script src="app.js?v=1.1.19"></script>
+  <script src="app.js?v=1.1.20"></script>
 </body>
 </html>
 
