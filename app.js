@@ -1,4 +1,4 @@
-/* app.js - v1.1.19
+/* app.js - v1.1.20
  * 변경사항:
  * - 같은 날짜 항목 정렬을 교시 시작 → 교시 끝 순으로 보정
  * - 시작일과 종료일이 같은 경우 날짜 범위를 한 번만 표시하도록 수정
@@ -8,6 +8,7 @@
  * - 관리자만: 관리자 탭(도메인 만료 관리) 접근/수정 가능
  * - editor-only 클래스 도입(관리자+부 관리자 표시)
  * - 수정은 팝업(모달) + textarea 줄바꿈 유지
+ * - GitHub 이미지 URL 첨부 기능 추가
  */
 
 if (!window.firebaseConfig) {
@@ -52,6 +53,7 @@ const listExam     = $('#list_exam');
 const listTask     = $('#list_task');
 const listHomework = $('#list_homework');
 const toggleNotices = $('#toggleNotices');
+const noticeImageUrlInput = $('#nImageUrl');
 
 const ttSchool = $('#ttSchool');
 const ttDate   = $('#ttDate');
@@ -405,6 +407,7 @@ const safeLoadNotices = async () => {
       li.innerHTML = `
         <div class="title">${data.title || '(제목 없음)'}</div>
         ${data.body ? `<div class="content"><pre>${data.body}</pre></div>` : ''}
+        ${data.imageUrl ? `<div class="notice-image-wrap"><img class="notice-image" src="${data.imageUrl}" loading="lazy"></div>` : ''}
       `;
 
       if (canEdit) {
@@ -422,12 +425,14 @@ const safeLoadNotices = async () => {
                 {value:'alert', label:'참고(초록)'},
               ], full:true},
               { key:'body', label:'내용(줄바꿈 가능)', type:'textarea', value: data.body || '', full:true, placeholder:'내용을 입력하세요' },
+              { key:'imageUrl', label:'이미지 URL', type:'text', value: data.imageUrl || '', full:true },
             ],
             onSave: async (v)=>{
               const payload = {
                 title: v.title.trim(),
                 kind: v.kind,
                 body: v.body,
+                imageUrl: v.imageUrl || '',
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
               };
               await db.doc(`users/${PUBLIC_UID}/notices/${id}`).set(payload, { merge:true });
@@ -461,11 +466,12 @@ $('#nAddBtn')?.addEventListener('click', async ()=>{
     title: ($('#nTitle')?.value || '').trim(),
     kind:  $('#nKind')?.value || 'notice',
     body:  ($('#nBody')?.value || ''),
+    imageUrl: ($('#nImageUrl')?.value || '').trim(),
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   };
   if(!payload.title){ alert('제목을 입력해주세요.'); return; }
   await db.collection(`users/${PUBLIC_UID}/notices`).add(payload);
-  $('#nTitle').value=''; $('#nBody').value='';
+  $('#nTitle').value=''; $('#nBody').value=''; if(noticeImageUrlInput) noticeImageUrlInput.value='';
   await safeLoadNotices();
 });
 
