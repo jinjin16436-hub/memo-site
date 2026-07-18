@@ -1,14 +1,6 @@
-/* app.js - v1.1.20
+/* app.js - v1.1.21
  * 변경사항:
- * - 같은 날짜 항목 정렬을 교시 시작 → 교시 끝 순으로 보정
- * - 시작일과 종료일이 같은 경우 날짜 범위를 한 번만 표시하도록 수정
- * - 시간표를 기준 날짜가 포함된 주간(월~금) 단위로 조회하도록 수정
- * - 권한 등급 추가: 관리자(Admin) / 부 관리자(Editor)
- * - 부관리자: 공지/일정/휴일/시험/수행/숙제 추가/수정/삭제 가능
- * - 관리자만: 관리자 탭(도메인 만료 관리) 접근/수정 가능
- * - editor-only 클래스 도입(관리자+부 관리자 표시)
- * - 수정은 팝업(모달) + textarea 줄바꿈 유지
- * - GitHub 이미지 URL 첨부 기능 추가
+ * - 설명/내용에서 **굵게**, __밑줄__ 간단 서식 지원
  */
 
 if (!window.firebaseConfig) {
@@ -41,6 +33,19 @@ const el = (name, attrs={}) => {
   return node;
 };
 const pad2 = n => String(n).padStart(2,'0');
+
+// 사용자 입력 텍스트를 안전하게 HTML로 변환한 뒤 간단한 서식만 적용
+// **텍스트** → 굵게, __텍스트__ → 밑줄
+const escapeHTML = (value='') => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+const formatRichText = (value='') => escapeHTML(value)
+  .replace(/\*\*([^\n]+?)\*\*/g, '<strong>$1</strong>')
+  .replace(/__([^\n]+?)__/g, '<u>$1</u>');
 
 const userInfo  = $('#userInfo');
 const loginBtn  = $('#loginBtn');
@@ -406,7 +411,7 @@ const safeLoadNotices = async () => {
       const li = el('li', { class: `notice-card kind-${data.kind || 'notice'}` });
       li.innerHTML = `
         <div class="title">${data.title || '(제목 없음)'}</div>
-        ${data.body ? `<div class="content"><pre>${data.body}</pre></div>` : ''}
+        ${data.body ? `<div class="content"><pre>${formatRichText(data.body)}</pre></div>` : ''}
         ${data.imageUrl ? `<div class="notice-image-wrap"><img class="notice-image" src="${data.imageUrl}" loading="lazy"></div>` : ''}
       `;
 
@@ -673,8 +678,8 @@ const safeLoadTasks = async (cat)=>{
 
       li.innerHTML = `
         <div class="title">${mainTitle}</div>
-        ${d.content ? `<div class="content"><pre>${d.content}</pre></div>` : ''}
-        ${d.detail  ? `<div class="content"><pre>${d.detail}</pre></div>` : ''}
+        ${d.content ? `<div class="content"><pre>${formatRichText(d.content)}</pre></div>` : ''}
+        ${d.detail  ? `<div class="content"><pre>${formatRichText(d.detail)}</pre></div>` : ''}
         ${renderMeta(d.startDate,d.endDate,d.periodStart,d.periodEnd,d.period)}
       `;
 
@@ -851,7 +856,7 @@ const safeLoadDomains = async ()=>{
           ${badge}
         </div>
         ${renew ? `<div class="meta">만료일: ${renew}</div>` : `<div class="meta">만료일: (없음)</div>`}
-        ${data.notes ? `<div class="content"><pre>${data.notes}</pre></div>` : ``}
+        ${data.notes ? `<div class="content"><pre>${formatRichText(data.notes)}</pre></div>` : ``}
       `;
 
       const row = el('div', { class:'row' });
