@@ -17,7 +17,7 @@
 
 ========== **사이트 주소 & 도메인** ==========
 - **https://memo-site-auo.pages.dev/**
-- bghs.kro.kr <- 학교 와이파이로 접속 안
+- bghs.kro.kr <- 학교 와이파이로 접속 불가
 - bugwanghomework.kro.kr
 - 부광고.웹.한국 (한글 도메인)
 
