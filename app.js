@@ -235,29 +235,31 @@ const initTabs = ()=>{
       timetable: $('#panel_timetable'),
       admin: $('#panel_admin'),
     };
+
     Object.entries(map).forEach(([k, panel])=>{
       if(panel) panel.classList.toggle('active', k===name);
     });
   };
 
   tabs.addEventListener('click', (e)=>{
-  const btn = e.target.closest('.tab-btn');
-  if(!btn) return;
+    const btn = e.target.closest('.tab-btn');
+    if(!btn) return;
 
-  const tab = btn.dataset.tab;
-  if(tab === 'admin' && !isAdmin) return;
+    const tab = btn.dataset.tab;
+    if(tab === 'admin' && !isAdmin) return;
 
-  setTab(tab);
+    setTab(tab);
 
-  // 탭 전환이 끝난 뒤 해당 패널 위치로 이동
-  requestAnimationFrame(()=>{
-    const panel = $(`#panel_${tab}`);
-    panel?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
+    // 탭 전환이 끝난 뒤 해당 패널 위치로 이동
+    requestAnimationFrame(()=>{
+      const panel = $(`#panel_${tab}`);
+      panel?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
     });
   });
-});
+};
 
 // ===== 로그인 =====
 loginBtn.addEventListener('click', async ()=>{ await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); });
