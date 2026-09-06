@@ -1,5 +1,12 @@
-/* app.js - v1.1.21
+==================================================
+app.js - v1.2.1
+==================================================
+/* app.js - v1.2.1
  * 변경사항:
+ * - 전체 다크 대시보드 UI 리뉴얼 대응
+ * - PC 사이드바 / 모바일 슬라이드 메뉴 지원
+ * - 빠른 메뉴 및 오늘 날짜 표시 추가
+ * - 기존 Firebase / Firestore / 권한 / NEIS 로직 유지
  * - 설명/내용에서 **굵게**, __밑줄__ 간단 서식 지원
  */
 
@@ -1089,3 +1096,48 @@ auth.onAuthStateChanged(async (u)=>{
 
   await safeLoadDomains();
 });
+
+
+/* =========================
+   v1.2.1 대시보드 UI 보조
+========================= */
+const initDashboardUI = ()=>{
+  const heroDate = $('#heroDate');
+  if(heroDate){
+    const now = new Date();
+    const weekdays = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+    heroDate.textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 ${weekdays[now.getDay()]}`;
+  }
+
+  const mobileMenuBtn = $('#mobileMenuBtn');
+  const mobileMenuBackdrop = $('#mobileMenuBackdrop');
+  const closeMobileMenu = ()=> document.body.classList.remove('menu-open');
+
+  mobileMenuBtn?.addEventListener('click', ()=>{
+    document.body.classList.toggle('menu-open');
+  });
+  mobileMenuBackdrop?.addEventListener('click', closeMobileMenu);
+
+  $$('.tab-btn, .sidebar-link').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      if(window.matchMedia('(max-width: 820px)').matches) closeMobileMenu();
+    });
+  });
+
+  $$('.quick-tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const tab = btn.dataset.targetTab;
+      const target = $(`.tab-btn[data-tab="${tab}"]`);
+      if(!target) return;
+      target.click();
+      const panel = $(`#panel_${tab}`);
+      panel?.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+  });
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape') closeMobileMenu();
+  });
+};
+
+initDashboardUI();
