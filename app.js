@@ -1,10 +1,11 @@
-/* app.js - v1.2.1
+/* app.js - v1.2.3
  * 변경사항:
  * - 전체 다크 대시보드 UI 리뉴얼 대응
  * - PC 사이드바 / 모바일 슬라이드 메뉴 지원
  * - 빠른 메뉴 및 오늘 날짜 표시 추가
  * - 기존 Firebase / Firestore / 권한 / NEIS 로직 유지
  * - 설명/내용에서 **굵게**, __밑줄__ 간단 서식 지원
+ * - 홈 요약 카드에 Firestore 일정/시험/수행평가/숙제 현황 연동
  */
 
 if (!window.firebaseConfig) {
@@ -664,6 +665,80 @@ const openTaskEditModal = (cat, id, d)=>{
   }
 };
 
+// ===== 홈 요약 카드 =====
+const summaryElements = {
+  schedules: { card: $('.summary-schedule'), main: $('#summaryScheduleMain'), sub: $('#summaryScheduleSub') },
+  exams: { card: $('.summary-exam'), main: $('#summaryExamMain'), sub: $('#summaryExamSub') },
+  tasks: { card: $('.summary-task'), main: $('#summaryTaskMain'), sub: $('#summaryTaskSub') },
+  homeworks: { card: $('.summary-homework'), main: $('#summaryHomeworkMain'), sub: $('#summaryHomeworkSub') },
+};
+
+const itemDateRange = (d={})=>{
+  let start = toDateOnly(d.startDate);
+  let end = toDateOnly(d.endDate);
+  if(!start && end) start = end;
+  if(start && !end) end = start;
+  return { start, end };
+};
+
+const summaryStatusText = (d={})=>{
+  const {start,end} = itemDateRange(d);
+  if(!start || !end) return '날짜 미정';
+  const today = toDateOnly(new Date());
+  if(today > end) return '종료';
+  if(today >= start && today <= end) return start.getTime() === end.getTime() ? 'D-DAY' : '진행중';
+  const diff = Math.ceil((start - today) / 86400000);
+  return diff === 0 ? 'D-DAY' : `D-${diff}`;
+};
+
+const summaryItemTitle = (cat,d={})=>{
+  if(cat === 'exams') return d.name || '시험';
+  if(cat === 'schedules') return d.title || '일정';
+  if(cat === 'tasks' || cat === 'homeworks') {
+    const subject = (d.subject || '').trim();
+    const content = (d.content || '').trim();
+    return [subject, content].filter(Boolean).join(' · ') || (cat === 'tasks' ? '수행평가' : '숙제');
+  }
+  return '항목';
+};
+
+const updateSummaryCard = (cat, docs=[])=>{
+  const ui = summaryElements[cat];
+  if(!ui?.main || !ui?.sub) return;
+
+  const active = docs
+    .map(({data})=>data || {})
+    .filter(d=>{
+      const {end} = itemDateRange(d);
+      return !end || end >= toDateOnly(new Date());
+    })
+    .sort((a,b)=>{
+      const ad = itemDateRange(a).start;
+      const bd = itemDateRange(b).start;
+      if(!ad && !bd) return 0;
+      if(!ad) return 1;
+      if(!bd) return -1;
+      return ad - bd;
+    });
+
+  ui.card?.classList.toggle('is-empty', active.length === 0);
+  if(active.length === 0){
+    ui.main.textContent = '예정 없음';
+    ui.sub.textContent = cat === 'schedules' ? '등록된 예정 일정이 없습니다' : `남아 있는 ${catLabel(cat)}가 없습니다`;
+    return;
+  }
+
+  const next = active[0];
+  const status = summaryStatusText(next);
+  if(cat === 'tasks' || cat === 'homeworks'){
+    ui.main.textContent = `남은 ${catLabel(cat)} ${active.length}개`;
+    ui.sub.textContent = `${summaryItemTitle(cat,next)} · ${status}`;
+  } else {
+    ui.main.textContent = summaryItemTitle(cat,next);
+    ui.sub.textContent = `${status} · 남은 항목 ${active.length}개`;
+  }
+};
+
 const safeLoadTasks = async (cat)=>{
   const ul = getListForCat(cat);
   if(!ul) return;
@@ -673,11 +748,13 @@ const safeLoadTasks = async (cat)=>{
     const snap = await db.collection(`users/${PUBLIC_UID}/tasks/${cat}/items`).get();
     if(snap.empty){
       ul.innerHTML = `<li class="meta">등록된 ${catLabel(cat)}가 없습니다.</li>`;
+      updateSummaryCard(cat, []);
       return;
     }
 
     const docs=[]; snap.forEach(doc=>docs.push({id:doc.id,data:doc.data()||{}}));
     docs.sort(compareTaskItems);
+    updateSummaryCard(cat, docs);
 
     docs.forEach(({id,data})=>{
       const d = data || {};
@@ -1106,7 +1183,7 @@ auth.onAuthStateChanged(async (u)=>{
 
 
 /* =========================
-   v1.2.1 대시보드 UI 보조
+   v1.2.3 대시보드 UI 보조
 ========================= */
 const initDashboardUI = ()=>{
   const heroDate = $('#heroDate');
