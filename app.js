@@ -1,4 +1,4 @@
-/* app.js - v1.2.8
+/* app.js - v1.2.9
  * 변경사항:
  * - 전체 다크 대시보드 UI 리뉴얼 대응
  * - PC 사이드바 / 모바일 슬라이드 메뉴 지원
@@ -9,6 +9,7 @@
  * - 주말 자동 시간표는 다음 월요일 기준으로 조회
  * - NEIS 오류 응답의 본문을 읽어 실제 오류 원인을 확인 가능하도록 개선
  * - 2-2 선택과목 시간표에 2-3 이동수업 과목을 함께 표시
+ * - 홈 자동 시간표에서 이동수업을 별도 줄로 분리해 말줄임 문제 수정
  */
 
 if (!window.firebaseConfig) {
@@ -1225,10 +1226,12 @@ const renderTodayTimetable = (rows=[], date=new Date(), { weekendRedirect=false 
     const item = el('div',{class:'today-period'});
     item.innerHTML = `
       <span class="period-no">${escapeHTML(perio)}교시</span>
-      <span class="period-subject" title="${escapeHTML(name)}">
-        ${escapeHTML(name)}
-        ${alternate ? `<small class="period-alternate">2-3 · ${escapeHTML(alternate)}</small>` : ''}
-      </span>
+      <div class="period-subject-wrap">
+        <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)}</span>
+        ${alternate ? `
+          <small class="period-alternate">2-3 이동 · ${escapeHTML(alternate)}</small>
+        ` : ''}
+      </div>
     `;
     todayTimetableList.appendChild(item);
   });
