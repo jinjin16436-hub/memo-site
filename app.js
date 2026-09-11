@@ -1,4 +1,4 @@
-/* app.js - v1.2.6
+/* app.js - v1.2.7
  * 변경사항:
  * - 전체 다크 대시보드 UI 리뉴얼 대응
  * - PC 사이드바 / 모바일 슬라이드 메뉴 지원
@@ -1177,7 +1177,7 @@ const renderTTWeek = (items=[])=>{
       const li = el('li',{class:'task'});
       const perio = r.PERIO || r.ORD || '';
       const name  = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '';
-      li.innerHTML = `<div class="title">${esc(perio)}교시 - ${esc(name)}</div>`;
+      li.innerHTML = `<div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)}</div>`;
       ttList.appendChild(li);
     });
   });
@@ -1206,8 +1206,8 @@ const renderTodayTimetable = (rows=[], date=new Date(), { weekendRedirect=false 
     const name = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '과목 정보 없음';
     const item = el('div',{class:'today-period'});
     item.innerHTML = `
-      <span class="period-no">${esc(perio)}교시</span>
-      <span class="period-subject" title="${esc(name)}">${esc(name)}</span>
+      <span class="period-no">${escapeHTML(perio)}교시</span>
+      <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)}</span>
     `;
     todayTimetableList.appendChild(item);
   });
@@ -1240,7 +1240,7 @@ const loadTodayTimetable = async ()=>{
     todayTimetableMeta.textContent = '시간표를 불러오지 못했습니다.';
     todayTimetableList.innerHTML = `
       <div class="today-timetable-empty">
-        ${esc(e.message || String(e))}
+        ${escapeHTML(e.message || String(e))}
       </div>
     `;
   }
@@ -1278,7 +1278,7 @@ const loadTimetableWeek = async ({ silent=false }={})=>{
 
     renderTTWeek(items);
   }catch(e){
-    ttList.innerHTML = `<li class="meta">오류: ${esc(e.message||e)}</li>`;
+    ttList.innerHTML = `<li class="meta">오류: ${escapeHTML(e.message||e)}</li>`;
     console.error('주간 시간표 조회 오류:', e);
   }finally{
     if(ttBtn){
