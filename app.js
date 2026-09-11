@@ -1,4 +1,4 @@
-/* app.js - v1.2.3
+/* app.js - v1.2.5
  * 변경사항:
  * - 전체 다크 대시보드 UI 리뉴얼 대응
  * - PC 사이드바 / 모바일 슬라이드 메뉴 지원
@@ -70,6 +70,8 @@ const ttDate   = $('#ttDate');
 const ttGrade  = $('#ttGrade');
 const ttClass  = $('#ttClass');
 const ttBtn    = $('#ttBtn');
+const todayTimetableMeta = $('#todayTimetableMeta');
+const todayTimetableList = $('#todayTimetableList');
 const ttList   = $('#ttList');
 
 // 관리자: 도메인 관리
@@ -1034,8 +1036,18 @@ domAddBtn?.addEventListener('click', async ()=>{
 ========================= */
 const PROXY = (NEIS_PROXY_BASE || '').replace(/\/+$/,'');
 
+const TIMETABLE_DEFAULTS = Object.freeze({
+  schoolName: '부광고등학교',
+  grade: '2',
+  classNm: '2',
+});
+
 const ymdFromDate = (d)=>{
   return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
+};
+
+const dateInputValue = (d)=>{
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
 };
 
 const getWeekdaysFromInput = (v)=>{
@@ -1063,8 +1075,34 @@ const fmtTTDate = (d)=>{
 
 const getJSON = async (url)=>{
   const r = await fetch(url,{headers:{'Accept':'application/json'}});
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
   const text = await r.text();
   try{ return JSON.parse(text); }catch{ return { raw:text }; }
+};
+
+const getTimetableConfig = ()=>({
+  schoolName: (ttSchool?.value || TIMETABLE_DEFAULTS.schoolName).trim(),
+  grade: (ttGrade?.value || TIMETABLE_DEFAULTS.grade).trim(),
+  classNm: (ttClass?.value || TIMETABLE_DEFAULTS.classNm).trim(),
+});
+
+const applyTimetableDefaults = ()=>{
+  const now = new Date();
+  if(ttSchool && !ttSchool.value) ttSchool.value = TIMETABLE_DEFAULTS.schoolName;
+  if(ttDate && !ttDate.value) ttDate.value = dateInputValue(now);
+  if(ttGrade && !ttGrade.value) ttGrade.value = TIMETABLE_DEFAULTS.grade;
+  if(ttClass && !ttClass.value) ttClass.value = TIMETABLE_DEFAULTS.classNm;
+};
+
+const fetchTimetableDay = async (date, config=getTimetableConfig())=>{
+  const ymd = ymdFromDate(date);
+  const url = `${PROXY}/api/timetable?schoolName=${encodeURIComponent(config.schoolName)}&ymd=${ymd}&grade=${encodeURIComponent(config.grade)}&classNm=${encodeURIComponent(config.classNm)}`;
+  const data = await getJSON(url);
+  return Array.isArray(data.rows) ? data.rows : [];
+};
+
+const sortTimetableRows = (rows=[])=>{
+  return [...rows].sort((a,b)=> parseInt(a.PERIO||a.ORD||'0') - parseInt(b.PERIO||b.ORD||'0'));
 };
 
 const renderTTWeek = (items=[])=>{
@@ -1090,13 +1128,11 @@ const renderTTWeek = (items=[])=>{
     }
 
     hasAnyRow = true;
-    rows.sort((a,b)=> parseInt(a.PERIO||a.ORD||'0') - parseInt(b.PERIO||b.ORD||'0'));
-
-    rows.forEach(r=>{
+    sortTimetableRows(rows).forEach(r=>{
       const li = el('li',{class:'task'});
       const perio = r.PERIO || r.ORD || '';
       const name  = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '';
-      li.innerHTML = `<div class="title">${perio}교시 - ${name}</div>`;
+      li.innerHTML = `<div class="title">${esc(perio)}교시 - ${esc(name)}</div>`;
       ttList.appendChild(li);
     });
   });
@@ -1108,11 +1144,59 @@ const renderTTWeek = (items=[])=>{
   }
 };
 
-ttBtn?.addEventListener('click', async ()=>{
-  if(!PROXY){
-    alert('env.js의 NEIS_PROXY_BASE를 설정해주세요(Cloudflare Worker URL).');
+const renderTodayTimetable = (rows=[], date=new Date())=>{
+  if(!todayTimetableList || !todayTimetableMeta) return;
+
+  todayTimetableList.innerHTML = '';
+  todayTimetableMeta.textContent = `${fmtTTDate(date)} · ${TIMETABLE_DEFAULTS.grade}학년 ${TIMETABLE_DEFAULTS.classNm}반`;
+
+  if(!rows.length){
+    todayTimetableList.innerHTML = `<div class="today-timetable-empty">오늘은 등록된 수업이 없습니다.</div>`;
     return;
   }
+
+  sortTimetableRows(rows).forEach(r=>{
+    const perio = r.PERIO || r.ORD || '';
+    const name = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '과목 정보 없음';
+    const item = el('div',{class:'today-period'});
+    item.innerHTML = `
+      <span class="period-no">${esc(perio)}교시</span>
+      <span class="period-subject" title="${esc(name)}">${esc(name)}</span>
+    `;
+    todayTimetableList.appendChild(item);
+  });
+};
+
+const loadTodayTimetable = async ()=>{
+  if(!todayTimetableList || !todayTimetableMeta) return;
+
+  if(!PROXY){
+    todayTimetableMeta.textContent = '시간표 자동 조회를 사용할 수 없습니다.';
+    todayTimetableList.innerHTML = `<div class="today-timetable-empty">NEIS_PROXY_BASE 설정을 확인해주세요.</div>`;
+    return;
+  }
+
+  const now = new Date();
+  todayTimetableMeta.textContent = '오늘 시간표를 자동으로 불러오는 중...';
+  todayTimetableList.innerHTML = `<div class="today-timetable-empty">불러오는 중...</div>`;
+
+  try{
+    const rows = await fetchTimetableDay(now);
+    renderTodayTimetable(rows, now);
+  }catch(e){
+    todayTimetableMeta.textContent = '시간표를 불러오지 못했습니다.';
+    todayTimetableList.innerHTML = `<div class="today-timetable-empty">잠시 후 다시 시도해주세요.</div>`;
+    console.error('오늘 시간표 자동 조회 오류:', e);
+  }
+};
+
+const loadTimetableWeek = async ({ silent=false }={})=>{
+  if(!PROXY){
+    if(!silent) alert('env.js의 NEIS_PROXY_BASE를 설정해주세요(Cloudflare Worker URL).');
+    return;
+  }
+
+  applyTimetableDefaults();
 
   const schoolName = ttSchool.value.trim();
   const days = getWeekdaysFromInput(ttDate.value);
@@ -1120,29 +1204,35 @@ ttBtn?.addEventListener('click', async ()=>{
   const classNm = ttClass.value.trim();
 
   if(!schoolName || !days.length || !grade || !classNm){
-    alert('학교명/기준 날짜/학년/반을 모두 입력해주세요.');
+    if(!silent) alert('학교명/기준 날짜/학년/반을 모두 입력해주세요.');
     return;
   }
 
-  ttBtn.disabled = true;
-  ttBtn.textContent = '주간 시간표 불러오는 중...';
+  if(ttBtn){
+    ttBtn.disabled = true;
+    ttBtn.textContent = '주간 시간표 불러오는 중...';
+  }
 
   try{
-    const items = await Promise.all(days.map(async (date)=>{
-      const ymd = ymdFromDate(date);
-      const url = `${PROXY}/api/timetable?schoolName=${encodeURIComponent(schoolName)}&ymd=${ymd}&grade=${grade}&classNm=${classNm}`;
-      const data = await getJSON(url);
-      return { date, rows: data.rows || [] };
-    }));
+    const config = { schoolName, grade, classNm };
+    const items = await Promise.all(days.map(async (date)=>({
+      date,
+      rows: await fetchTimetableDay(date, config),
+    })));
 
     renderTTWeek(items);
   }catch(e){
-    ttList.innerHTML = `<li class="meta">오류: ${e.message||e}</li>`;
+    ttList.innerHTML = `<li class="meta">오류: ${esc(e.message||e)}</li>`;
+    console.error('주간 시간표 조회 오류:', e);
   }finally{
-    ttBtn.disabled = false;
-    ttBtn.textContent = '불러오기';
+    if(ttBtn){
+      ttBtn.disabled = false;
+      ttBtn.textContent = '다시 불러오기';
+    }
   }
-});
+};
+
+ttBtn?.addEventListener('click', ()=> loadTimetableWeek());
 
 // ===== 시작 =====
 auth.onAuthStateChanged(async (u)=>{
@@ -1166,8 +1256,7 @@ auth.onAuthStateChanged(async (u)=>{
   applyRoleUI();
   initTabs();
 
-  const d=new Date();
-  if(ttDate) ttDate.value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  applyTimetableDefaults();
 
   await Promise.all([
     loadNoticeSwitch().then(safeLoadNotices),
@@ -1179,11 +1268,17 @@ auth.onAuthStateChanged(async (u)=>{
   ]);
 
   await safeLoadDomains();
+
+  // 로그인 여부와 관계없이 오늘/주간 시간표를 자동으로 불러옵니다.
+  await Promise.allSettled([
+    loadTodayTimetable(),
+    loadTimetableWeek({ silent:true }),
+  ]);
 });
 
 
 /* =========================
-   v1.2.3 대시보드 UI 보조
+   v1.2.5 대시보드 UI 보조
 ========================= */
 const initDashboardUI = ()=>{
   const heroDate = $('#heroDate');
