@@ -1,6 +1,8 @@
-/* style.css - v1.2.5
- * - 모바일 수정 모달 스크롤 개선
- * - 모바일에서 저장/취소 버튼을 항상 접근 가능하게 유지
+/* ===== style.css (v1.2.9) ===== */
+/* style.css - v1.2.9
+ * - 홈 자동 시간표 선택과목 이동수업 표시 개선
+ * - 기본 과목과 2-3 이동수업을 두 줄로 분리
+ * - 모바일/PC 자동 시간표 레이아웃 보완
  */
 :root{
   --bg:#07101d;
@@ -171,11 +173,16 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
 }
 .today-period{
   min-width:0;
+  min-height:112px;
   padding:13px 10px;
   border:1px solid rgba(96,165,250,.16);
   border-radius:14px;
   background:rgba(8,17,31,.58);
   text-align:center;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
 }
 .today-period .period-no{
   display:block;
@@ -184,14 +191,36 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
   font-size:12px;
   font-weight:800;
 }
+.period-subject-wrap{
+  width:100%;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:7px;
+}
 .today-period .period-subject{
   display:block;
+  width:100%;
+  min-width:0;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
   color:#f8fafc;
   font-size:15px;
   font-weight:800;
+  text-align:center;
+}
+.today-period .period-alternate{
+  display:block;
+  width:100%;
+  color:#8fa6c3;
+  font-size:12px;
+  font-weight:600;
+  line-height:1.35;
+  text-align:center;
+  white-space:normal;
+  overflow-wrap:anywhere;
 }
 .today-timetable-empty{
   grid-column:1/-1;
@@ -213,7 +242,9 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
   .today-timetable-head h2{font-size:18px}
   .today-timetable-more{font-size:12px;white-space:nowrap}
   .today-timetable-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-  .today-period{display:flex;align-items:center;text-align:left;gap:10px;padding:12px 13px}
+  .today-period{min-height:auto;display:flex;flex-direction:row;align-items:center;text-align:left;gap:10px;padding:12px 13px}
   .today-period .period-no{flex:0 0 auto;margin:0;min-width:36px}
-  .today-period .period-subject{font-size:14px}
+  .period-subject-wrap{align-items:flex-start;gap:4px}
+  .today-period .period-subject{font-size:14px;text-align:left}
+  .today-period .period-alternate{font-size:11px;text-align:left}
 }
