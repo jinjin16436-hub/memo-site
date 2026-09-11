@@ -1,8 +1,8 @@
-<!-- ===== index.html (v1.2.2) ===== -->
+<!-- ===== index.html (v1.2.3) ===== -->
 <!DOCTYPE html>
-<!-- index.html - v1.2.2
-  - 모바일 수정 모달 스크롤/저장 버튼 가시성 개선
-  - app.js 로직 변경 없음
+<!-- index.html - v1.2.3
+  - 홈 요약 카드 Firestore 데이터 연동
+  - 일정/시험/수행평가/숙제의 가장 가까운 현황 표시
 -->
 <html lang="ko">
 <head>
@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#08111f" />
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.2.2" />
+  <link rel="stylesheet" href="style.css?v=1.2.3" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -61,7 +61,7 @@
 
       <div class="sidebar-foot">
         <span class="status-dot"></span>
-        <span>사이트 버전 v1.2.2</span>
+        <span>사이트 버전 v1.2.3</span>
       </div>
     </aside>
 
@@ -95,16 +95,20 @@
 
         <section class="summary-grid" aria-label="빠른 메뉴">
           <button class="summary-card summary-schedule quick-tab" data-target-tab="schedule" type="button">
-            <span class="summary-icon">🗓️</span><span><small>바로가기</small><strong>일정</strong></span>
+            <span class="summary-icon">🗓️</span>
+            <span class="summary-copy"><small>일정</small><strong id="summaryScheduleMain">불러오는 중</strong><em id="summaryScheduleSub">가장 가까운 일정을 확인합니다</em></span>
           </button>
           <button class="summary-card summary-exam quick-tab" data-target-tab="exam" type="button">
-            <span class="summary-icon">🧪</span><span><small>바로가기</small><strong>시험</strong></span>
+            <span class="summary-icon">🧪</span>
+            <span class="summary-copy"><small>시험</small><strong id="summaryExamMain">불러오는 중</strong><em id="summaryExamSub">가장 가까운 시험을 확인합니다</em></span>
           </button>
           <button class="summary-card summary-task quick-tab" data-target-tab="task" type="button">
-            <span class="summary-icon">📝</span><span><small>바로가기</small><strong>수행평가</strong></span>
+            <span class="summary-icon">📝</span>
+            <span class="summary-copy"><small>수행평가</small><strong id="summaryTaskMain">불러오는 중</strong><em id="summaryTaskSub">예정된 수행평가를 확인합니다</em></span>
           </button>
           <button class="summary-card summary-homework quick-tab" data-target-tab="homework" type="button">
-            <span class="summary-icon">📌</span><span><small>바로가기</small><strong>숙제</strong></span>
+            <span class="summary-icon">📌</span>
+            <span class="summary-copy"><small>숙제</small><strong id="summaryHomeworkMain">불러오는 중</strong><em id="summaryHomeworkSub">남은 숙제를 확인합니다</em></span>
           </button>
         </section>
 
@@ -250,7 +254,7 @@
         </section>
 
         <footer class="site-footer">
-          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.2</span>
+          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.3</span>
         </footer>
       </main>
     </div>
@@ -258,6 +262,6 @@
 
   <button id="mobileMenuBackdrop" class="mobile-menu-backdrop" type="button" aria-label="메뉴 닫기"></button>
   <div id="modal-root"></div>
-  <script src="app.js?v=1.2.1"></script>
+  <script src="app.js?v=1.2.3"></script>
 </body>
 </html>
