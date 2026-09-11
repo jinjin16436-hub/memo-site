@@ -1,6 +1,5 @@
-<!-- ===== index.html (v1.2.3) ===== -->
 <!DOCTYPE html>
-<!-- index.html - v1.2.3
+<!-- index.html - v1.2.5
   - 홈 요약 카드 Firestore 데이터 연동
   - 일정/시험/수행평가/숙제의 가장 가까운 현황 표시
 -->
@@ -10,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#08111f" />
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.2.4" />
+  <link rel="stylesheet" href="style.css?v=1.2.5" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -61,7 +60,7 @@
 
       <div class="sidebar-foot">
         <span class="status-dot"></span>
-        <span>사이트 버전 v1.2.3</span>
+        <span>사이트 버전 v1.2.5</span>
       </div>
     </aside>
 
@@ -110,6 +109,21 @@
             <span class="summary-icon">📌</span>
             <span class="summary-copy"><small>숙제</small><strong id="summaryHomeworkMain">불러오는 중</strong><em id="summaryHomeworkSub">남은 숙제를 확인합니다</em></span>
           </button>
+        </section>
+
+        <section class="today-timetable-card" aria-labelledby="todayTimetableTitle">
+          <div class="today-timetable-head">
+            <div class="section-title-wrap">
+              <span class="section-icon cyan">📚</span>
+              <div>
+                <span class="section-kicker">TODAY TIMETABLE</span>
+                <h2 id="todayTimetableTitle">오늘의 시간표</h2>
+              </div>
+            </div>
+            <button class="today-timetable-more quick-tab" data-target-tab="timetable" type="button">전체 시간표 보기 →</button>
+          </div>
+          <div id="todayTimetableMeta" class="today-timetable-meta">시간표를 자동으로 불러오는 중...</div>
+          <div id="todayTimetableList" class="today-timetable-list" aria-live="polite"></div>
         </section>
 
         <section id="sec_notice" class="sec notice-section">
@@ -254,7 +268,7 @@
         </section>
 
         <footer class="site-footer">
-          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.3</span>
+          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.5</span>
         </footer>
       </main>
     </div>
@@ -262,6 +276,6 @@
 
   <button id="mobileMenuBackdrop" class="mobile-menu-backdrop" type="button" aria-label="메뉴 닫기"></button>
   <div id="modal-root"></div>
-  <script src="app.js?v=1.2.3"></script>
+  <script src="app.js?v=1.2.5"></script>
 </body>
 </html>
