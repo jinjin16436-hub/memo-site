@@ -1,7 +1,6 @@
-/* style.css - v1.2.3
+/* style.css - v1.2.5
  * - 모바일 수정 모달 스크롤 개선
  * - 모바일에서 저장/취소 버튼을 항상 접근 가능하게 유지
- * - app.js 변경 없음
  */
 :root{
   --bg:#07101d;
@@ -129,4 +128,92 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
   .modal-actions{gap:8px;padding:11px 14px calc(11px + env(safe-area-inset-bottom))}
   .modal-actions .btn{flex:1;min-height:46px}
   .container{width:calc(100% - 20px)}#userInfo{display:none}.auth .btn{padding:8px 10px;font-size:12px}.hero-card{border-radius:16px;min-height:170px;padding:22px 18px}.hero-card h1{font-size:24px}.hero-card p{font-size:13px}.hero-quote{font-size:11px}.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:11px 0 14px}.summary-card{min-height:112px;padding:13px 12px;border-radius:13px;gap:11px;align-items:center}.summary-icon{flex:0 0 42px;width:42px;height:42px;font-size:20px;align-self:center}.summary-copy{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;align-self:stretch}.summary-card strong{font-size:14px;line-height:1.35;margin-top:1px}.summary-card small{font-size:9px;line-height:1.2}.summary-copy em{margin-top:5px;font-size:10px;line-height:1.35}.sec{border-radius:15px;margin:13px 0}.section-title-wrap h2{font-size:16px}.section-icon{width:36px;height:36px}.section-kicker{font-size:8px}.task-form{grid-template-columns:1fr;padding:13px}.task-form .f,.task-form .col-span-5,.task-form .col-span-6,.task-form .col-span-12,.task-form .col-end,.layout-3row .r1-subj,.layout-3row .r1-content,.layout-3row .r3-item{grid-column:1/-1}.modal-body .grid{grid-template-columns:1fr}.modal-body .grid .f,.modal-body .grid .f.full{grid-column:1/-1}.notice-card,.task{padding:14px}.warn-line{align-items:flex-start;flex-direction:column}
+}
+
+/* =========================
+   v1.2.5 오늘의 시간표
+========================= */
+.today-timetable-card{
+  margin-top:20px;
+  padding:22px 24px;
+  border:1px solid var(--line, rgba(148,163,184,.16));
+  border-radius:20px;
+  background:linear-gradient(135deg, rgba(13,31,48,.92), rgba(15,23,42,.92));
+  box-shadow:0 18px 45px rgba(0,0,0,.18);
+}
+.today-timetable-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:16px;
+}
+.today-timetable-head h2{margin:2px 0 0;font-size:20px}
+.today-timetable-more{
+  border:0;
+  background:transparent;
+  color:#93c5fd;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+  padding:8px 0;
+}
+.today-timetable-more:hover{color:#dbeafe}
+.today-timetable-meta{
+  color:#8fa6c3;
+  font-size:14px;
+  margin-bottom:12px;
+}
+.today-timetable-list{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:10px;
+}
+.today-period{
+  min-width:0;
+  padding:13px 10px;
+  border:1px solid rgba(96,165,250,.16);
+  border-radius:14px;
+  background:rgba(8,17,31,.58);
+  text-align:center;
+}
+.today-period .period-no{
+  display:block;
+  margin-bottom:6px;
+  color:#60a5fa;
+  font-size:12px;
+  font-weight:800;
+}
+.today-period .period-subject{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#f8fafc;
+  font-size:15px;
+  font-weight:800;
+}
+.today-timetable-empty{
+  grid-column:1/-1;
+  padding:18px;
+  border:1px dashed rgba(148,163,184,.18);
+  border-radius:14px;
+  color:#8fa6c3;
+  text-align:center;
+  background:rgba(8,17,31,.38);
+}
+
+@media (max-width: 1000px){
+  .today-timetable-list{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
+@media (max-width: 820px){
+  .today-timetable-card{margin-top:14px;padding:17px 16px;border-radius:17px}
+  .today-timetable-head{align-items:flex-start}
+  .today-timetable-head h2{font-size:18px}
+  .today-timetable-more{font-size:12px;white-space:nowrap}
+  .today-timetable-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .today-period{display:flex;align-items:center;text-align:left;gap:10px;padding:12px 13px}
+  .today-period .period-no{flex:0 0 auto;margin:0;min-width:36px}
+  .today-period .period-subject{font-size:14px}
 }
