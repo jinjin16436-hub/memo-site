@@ -1,4 +1,4 @@
-/* app.js - v1.2.7
+/* app.js - v1.2.8
  * 변경사항:
  * - 전체 다크 대시보드 UI 리뉴얼 대응
  * - PC 사이드바 / 모바일 슬라이드 메뉴 지원
@@ -8,6 +8,7 @@
  * - 홈 요약 카드에 Firestore 일정/시험/수행평가/숙제 현황 연동
  * - 주말 자동 시간표는 다음 월요일 기준으로 조회
  * - NEIS 오류 응답의 본문을 읽어 실제 오류 원인을 확인 가능하도록 개선
+ * - 2-2 선택과목 시간표에 2-3 이동수업 과목을 함께 표시
  */
 
 if (!window.firebaseConfig) {
@@ -1044,6 +1045,18 @@ const TIMETABLE_DEFAULTS = Object.freeze({
   classNm: '2',
 });
 
+// 2-2 선택과목 → 2-3 이동수업 과목 매핑
+const ALTERNATE_SUBJECTS = Object.freeze({
+  '지구시스템과학': '물질과 에너지',
+  '물질과 에너지': '지구시스템과학',
+  '역학과 에너지': '세포와 물질대사',
+});
+
+const getAlternateSubject = (subject, config=TIMETABLE_DEFAULTS)=>{
+  if(String(config.grade) !== '2' || String(config.classNm) !== '2') return '';
+  return ALTERNATE_SUBJECTS[String(subject || '').trim()] || '';
+};
+
 const ymdFromDate = (d)=>{
   return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
 };
@@ -1177,7 +1190,11 @@ const renderTTWeek = (items=[])=>{
       const li = el('li',{class:'task'});
       const perio = r.PERIO || r.ORD || '';
       const name  = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '';
-      li.innerHTML = `<div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)}</div>`;
+      const alternate = getAlternateSubject(name, { grade: ttGrade?.value, classNm: ttClass?.value });
+      li.innerHTML = `
+        <div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)}</div>
+        ${alternate ? `<div class="meta">↳ 2-3 이동수업: ${escapeHTML(alternate)}</div>` : ''}
+      `;
       ttList.appendChild(li);
     });
   });
@@ -1204,10 +1221,14 @@ const renderTodayTimetable = (rows=[], date=new Date(), { weekendRedirect=false 
   sortTimetableRows(rows).forEach(r=>{
     const perio = r.PERIO || r.ORD || '';
     const name = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '과목 정보 없음';
+    const alternate = getAlternateSubject(name);
     const item = el('div',{class:'today-period'});
     item.innerHTML = `
       <span class="period-no">${escapeHTML(perio)}교시</span>
-      <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)}</span>
+      <span class="period-subject" title="${escapeHTML(name)}">
+        ${escapeHTML(name)}
+        ${alternate ? `<small class="period-alternate">2-3 · ${escapeHTML(alternate)}</small>` : ''}
+      </span>
     `;
     todayTimetableList.appendChild(item);
   });
@@ -1334,7 +1355,7 @@ auth.onAuthStateChanged(async (u)=>{
 
 
 /* =========================
-   v1.2.6 대시보드 UI 보조
+   v1.2.8 대시보드 UI 보조
 ========================= */
 const initDashboardUI = ()=>{
   const heroDate = $('#heroDate');
