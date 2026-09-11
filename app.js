@@ -1,4 +1,4 @@
-/* app.js - v1.2.5
+/* app.js - v1.2.6
  * 변경사항:
  * - 전체 다크 대시보드 UI 리뉴얼 대응
  * - PC 사이드바 / 모바일 슬라이드 메뉴 지원
@@ -6,6 +6,8 @@
  * - 기존 Firebase / Firestore / 권한 / NEIS 로직 유지
  * - 설명/내용에서 **굵게**, __밑줄__ 간단 서식 지원
  * - 홈 요약 카드에 Firestore 일정/시험/수행평가/숙제 현황 연동
+ * - 주말 자동 시간표는 다음 월요일 기준으로 조회
+ * - NEIS 오류 응답의 본문을 읽어 실제 오류 원인을 확인 가능하도록 개선
  */
 
 if (!window.firebaseConfig) {
@@ -1073,11 +1075,54 @@ const fmtTTDate = (d)=>{
   return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())} (${weekdayText[d.getDay()]})`;
 };
 
+// 토/일요일에는 다음 월요일 시간표를 홈에 자동 표시합니다.
+const getAutoTimetableDate = (baseDate=new Date())=>{
+  const target = new Date(baseDate);
+  target.setHours(0,0,0,0);
+
+  const day = target.getDay();
+  if(day === 6){       // 토요일 → 다음 월요일
+    target.setDate(target.getDate() + 2);
+  }else if(day === 0){ // 일요일 → 다음 월요일
+    target.setDate(target.getDate() + 1);
+  }
+
+  return target;
+};
+
+const isWeekendDate = (date)=> date.getDay() === 0 || date.getDay() === 6;
+
 const getJSON = async (url)=>{
-  const r = await fetch(url,{headers:{'Accept':'application/json'}});
-  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  const r = await fetch(url,{
+    headers:{
+      'Accept':'application/json'
+    }
+  });
+
+  // Worker/NEIS가 오류 상태 코드를 반환하더라도 본문에
+  // 실제 오류 정보가 들어있는 경우가 있어 먼저 본문을 읽습니다.
   const text = await r.text();
-  try{ return JSON.parse(text); }catch{ return { raw:text }; }
+
+  try{
+    const data = JSON.parse(text);
+
+    // 정상적인 JSON 응답이면 상태 코드와 관계없이 호출부에서 처리합니다.
+    // 다만 JSON 안에 명시적인 error/message가 있고 HTTP도 실패라면
+    // 디버깅이 쉽도록 메시지를 보존합니다.
+    if(!r.ok && data && !Array.isArray(data.rows)) {
+      const message = data.error || data.message || data.RESULT?.MESSAGE;
+      if(message) throw new Error(`${message} (HTTP ${r.status})`);
+    }
+
+    return data;
+  }catch(e){
+    // JSON 파싱 실패라면 HTTP 상태와 짧은 본문을 함께 보여줍니다.
+    if(e instanceof SyntaxError){
+      const preview = text.trim().slice(0, 180);
+      throw new Error(`시간표 서버 응답 오류 (HTTP ${r.status})${preview ? `: ${preview}` : ''}`);
+    }
+    throw e;
+  }
 };
 
 const getTimetableConfig = ()=>({
@@ -1144,14 +1189,15 @@ const renderTTWeek = (items=[])=>{
   }
 };
 
-const renderTodayTimetable = (rows=[], date=new Date())=>{
+const renderTodayTimetable = (rows=[], date=new Date(), { weekendRedirect=false }={})=>{
   if(!todayTimetableList || !todayTimetableMeta) return;
 
   todayTimetableList.innerHTML = '';
-  todayTimetableMeta.textContent = `${fmtTTDate(date)} · ${TIMETABLE_DEFAULTS.grade}학년 ${TIMETABLE_DEFAULTS.classNm}반`;
+  const prefix = weekendRedirect ? '다음 수업일 · ' : '';
+  todayTimetableMeta.textContent = `${prefix}${fmtTTDate(date)} · ${TIMETABLE_DEFAULTS.grade}학년 ${TIMETABLE_DEFAULTS.classNm}반`;
 
   if(!rows.length){
-    todayTimetableList.innerHTML = `<div class="today-timetable-empty">오늘은 등록된 수업이 없습니다.</div>`;
+    todayTimetableList.innerHTML = `<div class="today-timetable-empty">${weekendRedirect ? '다음 월요일' : '오늘'}은 등록된 수업이 없습니다.</div>`;
     return;
   }
 
@@ -1177,16 +1223,26 @@ const loadTodayTimetable = async ()=>{
   }
 
   const now = new Date();
-  todayTimetableMeta.textContent = '오늘 시간표를 자동으로 불러오는 중...';
+  const weekendRedirect = isWeekendDate(now);
+  const targetDate = getAutoTimetableDate(now);
+
+  todayTimetableMeta.textContent = weekendRedirect
+    ? '주말이라 다음 월요일 시간표를 불러오는 중...'
+    : '오늘 시간표를 자동으로 불러오는 중...';
   todayTimetableList.innerHTML = `<div class="today-timetable-empty">불러오는 중...</div>`;
 
   try{
-    const rows = await fetchTimetableDay(now);
-    renderTodayTimetable(rows, now);
+    const rows = await fetchTimetableDay(targetDate);
+    renderTodayTimetable(rows, targetDate, { weekendRedirect });
   }catch(e){
-    todayTimetableMeta.textContent = '시간표를 불러오지 못했습니다.';
-    todayTimetableList.innerHTML = `<div class="today-timetable-empty">잠시 후 다시 시도해주세요.</div>`;
     console.error('오늘 시간표 자동 조회 오류:', e);
+
+    todayTimetableMeta.textContent = '시간표를 불러오지 못했습니다.';
+    todayTimetableList.innerHTML = `
+      <div class="today-timetable-empty">
+        ${esc(e.message || String(e))}
+      </div>
+    `;
   }
 };
 
@@ -1278,7 +1334,7 @@ auth.onAuthStateChanged(async (u)=>{
 
 
 /* =========================
-   v1.2.5 대시보드 UI 보조
+   v1.2.6 대시보드 UI 보조
 ========================= */
 const initDashboardUI = ()=>{
   const heroDate = $('#heroDate');
