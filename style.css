@@ -1,9 +1,10 @@
-/* ===== style.css (v1.2.9) ===== */
-/* style.css - v1.2.9
- * - 홈 자동 시간표 선택과목 이동수업 표시 개선
- * - 기본 과목과 2-3 이동수업을 두 줄로 분리
- * - 모바일/PC 자동 시간표 레이아웃 보완
+/* ===== style.css (v1.2.10) ===== */
+/* style.css - v1.2.10
+ * - 모바일 오늘의 시간표를 2열에서 1열로 변경
+ * - 과목명이 잘리지 않도록 모바일 시간표 가독성 개선
+ * - PC/태블릿 시간표 레이아웃은 기존 유지
  */
+
 :root{
   --bg:#07101d;
   --bg-soft:#0a1423;
@@ -241,7 +242,7 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
   .today-timetable-head{align-items:flex-start}
   .today-timetable-head h2{font-size:18px}
   .today-timetable-more{font-size:12px;white-space:nowrap}
-  .today-timetable-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .today-timetable-list{grid-template-columns:1fr;gap:9px}
   .today-period{min-height:auto;display:flex;flex-direction:row;align-items:center;text-align:left;gap:10px;padding:12px 13px}
   .today-period .period-no{flex:0 0 auto;margin:0;min-width:36px}
   .period-subject-wrap{align-items:flex-start;gap:4px}
