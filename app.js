@@ -1196,7 +1196,7 @@ const renderTTWeek = (items=[])=>{
       const alternate = getAlternateSubject(name, { grade: ttGrade?.value, classNm: ttClass?.value });
       li.innerHTML = `
         <div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)}</div>
-        ${alternate ? `<div class="meta">↳ 2-3 이동수업: ${escapeHTML(alternate)}</div>` : ''}
+        ${alternate ? `<div class="meta">2-3 이동수업: ${escapeHTML(alternate)}</div>` : ''}
       `;
       ttList.appendChild(li);
     });
