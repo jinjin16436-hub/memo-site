@@ -1,5 +1,7 @@
-/* app.js - v1.2.9
+/* app.js - v1.2.11
  * 변경사항:
+ * - 홈 시간표 선택과목 보조 문구를 "2-3 · 과목명" 형식으로 간소화
+ * - 긴 선택과목명과 함께 표시할 때 PC 가독성 개선 대응
  * - 전체 다크 대시보드 UI 리뉴얼 대응
  * - PC 사이드바 / 모바일 슬라이드 메뉴 지원
  * - 빠른 메뉴 및 오늘 날짜 표시 추가
@@ -1229,7 +1231,7 @@ const renderTodayTimetable = (rows=[], date=new Date(), { weekendRedirect=false 
       <div class="period-subject-wrap">
         <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)}</span>
         ${alternate ? `
-          <small class="period-alternate">2-3 이동 · ${escapeHTML(alternate)}</small>
+          <small class="period-alternate">2-3 · ${escapeHTML(alternate)}</small>
         ` : ''}
       </div>
     `;
