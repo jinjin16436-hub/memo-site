@@ -1,8 +1,8 @@
-/* ===== style.css (v1.2.10) ===== */
-/* style.css - v1.2.10
- * - 모바일 오늘의 시간표를 2열에서 1열로 변경
- * - 과목명이 잘리지 않도록 모바일 시간표 가독성 개선
- * - PC/태블릿 시간표 레이아웃은 기존 유지
+/* ===== style.css (v1.2.11) ===== */
+/* style.css - v1.2.11
+ * - 모바일 오늘의 시간표 1열 레이아웃 유지
+ * - PC 선택과목 보조 문구에서 한글 단어가 어색하게 쪼개지지 않도록 개선
+ * - 긴 선택과목명은 단어 단위로 최대 2줄까지 자연스럽게 표시
  */
 
 :root{
@@ -216,12 +216,13 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
   display:block;
   width:100%;
   color:#8fa6c3;
-  font-size:12px;
+  font-size:11px;
   font-weight:600;
   line-height:1.35;
   text-align:center;
   white-space:normal;
-  overflow-wrap:anywhere;
+  word-break:keep-all;
+  overflow-wrap:normal;
 }
 .today-timetable-empty{
   grid-column:1/-1;
@@ -247,5 +248,5 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
   .today-period .period-no{flex:0 0 auto;margin:0;min-width:36px}
   .period-subject-wrap{align-items:flex-start;gap:4px}
   .today-period .period-subject{font-size:14px;text-align:left}
-  .today-period .period-alternate{font-size:11px;text-align:left}
+  .today-period .period-alternate{font-size:11px;text-align:left;white-space:normal;word-break:keep-all;overflow-wrap:normal}
 }
