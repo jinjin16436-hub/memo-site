@@ -1,5 +1,9 @@
-/* app.js - v1.2.11
+/* app.js - v1.2.12
  * 변경사항:
+ * - 선택과목/이동수업 설정을 Firestore 관리자 UI로 이동
+ * - 이동수업을 교시가 아닌 최종 과목명 기준으로 매칭
+ * - 날짜+교시 기준 임시 시간표 변경/추가/삭제 기능 추가
+ * - 관리자와 부관리자 모두 시간표 관리 가능, 도메인 관리는 관리자 전용 유지
  * - 홈 시간표 선택과목 보조 문구를 "2-3 · 과목명" 형식으로 간소화
  * - 긴 선택과목명과 함께 표시할 때 PC 가독성 개선 대응
  * - 전체 다크 대시보드 UI 리뉴얼 대응
@@ -87,6 +91,21 @@ const domNotes  = $('#domNotes');
 const domAddBtn = $('#domAddBtn');
 const domList   = $('#domList');
 const domStatus = $('#domStatus');
+
+// 관리자/부관리자: 시간표 관리
+const tsBaseSubject = $('#tsBaseSubject');
+const tsMoveClass = $('#tsMoveClass');
+const tsAlternateSubject = $('#tsAlternateSubject');
+const tsAddBtn = $('#tsAddBtn');
+const tsList = $('#tsList');
+const tsStatus = $('#tsStatus');
+const toDate = $('#toDate');
+const toPeriod = $('#toPeriod');
+const toSubject = $('#toSubject');
+const toAction = $('#toAction');
+const toAddBtn = $('#toAddBtn');
+const toList = $('#toList');
+const toStatus = $('#toStatus');
 
 // ===== 유틸 =====
 const toDateOnly = (v)=>{
@@ -231,7 +250,7 @@ const initTabs = ()=>{
   if(!tabs) return;
 
   const setTab = (name)=>{
-    if(name === 'admin' && !isAdmin) name = 'schedule';
+    if(name === 'admin' && !canEdit) name = 'schedule';
 
     $$('.tab-btn', tabs).forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
 
@@ -255,7 +274,7 @@ const initTabs = ()=>{
     if(!btn) return;
 
     const tab = btn.dataset.tab;
-    if(tab === 'admin' && !isAdmin) return;
+    if(tab === 'admin' && !canEdit) return;
 
     setTab(tab);
 
@@ -1038,6 +1057,197 @@ domAddBtn?.addEventListener('click', async ()=>{
 });
 
 /* =========================
+   ✅ 시간표 관리 (관리자 + 부관리자)
+========================= */
+const timetableSubjectsCol = ()=> db.collection(`users/${PUBLIC_UID}/settings/timetableSubjects/items`);
+const timetableOverridesCol = ()=> db.collection(`users/${PUBLIC_UID}/timetableOverrides/items`);
+
+const refreshTimetableViews = async ()=>{
+  await Promise.allSettled([
+    loadTodayTimetable(),
+    loadTimetableWeek({ silent:true }),
+  ]);
+};
+
+const loadTimetableManagementData = async ()=>{
+  try{
+    const [subjectSnap, overrideSnap] = await Promise.all([
+      timetableSubjectsCol().get(),
+      timetableOverridesCol().get(),
+    ]);
+
+    timetableSubjectRules = subjectSnap.docs.map(doc=>({ id:doc.id, ...doc.data() }));
+    timetableOverrides = overrideSnap.docs.map(doc=>({ id:doc.id, ...doc.data() }));
+
+    timetableSubjectRules.sort((a,b)=> String(a.baseSubject||'').localeCompare(String(b.baseSubject||''), 'ko'));
+    timetableOverrides.sort((a,b)=>{
+      const dateCmp = String(a.date||'').localeCompare(String(b.date||''));
+      return dateCmp || Number(a.period||0) - Number(b.period||0);
+    });
+
+    renderTimetableSubjectRules();
+    renderTimetableOverrides();
+  }catch(e){
+    console.error('시간표 관리 데이터 로드 오류:', e);
+    if(tsStatus) tsStatus.textContent = `불러오기 오류: ${e.message || e}`;
+    if(toStatus) toStatus.textContent = `불러오기 오류: ${e.message || e}`;
+  }
+};
+
+const renderTimetableSubjectRules = ()=>{
+  if(!tsList) return;
+  tsList.innerHTML = '';
+  if(!timetableSubjectRules.length){
+    tsList.innerHTML = `<li class="meta">등록된 선택과목 이동수업 설정이 없습니다.</li>`;
+    return;
+  }
+
+  timetableSubjectRules.forEach(rule=>{
+    const li = el('li',{class:'task'});
+    li.innerHTML = `
+      <div class="title">${escapeHTML(rule.baseSubject || '과목 없음')}</div>
+      <div class="meta">${escapeHTML(rule.moveClass || '이동 반 미지정')} 이동수업: ${escapeHTML(rule.alternateSubject || '과목 미지정')}</div>
+    `;
+
+    if(canEdit){
+      const row = el('div',{class:'row management-actions'});
+      const editBtn = el('button',{class:'btn'}); editBtn.textContent = '수정';
+      editBtn.addEventListener('click', ()=>{
+        openModal({
+          title:'선택과목 / 이동수업 수정',
+          fields:[
+            {key:'baseSubject',label:'기준 과목',type:'text',required:true,value:rule.baseSubject||'',full:true},
+            {key:'moveClass',label:'이동 반',type:'text',required:true,value:rule.moveClass||'',full:true},
+            {key:'alternateSubject',label:'이동수업 과목',type:'text',required:true,value:rule.alternateSubject||'',full:true},
+          ],
+          onSave:async(v)=>{
+            await timetableSubjectsCol().doc(rule.id).set({
+              baseSubject:v.baseSubject.trim(),
+              moveClass:v.moveClass.trim(),
+              alternateSubject:v.alternateSubject.trim(),
+              enabled:true,
+              updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+            },{merge:true});
+            await loadTimetableManagementData();
+            await refreshTimetableViews();
+          }
+        });
+      });
+      const delBtn = el('button',{class:'btn btn--danger'}); delBtn.textContent = '삭제';
+      delBtn.addEventListener('click', async()=>{
+        if(!confirm('이 이동수업 설정을 삭제할까요?')) return;
+        await timetableSubjectsCol().doc(rule.id).delete();
+        await loadTimetableManagementData();
+        await refreshTimetableViews();
+      });
+      row.append(editBtn,delBtn); li.appendChild(row);
+    }
+    tsList.appendChild(li);
+  });
+};
+
+const renderTimetableOverrides = ()=>{
+  if(!toList) return;
+  toList.innerHTML = '';
+  if(!timetableOverrides.length){
+    toList.innerHTML = `<li class="meta">등록된 임시 시간표 수정이 없습니다.</li>`;
+    return;
+  }
+
+  timetableOverrides.forEach(item=>{
+    const li = el('li',{class:'task'});
+    const isDelete = item.action === 'delete';
+    li.innerHTML = `
+      <div class="title"><span class="override-date">${escapeHTML(item.date || '')}</span> · ${escapeHTML(item.period || '')}교시</div>
+      <div class="meta ${isDelete ? 'override-delete' : ''}">${isDelete ? '이 교시를 시간표에서 숨김' : `변경/추가: ${escapeHTML(item.subject || '')}`}</div>
+    `;
+    if(canEdit){
+      const row = el('div',{class:'row management-actions'});
+      const editBtn = el('button',{class:'btn'}); editBtn.textContent='수정';
+      editBtn.addEventListener('click',()=>{
+        openModal({
+          title:'임시 시간표 수정',
+          fields:[
+            {key:'date',label:'날짜',type:'date',required:true,value:item.date||'',full:true},
+            {key:'period',label:'교시 (1~7)',type:'number',required:true,value:item.period||'',full:true},
+            {key:'subject',label:'변경 과목 (교시 삭제면 비워도 됨)',type:'text',required:false,value:item.subject||'',full:true},
+          ],
+          onSave:async(v)=>{
+            const period = Number(v.period);
+            if(!Number.isInteger(period) || period < 1 || period > 7) throw new Error('교시는 1~7 사이로 입력해주세요.');
+            if(item.action !== 'delete' && !v.subject.trim()) throw new Error('변경 과목을 입력해주세요.');
+            await timetableOverridesCol().doc(item.id).set({
+              date:v.date,
+              period,
+              subject:item.action === 'delete' ? '' : v.subject.trim(),
+              action:item.action || 'upsert',
+              updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+            },{merge:true});
+            await loadTimetableManagementData();
+            await refreshTimetableViews();
+          }
+        });
+      });
+      const delBtn=el('button',{class:'btn btn--danger'}); delBtn.textContent='삭제';
+      delBtn.addEventListener('click',async()=>{
+        if(!confirm('이 임시 시간표 수정을 삭제할까요?')) return;
+        await timetableOverridesCol().doc(item.id).delete();
+        await loadTimetableManagementData();
+        await refreshTimetableViews();
+      });
+      row.append(editBtn,delBtn); li.appendChild(row);
+    }
+    toList.appendChild(li);
+  });
+};
+
+tsAddBtn?.addEventListener('click',async()=>{
+  if(!canEdit) return;
+  const baseSubject=(tsBaseSubject?.value||'').trim();
+  const moveClass=(tsMoveClass?.value||'').trim();
+  const alternateSubject=(tsAlternateSubject?.value||'').trim();
+  if(!baseSubject || !moveClass || !alternateSubject){ alert('기준 과목, 이동 반, 이동수업 과목을 모두 입력해주세요.'); return; }
+  tsAddBtn.disabled=true;
+  try{
+    await timetableSubjectsCol().add({baseSubject,moveClass,alternateSubject,enabled:true,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    tsBaseSubject.value=''; tsMoveClass.value=''; tsAlternateSubject.value='';
+    if(tsStatus) tsStatus.textContent='추가 완료!';
+    await loadTimetableManagementData(); await refreshTimetableViews();
+  }catch(e){ if(tsStatus) tsStatus.textContent=`추가 오류: ${e.message||e}`; }
+  finally{ tsAddBtn.disabled=false; }
+});
+
+const syncOverrideSubjectState = ()=>{
+  if(!toSubject || !toAction) return;
+  const deleting = toAction.value === 'delete';
+  toSubject.disabled = deleting;
+  toSubject.placeholder = deleting ? '교시 삭제에서는 입력하지 않습니다' : '예: 물질과 에너지';
+  if(deleting) toSubject.value='';
+};
+toAction?.addEventListener('change',syncOverrideSubjectState);
+
+toAddBtn?.addEventListener('click',async()=>{
+  if(!canEdit) return;
+  const date=(toDate?.value||'').trim();
+  const period=Number(toPeriod?.value||0);
+  const action=toAction?.value||'upsert';
+  const subject=(toSubject?.value||'').trim();
+  if(!date || !Number.isInteger(period) || period<1 || period>7){ alert('날짜와 교시를 선택해주세요.'); return; }
+  if(action==='upsert' && !subject){ alert('변경할 과목을 입력해주세요.'); return; }
+  toAddBtn.disabled=true;
+  try{
+    // 같은 날짜+교시는 하나만 유지하여 중복 적용을 방지합니다.
+    const existing = timetableOverrides.find(x=>x.date===date && Number(x.period)===period);
+    const ref = existing ? timetableOverridesCol().doc(existing.id) : timetableOverridesCol().doc();
+    await ref.set({date,period,action,subject:action==='delete'?'':subject,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),...(existing?{}:{createdAt:firebase.firestore.FieldValue.serverTimestamp()})},{merge:true});
+    toPeriod.value=''; toSubject.value='';
+    if(toStatus) toStatus.textContent=existing?'기존 수정사항을 갱신했습니다.':'수정사항을 등록했습니다.';
+    await loadTimetableManagementData(); await refreshTimetableViews();
+  }catch(e){ if(toStatus) toStatus.textContent=`등록 오류: ${e.message||e}`; }
+  finally{ toAddBtn.disabled=false; }
+});
+
+/* =========================
    ✅ 시간표(NEIS)
 ========================= */
 const PROXY = (NEIS_PROXY_BASE || '').replace(/\/+$/,'');
@@ -1048,16 +1258,19 @@ const TIMETABLE_DEFAULTS = Object.freeze({
   classNm: '2',
 });
 
-// 2-2 선택과목 → 2-3 이동수업 과목 매핑
-const ALTERNATE_SUBJECTS = Object.freeze({
-  '지구시스템과학': '물질과 에너지',
-  '물질과 에너지': '지구시스템과학',
-  '역학과 에너지': '세포와 물질대사',
-});
+// Firestore에서 불러온 선택과목/이동수업 및 날짜별 임시 변경 캐시
+let timetableSubjectRules = [];
+let timetableOverrides = [];
+
+const isDefaultClassConfig = (config=TIMETABLE_DEFAULTS)=>
+  String(config.grade) === String(TIMETABLE_DEFAULTS.grade)
+  && String(config.classNm) === String(TIMETABLE_DEFAULTS.classNm);
 
 const getAlternateSubject = (subject, config=TIMETABLE_DEFAULTS)=>{
-  if(String(config.grade) !== '2' || String(config.classNm) !== '2') return '';
-  return ALTERNATE_SUBJECTS[String(subject || '').trim()] || '';
+  if(!isDefaultClassConfig(config)) return null;
+  const key = String(subject || '').trim();
+  if(!key) return null;
+  return timetableSubjectRules.find(rule=> rule.enabled !== false && rule.baseSubject === key) || null;
 };
 
 const ymdFromDate = (d)=>{
@@ -1155,11 +1368,42 @@ const applyTimetableDefaults = ()=>{
   if(ttClass && !ttClass.value) ttClass.value = TIMETABLE_DEFAULTS.classNm;
 };
 
+const applyTimetableOverrides = (rows=[], date, config=TIMETABLE_DEFAULTS)=>{
+  if(!isDefaultClassConfig(config)) return [...rows];
+
+  const dateKey = dateInputValue(date);
+  const dayOverrides = timetableOverrides.filter(item=>item.date === dateKey);
+  if(!dayOverrides.length) return [...rows];
+
+  const result = rows.map(row=>({...row}));
+  dayOverrides.forEach(item=>{
+    const period = Number(item.period);
+    const index = result.findIndex(row=>Number(row.PERIO || row.ORD || 0) === period);
+
+    if(item.action === 'delete'){
+      if(index >= 0) result.splice(index,1);
+      return;
+    }
+
+    const subject = String(item.subject || '').trim();
+    if(!subject) return;
+
+    if(index >= 0){
+      result[index] = { ...result[index], PERIO:String(period), ITRT_CNTNT:subject, SUBJECT:subject, TI_NM:subject, _manualOverride:true };
+    }else{
+      result.push({ PERIO:String(period), ITRT_CNTNT:subject, SUBJECT:subject, TI_NM:subject, _manualOverride:true });
+    }
+  });
+
+  return result;
+};
+
 const fetchTimetableDay = async (date, config=getTimetableConfig())=>{
   const ymd = ymdFromDate(date);
   const url = `${PROXY}/api/timetable?schoolName=${encodeURIComponent(config.schoolName)}&ymd=${ymd}&grade=${encodeURIComponent(config.grade)}&classNm=${encodeURIComponent(config.classNm)}`;
   const data = await getJSON(url);
-  return Array.isArray(data.rows) ? data.rows : [];
+  const rows = Array.isArray(data.rows) ? data.rows : [];
+  return applyTimetableOverrides(rows, date, config);
 };
 
 const sortTimetableRows = (rows=[])=>{
@@ -1196,7 +1440,7 @@ const renderTTWeek = (items=[])=>{
       const alternate = getAlternateSubject(name, { grade: ttGrade?.value, classNm: ttClass?.value });
       li.innerHTML = `
         <div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)}</div>
-        ${alternate ? `<div class="meta">2-3 이동수업: ${escapeHTML(alternate)}</div>` : ''}
+        ${alternate ? `<div class="meta">${escapeHTML(alternate.moveClass)} 이동수업: ${escapeHTML(alternate.alternateSubject)}</div>` : ''}
       `;
       ttList.appendChild(li);
     });
@@ -1231,7 +1475,7 @@ const renderTodayTimetable = (rows=[], date=new Date(), { weekendRedirect=false 
       <div class="period-subject-wrap">
         <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)}</span>
         ${alternate ? `
-          <small class="period-alternate">2-3 · ${escapeHTML(alternate)}</small>
+          <small class="period-alternate">${escapeHTML(alternate.moveClass)} · ${escapeHTML(alternate.alternateSubject)}</small>
         ` : ''}
       </div>
     `;
@@ -1350,6 +1594,11 @@ auth.onAuthStateChanged(async (u)=>{
   ]);
 
   await safeLoadDomains();
+
+  // 시간표 설정은 공개 읽기이므로 로그인 여부와 관계없이 먼저 불러옵니다.
+  await loadTimetableManagementData();
+  if(toDate && !toDate.value) toDate.value = dateInputValue(new Date());
+  syncOverrideSubjectState();
 
   // 로그인 여부와 관계없이 오늘/주간 시간표를 자동으로 불러옵니다.
   await Promise.allSettled([
