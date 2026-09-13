@@ -1060,7 +1060,7 @@ domAddBtn?.addEventListener('click', async ()=>{
    ✅ 시간표 관리 (관리자 + 부관리자)
 ========================= */
 const timetableSubjectsCol = ()=> db.collection(`users/${PUBLIC_UID}/settings/timetableSubjects/items`);
-const timetableOverridesCol = ()=> db.collection(`users/${PUBLIC_UID}/timetableOverrides/items`);
+const timetableOverridesCol = ()=> db.collection(`users/${PUBLIC_UID}/settings/timetableOverrides/items`);
 
 const refreshTimetableViews = async ()=>{
   await Promise.allSettled([
