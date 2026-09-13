@@ -1,5 +1,5 @@
-/* ===== style.css (v1.2.11) ===== */
-/* style.css - v1.2.11
+/* ===== style.css (v1.2.12) ===== */
+/* style.css - v1.2.12
  * - 모바일 오늘의 시간표 1열 레이아웃 유지
  * - PC 선택과목 보조 문구에서 한글 단어가 어색하게 쪼개지지 않도록 개선
  * - 긴 선택과목명은 단어 단위로 최대 2줄까지 자연스럽게 표시
@@ -250,3 +250,7 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
   .today-period .period-subject{font-size:14px;text-align:left}
   .today-period .period-alternate{font-size:11px;text-align:left;white-space:normal;word-break:keep-all;overflow-wrap:normal}
 }
+
+/* ===== v1.2.12 시간표 관리 ===== */
+.admin-stack{display:flex;flex-direction:column;gap:16px}.timetable-admin-form{margin-bottom:12px}.admin-box>.meta:first-of-type{margin-top:4px}.timetable-admin-form+.card-list{margin-top:12px}.task .management-actions{margin-top:11px}.override-delete{color:#ff9bae}.override-date{font-weight:800;color:#a9bdd7}
+@media (max-width:820px){.timetable-admin-form .f,.timetable-admin-form .col-span-5,.timetable-admin-form .col-end{grid-column:1/-1}}
