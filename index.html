@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<!-- index.html - v1.2.13
+<!-- index.html - v1.2.14
   - 관리자/부관리자 시간표 관리 UI 추가
   - 선택과목 이동수업을 과목명 기준으로 관리
   - 날짜+교시 기준 임시 시간표 수정 기능 추가
+  - 과목명 기준 수업 장소 관리 기능 추가
 -->
 <html lang="ko">
 <head>
@@ -10,7 +11,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#08111f" />
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.2.13" />
+  <link rel="stylesheet" href="style.css?v=1.2.14" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -61,7 +62,7 @@
 
       <div class="sidebar-foot">
         <span class="status-dot"></span>
-        <span>사이트 버전 v1.2.13</span>
+        <span>사이트 버전 v1.2.14</span>
       </div>
     </aside>
 
@@ -267,6 +268,18 @@
             </div>
 
             <div class="admin-box">
+              <div class="title">수업 장소 관리</div>
+              <div class="meta">과목명을 기준으로 수업 장소를 자동 표시합니다. 과목이 다른 교시로 이동해도 장소 정보가 함께 따라갑니다.</div>
+              <div class="task-form timetable-admin-form">
+                <div class="f col-span-6"><label class="label">과목명</label><input id="tlSubject" placeholder="예: 미적분 I" /></div>
+                <div class="f col-span-6"><label class="label">수업 장소</label><input id="tlLocation" placeholder="예: 수학실" /></div>
+                <div class="f col-end"><label class="label">&nbsp;</label><button id="tlAddBtn" class="btn btn--primary w-full">+ 장소 추가</button></div>
+              </div>
+              <ul id="tlList" class="card-list"></ul>
+              <div id="tlStatus" class="meta"></div>
+            </div>
+
+            <div class="admin-box">
               <div class="title">이번 주 시간표 수정</div>
               <div class="meta">날짜와 교시를 지정해 NEIS 시간표를 임시로 변경합니다. 해당 날짜에만 적용됩니다.</div>
               <div class="task-form timetable-admin-form">
@@ -297,7 +310,7 @@
         </section>
 
         <footer class="site-footer">
-          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.13</span>
+          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.14</span>
         </footer>
       </main>
     </div>
@@ -305,6 +318,6 @@
 
   <button id="mobileMenuBackdrop" class="mobile-menu-backdrop" type="button" aria-label="메뉴 닫기"></button>
   <div id="modal-root"></div>
-  <script src="app.js?v=1.2.13"></script>
+  <script src="app.js?v=1.2.14"></script>
 </body>
 </html>
