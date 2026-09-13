@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<!-- index.html - v1.2.11
-  - 홈 요약 카드 Firestore 데이터 연동
-  - 일정/시험/수행평가/숙제의 가장 가까운 현황 표시
+<!-- index.html - v1.2.12
+  - 관리자/부관리자 시간표 관리 UI 추가
+  - 선택과목 이동수업을 과목명 기준으로 관리
+  - 날짜+교시 기준 임시 시간표 수정 기능 추가
 -->
 <html lang="ko">
 <head>
@@ -53,14 +54,14 @@
           <span class="nav-icon">📚</span><span>시간표</span>
         </button>
         <div class="nav-divider"></div>
-        <button class="tab-btn admin-only" data-tab="admin" type="button">
-          <span class="nav-icon">🛡️</span><span>관리자</span>
+        <button class="tab-btn editor-only" data-tab="admin" type="button">
+          <span class="nav-icon">🛡️</span><span>관리</span>
         </button>
       </nav>
 
       <div class="sidebar-foot">
         <span class="status-dot"></span>
-        <span>사이트 버전 v1.2.11</span>
+        <span>사이트 버전 v1.2.12</span>
       </div>
     </aside>
 
@@ -249,10 +250,38 @@
           </div>
         </section>
 
-        <section id="panel_admin" class="sec panel admin-only">
-          <div class="section-head"><div class="section-title-wrap"><span class="section-icon red">🛡️</span><div><span class="section-kicker">ADMIN ONLY</span><h2>관리자</h2></div></div></div>
-          <div class="section-body">
+        <section id="panel_admin" class="sec panel editor-only">
+          <div class="section-head"><div class="section-title-wrap"><span class="section-icon red">🛡️</span><div><span class="section-kicker">MANAGEMENT</span><h2>관리</h2></div></div></div>
+          <div class="section-body admin-stack">
             <div class="admin-box">
+              <div class="title">선택과목 / 이동수업 설정</div>
+              <div class="meta">NEIS의 최종 과목명을 기준으로 이동수업 정보를 자동 표시합니다. 교시가 바뀌어도 과목을 따라갑니다.</div>
+              <div class="task-form timetable-admin-form">
+                <div class="f col-span-5"><label class="label">기준 과목</label><input id="tsBaseSubject" placeholder="예: 물질과 에너지" /></div>
+                <div class="f"><label class="label">이동 반</label><input id="tsMoveClass" placeholder="예: 2-3" /></div>
+                <div class="f col-span-5"><label class="label">이동수업 과목</label><input id="tsAlternateSubject" placeholder="예: 지구시스템과학" /></div>
+                <div class="f col-end"><label class="label">&nbsp;</label><button id="tsAddBtn" class="btn btn--primary w-full">+ 추가</button></div>
+              </div>
+              <ul id="tsList" class="card-list"></ul>
+              <div id="tsStatus" class="meta"></div>
+            </div>
+
+            <div class="admin-box">
+              <div class="title">이번 주 시간표 수정</div>
+              <div class="meta">날짜와 교시를 지정해 NEIS 시간표를 임시로 변경합니다. 해당 날짜에만 적용됩니다.</div>
+              <div class="task-form timetable-admin-form">
+                <div class="f col-span-5"><label class="label">날짜</label><input id="toDate" type="date" /></div>
+                <div class="f"><label class="label">교시</label><select id="toPeriod"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></div>
+                <div class="f col-span-5"><label class="label">변경 과목</label><input id="toSubject" placeholder="예: 물질과 에너지" /></div>
+                <div class="f"><label class="label">처리</label><select id="toAction"><option value="upsert">변경/추가</option><option value="delete">교시 삭제</option></select></div>
+                <div class="f col-end"><label class="label">&nbsp;</label><button id="toAddBtn" class="btn btn--primary w-full">+ 수정 등록</button></div>
+              </div>
+              <ul id="toList" class="card-list"></ul>
+              <div id="toStatus" class="meta"></div>
+              <div class="meta hint">* 날짜가 지나면 자동으로 적용되지 않으며, 기록은 관리 화면에서 삭제할 수 있습니다.</div>
+            </div>
+
+            <div class="admin-box admin-only">
               <div class="title">도메인 만료 관리</div>
               <div class="task-form">
                 <div class="f col-span-6"><label class="label">도메인</label><input id="domName" placeholder="예: example.com" /></div>
@@ -268,7 +297,7 @@
         </section>
 
         <footer class="site-footer">
-          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.11</span>
+          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.12</span>
         </footer>
       </main>
     </div>
