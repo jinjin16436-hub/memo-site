@@ -1,5 +1,6 @@
-/* app.js - v1.2.13
+/* app.js - v1.2.14
  * 변경사항:
+ * - 과목명 기준 수업 장소 관리 기능 추가 (예: 미적분 I → 수학실)
  * - 선택과목/이동수업 설정을 Firestore 관리자 UI로 이동
  * - 이동수업을 교시가 아닌 최종 과목명 기준으로 매칭
  * - 날짜+교시 기준 임시 시간표 변경/추가/삭제 기능 추가
@@ -99,6 +100,13 @@ const tsAlternateSubject = $('#tsAlternateSubject');
 const tsAddBtn = $('#tsAddBtn');
 const tsList = $('#tsList');
 const tsStatus = $('#tsStatus');
+
+const tlSubject = $('#tlSubject');
+const tlLocation = $('#tlLocation');
+const tlAddBtn = $('#tlAddBtn');
+const tlList = $('#tlList');
+const tlStatus = $('#tlStatus');
+
 const toDate = $('#toDate');
 const toPeriod = $('#toPeriod');
 const toSubject = $('#toSubject');
@@ -1060,6 +1068,7 @@ domAddBtn?.addEventListener('click', async ()=>{
    ✅ 시간표 관리 (관리자 + 부관리자)
 ========================= */
 const timetableSubjectsCol = ()=> db.collection(`users/${PUBLIC_UID}/settings/timetableSubjects/items`);
+const timetableLocationsCol = ()=> db.collection(`users/${PUBLIC_UID}/settings/timetableLocations/items`);
 const timetableOverridesCol = ()=> db.collection(`users/${PUBLIC_UID}/settings/timetableOverrides/items`);
 
 const refreshTimetableViews = async ()=>{
@@ -1071,25 +1080,30 @@ const refreshTimetableViews = async ()=>{
 
 const loadTimetableManagementData = async ()=>{
   try{
-    const [subjectSnap, overrideSnap] = await Promise.all([
+    const [subjectSnap, locationSnap, overrideSnap] = await Promise.all([
       timetableSubjectsCol().get(),
+      timetableLocationsCol().get(),
       timetableOverridesCol().get(),
     ]);
 
     timetableSubjectRules = subjectSnap.docs.map(doc=>({ id:doc.id, ...doc.data() }));
+    timetableLocationRules = locationSnap.docs.map(doc=>({ id:doc.id, ...doc.data() }));
     timetableOverrides = overrideSnap.docs.map(doc=>({ id:doc.id, ...doc.data() }));
 
     timetableSubjectRules.sort((a,b)=> String(a.baseSubject||'').localeCompare(String(b.baseSubject||''), 'ko'));
+    timetableLocationRules.sort((a,b)=> String(a.subject||'').localeCompare(String(b.subject||''), 'ko'));
     timetableOverrides.sort((a,b)=>{
       const dateCmp = String(a.date||'').localeCompare(String(b.date||''));
       return dateCmp || Number(a.period||0) - Number(b.period||0);
     });
 
     renderTimetableSubjectRules();
+    renderTimetableLocationRules();
     renderTimetableOverrides();
   }catch(e){
     console.error('시간표 관리 데이터 로드 오류:', e);
     if(tsStatus) tsStatus.textContent = `불러오기 오류: ${e.message || e}`;
+    if(tlStatus) tlStatus.textContent = `불러오기 오류: ${e.message || e}`;
     if(toStatus) toStatus.textContent = `불러오기 오류: ${e.message || e}`;
   }
 };
@@ -1145,6 +1159,116 @@ const renderTimetableSubjectRules = ()=>{
     tsList.appendChild(li);
   });
 };
+
+
+const renderTimetableLocationRules = ()=>{
+  if(!tlList) return;
+  tlList.innerHTML = '';
+
+  if(!timetableLocationRules.length){
+    tlList.innerHTML = `<li class="meta">등록된 수업 장소 설정이 없습니다.</li>`;
+    return;
+  }
+
+  timetableLocationRules.forEach(rule=>{
+    const li = el('li',{class:'task'});
+    li.innerHTML = `
+      <div class="title">${escapeHTML(rule.subject || '과목 없음')}</div>
+      <div class="meta">수업 장소: ${escapeHTML(rule.location || '장소 미지정')}</div>
+    `;
+
+    if(canEdit){
+      const row = el('div',{class:'row management-actions'});
+
+      const editBtn = el('button',{class:'btn'});
+      editBtn.textContent = '수정';
+      editBtn.addEventListener('click', ()=>{
+        openModal({
+          title:'수업 장소 수정',
+          fields:[
+            {key:'subject',label:'과목명',type:'text',required:true,value:rule.subject||'',full:true},
+            {key:'location',label:'수업 장소',type:'text',required:true,value:rule.location||'',full:true},
+          ],
+          onSave:async(v)=>{
+            await timetableLocationsCol().doc(rule.id).set({
+              subject:v.subject.trim(),
+              location:v.location.trim(),
+              enabled:true,
+              updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+            },{merge:true});
+
+            await loadTimetableManagementData();
+            await refreshTimetableViews();
+          }
+        });
+      });
+
+      const delBtn = el('button',{class:'btn btn--danger'});
+      delBtn.textContent = '삭제';
+      delBtn.addEventListener('click', async()=>{
+        if(!confirm('이 수업 장소 설정을 삭제할까요?')) return;
+        await timetableLocationsCol().doc(rule.id).delete();
+        await loadTimetableManagementData();
+        await refreshTimetableViews();
+      });
+
+      row.append(editBtn,delBtn);
+      li.appendChild(row);
+    }
+
+    tlList.appendChild(li);
+  });
+};
+
+tlAddBtn?.addEventListener('click',async()=>{
+  if(!canEdit) return;
+
+  const subject=(tlSubject?.value||'').trim();
+  const location=(tlLocation?.value||'').trim();
+
+  if(!subject || !location){
+    alert('과목명과 수업 장소를 모두 입력해주세요.');
+    return;
+  }
+
+  tlAddBtn.disabled=true;
+
+  try{
+    const existing = timetableLocationRules.find(
+      rule=>String(rule.subject||'').trim() === subject
+    );
+
+    const ref = existing
+      ? timetableLocationsCol().doc(existing.id)
+      : timetableLocationsCol().doc();
+
+    await ref.set({
+      subject,
+      location,
+      enabled:true,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      ...(existing ? {} : {
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      }),
+    },{merge:true});
+
+    tlSubject.value='';
+    tlLocation.value='';
+
+    if(tlStatus){
+      tlStatus.textContent = existing
+        ? '기존 장소 설정을 갱신했습니다.'
+        : '수업 장소를 추가했습니다.';
+    }
+
+    await loadTimetableManagementData();
+    await refreshTimetableViews();
+  }catch(e){
+    if(tlStatus) tlStatus.textContent=`추가 오류: ${e.message||e}`;
+  }finally{
+    tlAddBtn.disabled=false;
+  }
+});
 
 const renderTimetableOverrides = ()=>{
   if(!toList) return;
@@ -1260,6 +1384,7 @@ const TIMETABLE_DEFAULTS = Object.freeze({
 
 // Firestore에서 불러온 선택과목/이동수업 및 날짜별 임시 변경 캐시
 let timetableSubjectRules = [];
+let timetableLocationRules = [];
 let timetableOverrides = [];
 
 const isDefaultClassConfig = (config=TIMETABLE_DEFAULTS)=>
@@ -1271,6 +1396,18 @@ const getAlternateSubject = (subject, config=TIMETABLE_DEFAULTS)=>{
   const key = String(subject || '').trim();
   if(!key) return null;
   return timetableSubjectRules.find(rule=> rule.enabled !== false && rule.baseSubject === key) || null;
+};
+
+const getTimetableLocation = (subject, config=TIMETABLE_DEFAULTS)=>{
+  if(!isDefaultClassConfig(config)) return null;
+  const key = String(subject || '').trim();
+  if(!key) return null;
+
+  const rule = timetableLocationRules.find(
+    item=>item.enabled !== false && String(item.subject||'').trim() === key
+  );
+
+  return rule?.location ? String(rule.location).trim() : null;
 };
 
 const ymdFromDate = (d)=>{
@@ -1437,9 +1574,13 @@ const renderTTWeek = (items=[])=>{
       const li = el('li',{class:'task'});
       const perio = r.PERIO || r.ORD || '';
       const name  = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '';
-      const alternate = getAlternateSubject(name, { grade: ttGrade?.value, classNm: ttClass?.value });
+      const timetableConfig = { grade: ttGrade?.value, classNm: ttClass?.value };
+      const alternate = getAlternateSubject(name, timetableConfig);
+      const location = getTimetableLocation(name, timetableConfig);
+
       li.innerHTML = `
         <div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)}</div>
+        ${location ? `<div class="meta timetable-location">장소: ${escapeHTML(location)}</div>` : ''}
         ${alternate ? `<div class="meta">${escapeHTML(alternate.moveClass)} 이동수업: ${escapeHTML(alternate.alternateSubject)}</div>` : ''}
       `;
       ttList.appendChild(li);
@@ -1469,11 +1610,13 @@ const renderTodayTimetable = (rows=[], date=new Date(), { weekendRedirect=false 
     const perio = r.PERIO || r.ORD || '';
     const name = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '과목 정보 없음';
     const alternate = getAlternateSubject(name);
+    const location = getTimetableLocation(name);
     const item = el('div',{class:'today-period'});
     item.innerHTML = `
       <span class="period-no">${escapeHTML(perio)}교시</span>
       <div class="period-subject-wrap">
         <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)}</span>
+        ${location ? `<small class="period-location">${escapeHTML(location)}</small>` : ''}
         ${alternate ? `
           <small class="period-alternate">${escapeHTML(alternate.moveClass)} · ${escapeHTML(alternate.alternateSubject)}</small>
         ` : ''}
