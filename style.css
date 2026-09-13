@@ -1,5 +1,6 @@
-/* ===== style.css (v1.2.13) ===== */
-/* style.css - v1.2.13
+/* ===== style.css (v1.2.14) ===== */
+/* style.css - v1.2.14
+ * - 과목명 기준 수업 장소 표시 및 관리자 관리 UI 추가
  * - 모바일 오늘의 시간표 1열 레이아웃 유지
  * - PC 선택과목 보조 문구에서 한글 단어가 어색하게 쪼개지지 않도록 개선
  * - 긴 선택과목명은 단어 단위로 최대 2줄까지 자연스럽게 표시
@@ -254,3 +255,21 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
 /* ===== v1.2.13 시간표 관리 ===== */
 .admin-stack{display:flex;flex-direction:column;gap:16px}.timetable-admin-form{margin-bottom:12px}.admin-box>.meta:first-of-type{margin-top:4px}.timetable-admin-form+.card-list{margin-top:12px}.task .management-actions{margin-top:11px}.override-delete{color:#ff9bae}.override-date{font-weight:800;color:#a9bdd7}
 @media (max-width:820px){.timetable-admin-form .f,.timetable-admin-form .col-span-5,.timetable-admin-form .col-end{grid-column:1/-1}}
+
+
+/* ===== v1.2.14 수업 장소 표시 ===== */
+.timetable-location{color:#9fb3cf}
+.today-period .period-location{
+  display:block;
+  width:100%;
+  color:#a9bdd7;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.35;
+  text-align:center;
+  white-space:normal;
+  word-break:keep-all;
+}
+@media (max-width:820px){
+  .today-period .period-location{text-align:left}
+}
