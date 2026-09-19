@@ -1,6 +1,8 @@
-/* ===== style.css (v1.2.15) ===== */
-/* style.css - v1.2.15
- * - 시간표 수행평가 자동 매칭 [수행] 배지 및 보라색 강조 추가
+/* ===== style.css (v1.2.16) ===== */
+/* style.css - v1.2.16
+ * - 시간표 숙제 자동 매칭 [숙제] 배지 및 주황색 강조 추가
+ * - [수행]과 [숙제]가 동시에 있으면 두 배지를 한 줄에 표시
+ * - 시간표 카드 높이 유지를 위해 수행평가/숙제 상세 문구는 표시하지 않음
  * - 과목명 기준 수업 장소 표시 및 관리자 관리 UI 유지
  * - 모바일 오늘의 시간표 1열 레이아웃 유지
  * - PC 선택과목 보조 문구에서 한글 단어가 어색하게 쪼개지지 않도록 개선
@@ -276,37 +278,33 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
 }
 
 
-/* ===== v1.2.15 시간표 수행평가 자동 표시 ===== */
+/* ===== v1.2.16 시간표 수행평가 / 숙제 자동 표시 ===== */
 .task.timetable-performance,
 .today-period.timetable-performance{
   border-color:rgba(168,85,247,.55);
   background:linear-gradient(145deg,rgba(92,40,135,.30),rgba(14,23,42,.96));
   box-shadow:inset 0 0 0 1px rgba(168,85,247,.08),0 10px 28px rgba(88,28,135,.12);
 }
-.timetable-performance-badge{
+.task.timetable-homework,
+.today-period.timetable-homework{
+  border-color:rgba(251,146,60,.55);
+  background:linear-gradient(145deg,rgba(120,67,22,.30),rgba(14,23,42,.96));
+  box-shadow:inset 0 0 0 1px rgba(251,146,60,.08),0 10px 28px rgba(124,45,18,.10);
+}
+.task.timetable-performance.timetable-homework,
+.today-period.timetable-performance.timetable-homework{
+  border-color:rgba(192,132,252,.60);
+  background:linear-gradient(145deg,rgba(92,40,135,.27),rgba(100,57,20,.24),rgba(14,23,42,.96));
+}
+.timetable-performance-badge,
+.timetable-homework-badge{
   display:inline-flex;
   align-items:center;
   margin-left:5px;
-  color:#d8b4fe;
   font-size:11px;
   font-weight:900;
   white-space:nowrap;
   vertical-align:middle;
 }
-.timetable-performance-text,
-.period-performance{
-  color:#d8b4fe!important;
-  font-weight:700;
-}
-.period-performance{
-  display:block;
-  width:100%;
-  font-size:10px;
-  line-height:1.35;
-  text-align:center;
-  white-space:normal;
-  word-break:keep-all;
-}
-@media (max-width:820px){
-  .period-performance{text-align:left}
-}
+.timetable-performance-badge{color:#d8b4fe}
+.timetable-homework-badge{color:#fdba74}
