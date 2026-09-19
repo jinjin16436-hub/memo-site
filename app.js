@@ -1,5 +1,8 @@
-/* app.js - v1.2.14
+/* app.js - v1.2.15
  * 변경사항:
+ * - 시간표의 날짜·교시·과목과 수행평가를 자동 매칭해 [수행] 배지 표시
+ * - 수행평가가 있는 시간표 카드를 보라색으로 강조
+ * - 선택과목 이동수업 과목에 등록된 수행평가도 함께 매칭
  * - 과목명 기준 수업 장소 관리 기능 추가 (예: 미적분 I → 수학실)
  * - 선택과목/이동수업 설정을 Firestore 관리자 UI로 이동
  * - 이동수업을 교시가 아닌 최종 과목명 기준으로 매칭
@@ -40,6 +43,9 @@ let currentUser = null;
 let isAdmin = false;
 let isEditor = false;
 let canEdit = false;
+
+// 시간표 수행평가 자동 매칭용 공개 캐시
+let performanceTaskItems = [];
 
 const $  = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -665,6 +671,7 @@ const openTaskEditModal = (cat, id, d)=>{
         };
         await db.doc(`users/${PUBLIC_UID}/tasks/tasks/items/${id}`).set(payload,{merge:true});
         await safeLoadTasks('tasks');
+        await refreshTimetableViews();
       }
     });
     return;
@@ -774,6 +781,44 @@ const updateSummaryCard = (cat, docs=[])=>{
   }
 };
 
+const normalizeSubjectName = (value='')=> String(value).trim().replace(/\s+/g, '').toLowerCase();
+
+const isDateWithinTaskRange = (date, task={})=>{
+  const target = toDateOnly(date);
+  if(!target) return false;
+  let start = toDateOnly(task.startDate);
+  let end = toDateOnly(task.endDate);
+  if(!start && !end) return false;
+  if(!start) start = end;
+  if(!end) end = start;
+  return target >= start && target <= end;
+};
+
+const isPeriodWithinTaskRange = (period, task={})=>{
+  const p = normPeriod(asIntOrNull(period));
+  if(!p) return false;
+  let start = normPeriod(asIntOrNull(task.periodStart));
+  let end = normPeriod(asIntOrNull(task.periodEnd));
+  if(!start && !end) return true;
+  if(!start) start = end;
+  if(!end) end = start;
+  return p >= Math.min(start,end) && p <= Math.max(start,end);
+};
+
+const getPerformanceTasksForTimetable = (date, period, subject, alternate=null)=>{
+  const names = new Set([
+    normalizeSubjectName(subject),
+    normalizeSubjectName(alternate?.alternateSubject || '')
+  ].filter(Boolean));
+
+  return performanceTaskItems.filter(item=>{
+    const task = item.data || item;
+    return names.has(normalizeSubjectName(task.subject || ''))
+      && isDateWithinTaskRange(date, task)
+      && isPeriodWithinTaskRange(period, task);
+  });
+};
+
 const safeLoadTasks = async (cat)=>{
   const ul = getListForCat(cat);
   if(!ul) return;
@@ -782,6 +827,7 @@ const safeLoadTasks = async (cat)=>{
   try{
     const snap = await db.collection(`users/${PUBLIC_UID}/tasks/${cat}/items`).get();
     if(snap.empty){
+      if(cat === 'tasks') performanceTaskItems = [];
       ul.innerHTML = `<li class="meta">등록된 ${catLabel(cat)}가 없습니다.</li>`;
       updateSummaryCard(cat, []);
       return;
@@ -789,6 +835,7 @@ const safeLoadTasks = async (cat)=>{
 
     const docs=[]; snap.forEach(doc=>docs.push({id:doc.id,data:doc.data()||{}}));
     docs.sort(compareTaskItems);
+    if(cat === 'tasks') performanceTaskItems = docs.map(item=>({ id:item.id, data:item.data }));
     updateSummaryCard(cat, docs);
 
     docs.forEach(({id,data})=>{
@@ -820,6 +867,7 @@ const safeLoadTasks = async (cat)=>{
           if(!confirm('삭제할까요?')) return;
           await db.doc(`users/${PUBLIC_UID}/tasks/${cat}/items/${id}`).delete();
           await safeLoadTasks(cat);
+          if(cat === 'tasks') await refreshTimetableViews();
         });
 
         row.append(editBtn, delBtn);
@@ -869,6 +917,7 @@ $('#tAddBtn')?.addEventListener('click', async ()=>{
   await db.collection(`users/${PUBLIC_UID}/tasks/tasks/items`).add(payload);
   ['tSubj','tTitle','tDetail','tStart','tEnd','tPStart','tPEnd'].forEach(id=>$('#'+id).value='');
   await safeLoadTasks('tasks');
+  await refreshTimetableViews();
 });
 
 $('#hAddBtn')?.addEventListener('click', async ()=>{
@@ -1577,11 +1626,15 @@ const renderTTWeek = (items=[])=>{
       const timetableConfig = { grade: ttGrade?.value, classNm: ttClass?.value };
       const alternate = getAlternateSubject(name, timetableConfig);
       const location = getTimetableLocation(name, timetableConfig);
+      const performanceTasks = getPerformanceTasksForTimetable(date, perio, name, alternate);
+      const hasPerformance = performanceTasks.length > 0;
+      if(hasPerformance) li.classList.add('timetable-performance');
 
       li.innerHTML = `
-        <div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)}</div>
+        <div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)} ${hasPerformance ? '<span class="timetable-performance-badge">[수행]</span>' : ''}</div>
         ${location ? `<div class="meta timetable-location">장소: ${escapeHTML(location)}</div>` : ''}
         ${alternate ? `<div class="meta">${escapeHTML(alternate.moveClass)} 이동수업: ${escapeHTML(alternate.alternateSubject)}</div>` : ''}
+        ${hasPerformance ? `<div class="meta timetable-performance-text">${performanceTasks.map(item=>escapeHTML(item.data?.content || '수행평가')).join(' · ')}</div>` : ''}
       `;
       ttList.appendChild(li);
     });
@@ -1611,15 +1664,18 @@ const renderTodayTimetable = (rows=[], date=new Date(), { weekendRedirect=false 
     const name = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '과목 정보 없음';
     const alternate = getAlternateSubject(name);
     const location = getTimetableLocation(name);
-    const item = el('div',{class:'today-period'});
+    const performanceTasks = getPerformanceTasksForTimetable(date, perio, name, alternate);
+    const hasPerformance = performanceTasks.length > 0;
+    const item = el('div',{class:`today-period${hasPerformance ? ' timetable-performance' : ''}`});
     item.innerHTML = `
       <span class="period-no">${escapeHTML(perio)}교시</span>
       <div class="period-subject-wrap">
-        <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)}</span>
+        <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)} ${hasPerformance ? '<span class="timetable-performance-badge">[수행]</span>' : ''}</span>
         ${location ? `<small class="period-location">${escapeHTML(location)}</small>` : ''}
         ${alternate ? `
           <small class="period-alternate">${escapeHTML(alternate.moveClass)} · ${escapeHTML(alternate.alternateSubject)}</small>
         ` : ''}
+        ${hasPerformance ? `<small class="period-performance">${performanceTasks.map(item=>escapeHTML(item.data?.content || '수행평가')).join(' · ')}</small>` : ''}
       </div>
     `;
     todayTimetableList.appendChild(item);
