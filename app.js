@@ -1,5 +1,6 @@
-/* app.js - v1.2.16
+/* app.js - v1.2.17
  * 변경사항:
+ * - 기본 과목/이동수업 과목의 [수행]/[숙제] 배지를 실제 과목 옆에 각각 표시
  * - 시간표의 날짜·교시·과목과 숙제를 자동 매칭해 [숙제] 배지 표시
  * - 수행평가 [수행] + 숙제 [숙제] 배지를 한 줄에 함께 표시 가능
  * - 수행평가는 보라색, 숙제는 주황색, 둘 다 있으면 혼합 강조
@@ -809,25 +810,24 @@ const isPeriodWithinTaskRange = (period, task={})=>{
   return p >= Math.min(start,end) && p <= Math.max(start,end);
 };
 
-const getMatchingTasksForTimetable = (items, date, period, subject, alternate=null)=>{
-  const names = new Set([
-    normalizeSubjectName(subject),
-    normalizeSubjectName(alternate?.alternateSubject || '')
-  ].filter(Boolean));
-
+const getMatchingTasksForTimetable = (items, date, period, subject)=>{
+  const subjectKey = normalizeSubjectName(subject);
+  if(!subjectKey) return [];
   return items.filter(item=>{
     const task = item.data || item;
-    return names.has(normalizeSubjectName(task.subject || ''))
+    return normalizeSubjectName(task.subject || '') === subjectKey
       && isDateWithinTaskRange(date, task)
       && isPeriodWithinTaskRange(period, task);
   });
 };
 
-const getPerformanceTasksForTimetable = (date, period, subject, alternate=null)=>
-  getMatchingTasksForTimetable(performanceTaskItems, date, period, subject, alternate);
+const getTimetableTaskFlags = (date, period, subject)=>({
+  hasPerformance: getMatchingTasksForTimetable(performanceTaskItems, date, period, subject).length > 0,
+  hasHomework: getMatchingTasksForTimetable(homeworkTaskItems, date, period, subject).length > 0,
+});
 
-const getHomeworkTasksForTimetable = (date, period, subject, alternate=null)=>
-  getMatchingTasksForTimetable(homeworkTaskItems, date, period, subject, alternate);
+const renderTimetableTaskBadges = (flags={})=>
+  `${flags.hasPerformance ? '<span class="timetable-performance-badge">[수행]</span>' : ''}${flags.hasHomework ? '<span class="timetable-homework-badge">[숙제]</span>' : ''}`;
 
 const safeLoadTasks = async (cat)=>{
   const ul = getListForCat(cat);
@@ -1638,17 +1638,19 @@ const renderTTWeek = (items=[])=>{
       const timetableConfig = { grade: ttGrade?.value, classNm: ttClass?.value };
       const alternate = getAlternateSubject(name, timetableConfig);
       const location = getTimetableLocation(name, timetableConfig);
-      const performanceTasks = getPerformanceTasksForTimetable(date, perio, name, alternate);
-      const homeworkTasks = getHomeworkTasksForTimetable(date, perio, name, alternate);
-      const hasPerformance = performanceTasks.length > 0;
-      const hasHomework = homeworkTasks.length > 0;
+      const baseFlags = getTimetableTaskFlags(date, perio, name);
+      const alternateFlags = alternate
+        ? getTimetableTaskFlags(date, perio, alternate.alternateSubject)
+        : { hasPerformance:false, hasHomework:false };
+      const hasPerformance = baseFlags.hasPerformance || alternateFlags.hasPerformance;
+      const hasHomework = baseFlags.hasHomework || alternateFlags.hasHomework;
       if(hasPerformance) li.classList.add('timetable-performance');
       if(hasHomework) li.classList.add('timetable-homework');
 
       li.innerHTML = `
-        <div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)} ${hasPerformance ? '<span class="timetable-performance-badge">[수행]</span>' : ''}${hasHomework ? '<span class="timetable-homework-badge">[숙제]</span>' : ''}</div>
+        <div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)} ${renderTimetableTaskBadges(baseFlags)}</div>
         ${location ? `<div class="meta timetable-location">장소: ${escapeHTML(location)}</div>` : ''}
-        ${alternate ? `<div class="meta">${escapeHTML(alternate.moveClass)} 이동수업: ${escapeHTML(alternate.alternateSubject)}</div>` : ''}
+        ${alternate ? `<div class="meta">${escapeHTML(alternate.moveClass)} 이동수업: ${escapeHTML(alternate.alternateSubject)} ${renderTimetableTaskBadges(alternateFlags)}</div>` : ''}
       `;
       ttList.appendChild(li);
     });
@@ -1678,18 +1680,20 @@ const renderTodayTimetable = (rows=[], date=new Date(), { weekendRedirect=false 
     const name = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '과목 정보 없음';
     const alternate = getAlternateSubject(name);
     const location = getTimetableLocation(name);
-    const performanceTasks = getPerformanceTasksForTimetable(date, perio, name, alternate);
-    const homeworkTasks = getHomeworkTasksForTimetable(date, perio, name, alternate);
-    const hasPerformance = performanceTasks.length > 0;
-    const hasHomework = homeworkTasks.length > 0;
+    const baseFlags = getTimetableTaskFlags(date, perio, name);
+    const alternateFlags = alternate
+      ? getTimetableTaskFlags(date, perio, alternate.alternateSubject)
+      : { hasPerformance:false, hasHomework:false };
+    const hasPerformance = baseFlags.hasPerformance || alternateFlags.hasPerformance;
+    const hasHomework = baseFlags.hasHomework || alternateFlags.hasHomework;
     const item = el('div',{class:`today-period${hasPerformance ? ' timetable-performance' : ''}${hasHomework ? ' timetable-homework' : ''}`});
     item.innerHTML = `
       <span class="period-no">${escapeHTML(perio)}교시</span>
       <div class="period-subject-wrap">
-        <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)} ${hasPerformance ? '<span class="timetable-performance-badge">[수행]</span>' : ''}${hasHomework ? '<span class="timetable-homework-badge">[숙제]</span>' : ''}</span>
+        <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)} ${renderTimetableTaskBadges(baseFlags)}</span>
         ${location ? `<small class="period-location">${escapeHTML(location)}</small>` : ''}
         ${alternate ? `
-          <small class="period-alternate">${escapeHTML(alternate.moveClass)} · ${escapeHTML(alternate.alternateSubject)}</small>
+          <small class="period-alternate">${escapeHTML(alternate.moveClass)} · ${escapeHTML(alternate.alternateSubject)} ${renderTimetableTaskBadges(alternateFlags)}</small>
         ` : ''}
       </div>
     `;
