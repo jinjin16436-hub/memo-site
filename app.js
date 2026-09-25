@@ -1,8 +1,9 @@
-/* app.js - v1.2.22
- * 변경사항:
- * - v1.2.22: 홈 급식/시간표 레이아웃 변경 (JS 기능 변경 없음)
- * - v1.2.21: 페이지 최초 진입 시 급식 자동 조회 실행 누락 수정
- * - 홈 자동 시간표 조회 중 경과 시간 표시 및 완료/실패 시 소요 시간 표시
+/* app.js - v1.2.23
+ * 홈 대시보드: 급식·시간표·다가오는 일정 3열 구성.
+ * 기존 Firestore 공개 읽기/권한, Google Popup 로그인, NEIS 자동·수동 조회,
+ * 이동수업/수업장소/과목별 수행·숙제 배지, 급식 주간·일간 조회 유지.
+ * 일정 미리보기는 기존 카테고리 조회 결과를 재사용하여 추가 읽기를 방지합니다.
+ * 자동 조회 시간 및 오류/경과시간 표시 동작은 변경하지 않습니다.
  */
 
 if (!window.firebaseConfig) {
@@ -739,7 +740,44 @@ const summaryItemTitle = (cat,d={})=>{
   return '항목';
 };
 
+// 각 탭에서 이미 읽은 데이터를 합쳐 홈의 다가오는 일정을 갱신합니다.
+const upcomingCache = { schedules:null, exams:null, tasks:null, homeworks:null };
+const renderHomeUpcoming = ()=>{
+  const host = $('#homeUpcomingList');
+  if(!host) return;
+  const labels = {schedules:'일정', exams:'시험', tasks:'수행', homeworks:'숙제'};
+  const entries = Object.entries(upcomingCache).flatMap(([cat,docs])=>
+    (docs || []).map(({data})=>({cat, data:data||{}}))
+  ).filter(({data})=>{
+    const {end} = itemDateRange(data);
+    return end && end >= toDateOnly(new Date());
+  }).sort((a,b)=>itemDateRange(a.data).end-itemDateRange(b.data).end).slice(0,5);
+  host.replaceChildren();
+  if(!entries.length){
+    host.textContent = Object.values(upcomingCache).some(v=>v===null)
+      ? '일정을 불러오는 중...' : '예정된 일정이 없습니다.';
+    return;
+  }
+  entries.forEach(({cat,data})=>{
+    const card=el('div',{class:'upcoming-item'});
+    const header=el('div',{class:'upcoming-item-head'});
+    const tag=el('span',{class:`upcoming-tag upcoming-${cat}`});
+    tag.textContent=labels[cat];
+    const dday=el('span',{class:'upcoming-dday'});
+    dday.textContent=summaryStatusText(data);
+    header.append(tag,dday);
+    const name=el('div',{class:'upcoming-name'});
+    name.textContent=summaryItemTitle(cat,data);
+    const end=itemDateRange(data).end;
+    const date=el('div',{class:'upcoming-date'});
+    date.textContent=end ? `${end.getMonth()+1}월 ${end.getDate()}일` : '';
+    card.append(header,name,date);
+    host.appendChild(card);
+  });
+};
+
 const updateSummaryCard = (cat, docs=[])=>{
+  if(Object.hasOwn(upcomingCache,cat)){ upcomingCache[cat]=docs; renderHomeUpcoming(); }
   const ui = summaryElements[cat];
   if(!ui?.main || !ui?.sub) return;
 
@@ -1684,8 +1722,8 @@ const renderTodayTimetable = (rows=[], date=new Date(), { weekendRedirect=false 
   if(!todayTimetableList || !todayTimetableMeta) return;
 
   todayTimetableList.innerHTML = '';
-  const prefix = weekendRedirect ? '다음 수업일 · ' : '';
-  todayTimetableMeta.textContent = `${prefix}${fmtTTDate(date)} · ${TIMETABLE_DEFAULTS.grade}학년 ${TIMETABLE_DEFAULTS.classNm}반`;
+  const prefix = weekendRedirect ? `다음 수업일 · ${fmtTTDate(date)} · ` : '';
+  todayTimetableMeta.textContent = `${prefix}${TIMETABLE_DEFAULTS.grade}학년 ${TIMETABLE_DEFAULTS.classNm}반`;
 
   if(!rows.length){
     todayTimetableList.innerHTML = `<div class="today-timetable-empty">${weekendRedirect ? '다음 월요일' : '오늘'}은 등록된 수업이 없습니다.</div>`;
