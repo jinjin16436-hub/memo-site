@@ -1,11 +1,6 @@
 <!DOCTYPE html>
-<!-- index.html - v1.2.19
-  - 관리자/부관리자 시간표 관리 UI 추가
-  - 선택과목 이동수업을 과목명 기준으로 관리
-  - 날짜+교시 기준 임시 시간표 수정 기능 추가
-  - 과목명 기준 수업 장소 관리 기능 추가
-  - 시간표 수행평가 자동 매칭 및 [수행] 표시 유지
-  - 시간표 숙제 자동 매칭 및 [숙제] 표시 추가
+<!-- index.html - v1.2.20
+  - 급식 추가
 -->
 <html lang="ko">
 <head>
@@ -13,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#08111f" />
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.2.16" />
+  <link rel="stylesheet" href="style.css?v=1.2.20" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -56,6 +51,7 @@
         <button class="tab-btn" data-tab="timetable" type="button">
           <span class="nav-icon">📚</span><span>시간표</span>
         </button>
+        <button class="tab-btn" data-tab="meal" type="button"><span class="nav-icon">🍱</span><span>급식</span></button>
         <div class="nav-divider"></div>
         <button class="tab-btn editor-only" data-tab="admin" type="button">
           <span class="nav-icon">🛡️</span><span>관리</span>
@@ -128,6 +124,11 @@
           </div>
           <div id="todayTimetableMeta" class="today-timetable-meta">시간표를 자동으로 불러오는 중...</div>
           <div id="todayTimetableList" class="today-timetable-list" aria-live="polite"></div>
+        </section>
+
+        <section class="today-timetable-card meal-home" aria-labelledby="homeMealTitle">
+          <div class="today-timetable-head"><div class="section-title-wrap"><span class="section-icon cyan">🍱</span><div><span class="section-kicker">TODAY MEAL</span><h2 id="homeMealTitle">오늘의 급식</h2></div></div><button class="today-timetable-more quick-tab" data-target-tab="meal" type="button">전체 급식 보기 →</button></div>
+          <div id="homeMealMeta" class="today-timetable-meta">급식을 자동으로 불러오는 중...</div><div id="homeMealContent" class="meal-home-content" aria-live="polite"></div>
         </section>
 
         <section id="sec_notice" class="sec notice-section">
@@ -253,6 +254,17 @@
           </div>
         </section>
 
+        <section id="panel_meal" class="sec panel">
+          <div class="section-head"><div class="section-title-wrap"><span class="section-icon cyan">🍱</span><div><span class="section-kicker">NEIS MEAL</span><h2>급식 조회</h2></div></div></div>
+          <div class="section-body">
+            <div class="meal-toolbar"><button id="mealPrev" class="btn" type="button">← 이전 날</button><label class="label" for="mealDate">조회 날짜</label><input id="mealDate" type="date"><button id="mealNext" class="btn" type="button">다음 날 →</button><button id="mealAuto" class="btn btn--primary" type="button">자동 날짜</button></div>
+            <div id="mealStatus" class="meta" aria-live="polite"></div><div id="mealDaily" class="meal-results"></div>
+            <div class="meal-week-head"><h3>주간 급식표 (월~금)</h3><button id="mealWeekRefresh" class="btn" type="button">새로고침</button></div>
+            <div id="mealWeekStatus" class="meta" aria-live="polite"></div><div id="mealWeek" class="meal-week-grid"></div>
+            <p class="meta hint">급식은 NEIS 제공 정보 기준이며, 실제 제공 메뉴는 학교 사정에 따라 달라질 수 있습니다.</p>
+          </div>
+        </section>
+
         <section id="panel_admin" class="sec panel editor-only">
           <div class="section-head"><div class="section-title-wrap"><span class="section-icon red">🛡️</span><div><span class="section-kicker">MANAGEMENT</span><h2>관리</h2></div></div></div>
           <div class="section-body admin-stack">
@@ -312,7 +324,7 @@
         </section>
 
         <footer class="site-footer">
-          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.19</span>
+          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.20</span>
         </footer>
       </main>
     </div>
@@ -320,6 +332,6 @@
 
   <button id="mobileMenuBackdrop" class="mobile-menu-backdrop" type="button" aria-label="메뉴 닫기"></button>
   <div id="modal-root"></div>
-  <script src="app.js?v=1.2.19"></script>
+  <script src="app.js?v=1.2.20"></script>
 </body>
 </html>
