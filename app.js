@@ -1,8 +1,8 @@
 /* app.js - v1.2.18
  * 변경사항:
- * - 이동수업 과목의 [수행]/[숙제] 배지를 해당 이동수업 과목 옆에 분리 표시
+ * - v1.2.17의 기본/이동수업 과목별 [수행]/[숙제] 배지 표시 로직 유지
  * - 한국 시간 16:35부터 홈 자동 시간표를 다음 수업일 기준으로 조회
- * - 모바일 Google 로그인은 redirect, PC는 popup 방식으로 분리
+ * - 모바일 redirect 로그인을 제거하고 PC/모바일 모두 Google popup 로그인으로 복원
  * - 시간표의 날짜·교시·과목과 숙제를 자동 매칭해 [숙제] 배지 표시
  * - 수행평가 [수행] + 숙제 [숙제] 배지를 한 줄에 함께 표시 가능
  * - 수행평가는 보라색, 숙제는 주황색, 둘 다 있으면 혼합 강조
@@ -312,14 +312,8 @@ const initTabs = ()=>{
 // ===== 로그인 =====
 loginBtn.addEventListener('click', async ()=>{
   const provider = new firebase.auth.GoogleAuthProvider();
-  const isMobile = window.matchMedia('(max-width: 820px)').matches
-    || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   try{
-    if(isMobile){
-      await auth.signInWithRedirect(provider);
-      return;
-    }
     await auth.signInWithPopup(provider);
   }catch(e){
     console.error('Google 로그인 오류:', e);
@@ -1763,7 +1757,7 @@ const loadTodayTimetable = async ()=>{
   const weekendRedirect = autoInfo.shifted;
 
   todayTimetableMeta.textContent = autoInfo.shifted
-    ? (autoInfo.afterCutoff ? '오늘 일과가 종료되어 다음 수업일 시간표를 불러오는 중...' : '주말이라 다음 수업일 시간표를 불러오는 중...')
+    ? (autoInfo.afterCutoff ? '16:35 이후라 다음 수업일 시간표를 불러오는 중...' : '주말이라 다음 수업일 시간표를 불러오는 중...')
     : '오늘 시간표를 자동으로 불러오는 중...';
   todayTimetableList.innerHTML = `<div class="today-timetable-empty">불러오는 중...</div>`;
 
