@@ -1,5 +1,6 @@
-/* app.js - v1.2.18
+/* app.js - v1.2.19
  * 변경사항:
+ * - 홈 자동 시간표 조회 중 경과 시간 표시 및 완료/실패 시 소요 시간 표시
  * - v1.2.17의 기본/이동수업 과목별 [수행]/[숙제] 배지 표시 로직 유지
  * - 한국 시간 16:35부터 홈 자동 시간표를 다음 수업일 기준으로 조회
  * - 모바일 redirect 로그인을 제거하고 PC/모바일 모두 Google popup 로그인으로 복원
@@ -1755,19 +1756,28 @@ const loadTodayTimetable = async ()=>{
   const autoInfo = getAutoTimetableInfo(now);
   const targetDate = autoInfo.targetDate;
   const weekendRedirect = autoInfo.shifted;
-
-  todayTimetableMeta.textContent = autoInfo.shifted
+  const loadingMessage = autoInfo.shifted
     ? (autoInfo.afterCutoff ? '16:35 이후라 다음 수업일 시간표를 불러오는 중...' : '주말이라 다음 수업일 시간표를 불러오는 중...')
     : '오늘 시간표를 자동으로 불러오는 중...';
+
+  // performance.now()로 실제 경과 시간을 측정하고 조회 중에도 표시한다.
+  const startedAt = performance.now();
+  const elapsedText = ()=> `${((performance.now() - startedAt) / 1000).toFixed(1)}초`;
+  todayTimetableMeta.textContent = `${loadingMessage} (${elapsedText()} 경과)`;
   todayTimetableList.innerHTML = `<div class="today-timetable-empty">불러오는 중...</div>`;
+  const elapsedTimer = setInterval(()=>{
+    todayTimetableMeta.textContent = `${loadingMessage} (${elapsedText()} 경과)`;
+  }, 100);
 
   try{
     const rows = await fetchTimetableDay(targetDate);
+    clearInterval(elapsedTimer);
     renderTodayTimetable(rows, targetDate, { weekendRedirect });
+    todayTimetableMeta.textContent += ` · ${elapsedText()} 소요`;
   }catch(e){
+    clearInterval(elapsedTimer);
     console.error('오늘 시간표 자동 조회 오류:', e);
-
-    todayTimetableMeta.textContent = '시간표를 불러오지 못했습니다.';
+    todayTimetableMeta.textContent = `시간표를 불러오지 못했습니다. (${elapsedText()} 소요)`;
     todayTimetableList.innerHTML = `
       <div class="today-timetable-empty">
         ${escapeHTML(e.message || String(e))}
