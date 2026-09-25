@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<!-- index.html - v1.2.22
-  - 급식 & 시간표 수정
+<!-- index.html - v1.2.23
+  홈 대시보드: 급식(25%) · 시간표(45%) · 다가오는 일정(30%).
+  기존 공지/일정/휴일/시험/수행평가/숙제/NEIS/관리 탭 유지.
+  CSS·JS 캐시 버전, 사이드바·푸터 표시 버전을 동기화합니다.
 -->
 <html lang="ko">
 <head>
@@ -8,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#08111f" />
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.2.22" />
+  <link rel="stylesheet" href="style.css?v=1.2.23" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -60,7 +62,7 @@
 
       <div class="sidebar-foot">
         <span class="status-dot"></span>
-        <span>사이트 버전 v1.2.22</span>
+        <span>사이트 버전 v1.2.23</span>
       </div>
     </aside>
 
@@ -131,6 +133,16 @@
           <div id="todayTimetableMeta" class="today-timetable-meta">시간표를 자동으로 불러오는 중...</div>
           <div id="todayTimetableList" class="today-timetable-list" aria-live="polite"></div>
         </section>
+          <section class="today-timetable-card upcoming-home" aria-labelledby="upcomingTitle">
+            <div class="today-timetable-head">
+              <div class="section-title-wrap">
+                <span class="section-icon amber">📌</span>
+                <div><span class="section-kicker">UPCOMING</span><h2 id="upcomingTitle">다가오는 일정</h2></div>
+              </div>
+            </div>
+            <p class="upcoming-caption">일정 · 시험 · 수행평가 · 숙제</p>
+            <div id="homeUpcomingList" class="upcoming-list" aria-live="polite">일정을 불러오는 중...</div>
+          </section>
         </div>
 
         <section id="sec_notice" class="sec notice-section">
@@ -326,7 +338,7 @@
         </section>
 
         <footer class="site-footer">
-          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.22</span>
+          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.23</span>
         </footer>
       </main>
     </div>
@@ -334,6 +346,6 @@
 
   <button id="mobileMenuBackdrop" class="mobile-menu-backdrop" type="button" aria-label="메뉴 닫기"></button>
   <div id="modal-root"></div>
-  <script src="app.js?v=1.2.22"></script>
+  <script src="app.js?v=1.2.23"></script>
 </body>
 </html>
