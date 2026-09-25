@@ -1,6 +1,7 @@
-/* app.js - v1.2.20
+/* app.js - v1.2.21
  * 변경사항:
- * - 급식 추가
+ * - v1.2.21: 페이지 최초 진입 시 급식 자동 조회 실행 누락 수정
+ * - 홈 자동 시간표 조회 중 경과 시간 표시 및 완료/실패 시 소요 시간 표시
  */
 
 if (!window.firebaseConfig) {
@@ -2011,3 +2012,6 @@ setInterval(()=>{
   const key=dateInputValue(getAutoTimetableDate());
   if(mealAutoKey&&mealAutoKey!==key){mealCache.clear();loadMealHome();}
 },30000);
+
+// v1.2.21: 페이지 최초 진입 시 홈/일일/주간 급식을 자동 조회
+loadMealAuto();
