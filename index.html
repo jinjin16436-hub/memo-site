@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- index.html - v1.2.21
-  - 급식 추가
+<!-- index.html - v1.2.22
+  - 급식 & 시간표 수정
 -->
 <html lang="ko">
 <head>
@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#08111f" />
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.2.20" />
+  <link rel="stylesheet" href="style.css?v=1.2.22" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -60,7 +60,7 @@
 
       <div class="sidebar-foot">
         <span class="status-dot"></span>
-        <span>사이트 버전 v1.2.21</span>
+        <span>사이트 버전 v1.2.19</span>
       </div>
     </aside>
 
@@ -111,7 +111,13 @@
           </button>
         </section>
 
-        <section class="today-timetable-card" aria-labelledby="todayTimetableTitle">
+        <div class="home-daily-grid">
+          <section class="today-timetable-card meal-home" aria-labelledby="homeMealTitle">
+          <div class="today-timetable-head"><div class="section-title-wrap"><span class="section-icon cyan">🍱</span><div><span class="section-kicker">TODAY MEAL</span><h2 id="homeMealTitle">오늘의 급식</h2></div></div><button class="today-timetable-more quick-tab" data-target-tab="meal" type="button">전체 급식 보기 →</button></div>
+          <div id="homeMealMeta" class="today-timetable-meta">급식을 자동으로 불러오는 중...</div><div id="homeMealContent" class="meal-home-content" aria-live="polite"></div>
+        </section>
+
+          <section class="today-timetable-card" aria-labelledby="todayTimetableTitle">
           <div class="today-timetable-head">
             <div class="section-title-wrap">
               <span class="section-icon cyan">📚</span>
@@ -125,11 +131,7 @@
           <div id="todayTimetableMeta" class="today-timetable-meta">시간표를 자동으로 불러오는 중...</div>
           <div id="todayTimetableList" class="today-timetable-list" aria-live="polite"></div>
         </section>
-
-        <section class="today-timetable-card meal-home" aria-labelledby="homeMealTitle">
-          <div class="today-timetable-head"><div class="section-title-wrap"><span class="section-icon cyan">🍱</span><div><span class="section-kicker">TODAY MEAL</span><h2 id="homeMealTitle">오늘의 급식</h2></div></div><button class="today-timetable-more quick-tab" data-target-tab="meal" type="button">전체 급식 보기 →</button></div>
-          <div id="homeMealMeta" class="today-timetable-meta">급식을 자동으로 불러오는 중...</div><div id="homeMealContent" class="meal-home-content" aria-live="polite"></div>
-        </section>
+        </div>
 
         <section id="sec_notice" class="sec notice-section">
           <div class="section-head">
@@ -324,7 +326,7 @@
         </section>
 
         <footer class="site-footer">
-          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.21</span>
+          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.22</span>
         </footer>
       </main>
     </div>
@@ -332,6 +334,6 @@
 
   <button id="mobileMenuBackdrop" class="mobile-menu-backdrop" type="button" aria-label="메뉴 닫기"></button>
   <div id="modal-root"></div>
-  <script src="app.js?v=1.2.21"></script>
+  <script src="app.js?v=1.2.22"></script>
 </body>
 </html>
