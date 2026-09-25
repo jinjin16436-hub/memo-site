@@ -1,5 +1,7 @@
-/* ===== style.css (v1.2.22) ===== */
-/* 급식 & 시간표 UI 수정
+/* ===== style.css (v1.2.23) =====
+ * 기존 다크 테마·탭·관리 폼·급식·시간표 스타일 유지.
+ * 홈: 급식 25% / 시간표 45% / 다가오는 일정 30%.
+ * 이동수업·장소·과목별 배지 줄바꿈 지원, 모바일 1열.
  */
 
 :root{
@@ -308,7 +310,7 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
 .meal-card,.meal-week-day{border:1px solid #334960;background:linear-gradient(145deg,#16263a,#0e192a);border-radius:14px;padding:16px;min-width:0}.meal-card h3,.meal-week-day h3{margin:0 0 12px;color:#d6efff;font-size:1rem}.meal-dishes{padding-left:20px;margin:0;line-height:1.85}.meal-dishes li{overflow-wrap:anywhere}.meal-allergen{color:#f9bd83;font-size:.77rem}.meal-calorie{margin-top:12px;color:#b8d4f0;font-size:.9rem}.meal-nutrition{margin-top:12px;font-size:.85rem}.meal-nutrition ul{padding-left:20px}.meal-empty{padding:16px;color:#b5c6d8;border:1px dashed #465a73;border-radius:12px}.meal-week-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:28px}.meal-week-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin-top:14px}.meal-week-day .meal-card{padding:10px;margin-top:10px;background:#102035}.meal-week-day .meal-card h3{font-size:.93rem}.meal-home .meal-card{flex:1}@media(max-width:600px){.meal-toolbar{display:grid;grid-template-columns:1fr 1fr}.meal-toolbar label{grid-column:1}.meal-toolbar input{grid-column:2}.meal-toolbar #mealAuto{grid-column:1/-1}.meal-week-grid{grid-template-columns:1fr}}
 
 /* =========================================================
-   v1.2.22: 홈 급식(왼쪽) + 시간표(오른쪽) 반응형 배치
+   v1.2.23: 홈 급식 + 시간표 + 다가오는 일정 반응형 배치
    기존 탭/자동 조회/배지 동작 변경 없음
    ========================================================= */
 .home-daily-grid {
@@ -368,4 +370,43 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
     overflow:visible;
     overflow-wrap:anywhere;
   }
+}
+
+/* ===== v1.2.23: 홈 3열 레이아웃 및 일정 미리보기 ===== */
+@media (min-width: 1351px) {
+  .home-daily-grid {grid-template-columns:minmax(0,25fr) minmax(0,45fr) minmax(0,30fr);gap:14px;align-items:start}
+}
+/* 사이드바 포함 화면에서 가용 폭이 부족하면 2열로 전환합니다. */
+@media (min-width: 821px) and (max-width:1350px) {
+  .home-daily-grid {grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);align-items:start}
+  .home-daily-grid .upcoming-home {grid-column:1/-1}
+}
+.home-daily-grid > .today-timetable-card {margin-top:0;min-width:0;height:auto}
+.home-daily-grid .today-timetable-list {grid-template-columns:minmax(0,1fr);gap:8px}
+.home-daily-grid .today-period {display:flex;flex-direction:row;align-items:center;text-align:left;min-height:0;padding:10px;gap:9px}
+.home-daily-grid .today-period .period-no {flex:0 0 39px;margin:0;text-align:left}
+.home-daily-grid .period-subject-wrap {min-width:0;align-items:flex-start;gap:3px}
+.home-daily-grid .today-period .period-subject,
+.home-daily-grid .today-period .period-location,
+.home-daily-grid .today-period .period-alternate {text-align:left;white-space:normal;overflow:visible;overflow-wrap:anywhere}
+.home-daily-grid .today-period .period-subject {font-size:13px;line-height:1.4}
+.home-daily-grid .today-period .period-location,
+.home-daily-grid .today-period .period-alternate {font-size:11px;line-height:1.45}
+.home-daily-grid .today-timetable-head {gap:6px;margin-bottom:10px}
+.home-daily-grid .today-timetable-more {font-size:11px}
+.home-daily-grid .today-timetable-meta {font-size:12px}
+.home-daily-grid .meal-home-content {grid-template-columns:minmax(0,1fr)}
+.home-daily-grid .meal-home .meal-card {padding:12px}
+.upcoming-caption {color:#8fa6c3;font-size:12px;margin:0 0 12px}
+.upcoming-list {display:flex;flex-direction:column;gap:9px;color:#a8bad2;font-size:13px}
+.upcoming-item {border:1px solid #273b53;background:rgba(8,17,31,.58);border-radius:12px;padding:11px;min-width:0}
+.upcoming-item-head {display:flex;justify-content:space-between;align-items:center;gap:8px}
+.upcoming-tag {font-size:10px;font-weight:800;color:#b6ccf1}
+.upcoming-tasks {color:#d8b4fe}.upcoming-homeworks {color:#fdba74}.upcoming-exams {color:#fda4af}
+.upcoming-dday {font-size:11px;font-weight:800;color:#93c5fd;white-space:nowrap}
+.upcoming-name {font-size:13px;font-weight:750;color:#f1f5ff;overflow-wrap:anywhere;margin-top:4px}
+.upcoming-date {font-size:11px;color:#8fa6c3;margin-top:3px}
+@media (max-width:820px) {
+  .home-daily-grid {grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+  .home-daily-grid .upcoming-home {grid-column:auto}
 }
