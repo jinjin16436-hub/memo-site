@@ -1,12 +1,6 @@
-/* ===== style.css (v1.2.16) ===== */
+/* ===== style.css (v1.2.20) ===== */
 /* style.css - v1.2.16
- * - 시간표 숙제 자동 매칭 [숙제] 배지 및 주황색 강조 추가
- * - [수행]과 [숙제]가 동시에 있으면 두 배지를 한 줄에 표시
- * - 시간표 카드 높이 유지를 위해 수행평가/숙제 상세 문구는 표시하지 않음
- * - 과목명 기준 수업 장소 표시 및 관리자 관리 UI 유지
- * - 모바일 오늘의 시간표 1열 레이아웃 유지
- * - PC 선택과목 보조 문구에서 한글 단어가 어색하게 쪼개지지 않도록 개선
- * - 긴 선택과목명은 단어 단위로 최대 2줄까지 자연스럽게 표시
+ * - 급식 추가
  */
 
 :root{
@@ -308,3 +302,8 @@ ul.card-list{display:flex;flex-direction:column;gap:10px}.card-list:empty::after
 }
 .timetable-performance-badge{color:#d8b4fe}
 .timetable-homework-badge{color:#fdba74}
+
+/* v1.2.20 NEIS 급식 */
+.meal-home{margin-top:18px}.meal-home-content,.meal-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;margin-top:14px}
+.meal-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px}.meal-toolbar input{min-height:40px;padding:8px;border-radius:9px;color:inherit;background:#14243a;border:1px solid #38506c;color-scheme:dark}
+.meal-card,.meal-week-day{border:1px solid #334960;background:linear-gradient(145deg,#16263a,#0e192a);border-radius:14px;padding:16px;min-width:0}.meal-card h3,.meal-week-day h3{margin:0 0 12px;color:#d6efff;font-size:1rem}.meal-dishes{padding-left:20px;margin:0;line-height:1.85}.meal-dishes li{overflow-wrap:anywhere}.meal-allergen{color:#f9bd83;font-size:.77rem}.meal-calorie{margin-top:12px;color:#b8d4f0;font-size:.9rem}.meal-nutrition{margin-top:12px;font-size:.85rem}.meal-nutrition ul{padding-left:20px}.meal-empty{padding:16px;color:#b5c6d8;border:1px dashed #465a73;border-radius:12px}.meal-week-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:28px}.meal-week-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin-top:14px}.meal-week-day .meal-card{padding:10px;margin-top:10px;background:#102035}.meal-week-day .meal-card h3{font-size:.93rem}.meal-home .meal-card{flex:1}@media(max-width:600px){.meal-toolbar{display:grid;grid-template-columns:1fr 1fr}.meal-toolbar label{grid-column:1}.meal-toolbar input{grid-column:2}.meal-toolbar #mealAuto{grid-column:1/-1}.meal-week-grid{grid-template-columns:1fr}}
