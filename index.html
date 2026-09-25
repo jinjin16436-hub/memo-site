@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<!-- index.html - v1.2.23
-  홈 대시보드: 급식(25%) · 시간표(45%) · 다가오는 일정(30%).
-  기존 공지/일정/휴일/시험/수행평가/숙제/NEIS/관리 탭 유지.
-  CSS·JS 캐시 버전, 사이드바·푸터 표시 버전을 동기화합니다.
+<!-- index.html - v1.2.24
+  홈: 급식(40%) + 시간표(60%)를 같은 행에, 다가오는 일정은 전체 너비의 별도 행에 표시.
+  모바일: 급식 → 시간표 → 일정 순서로 세로 배치.
+  기존 탭·입력 폼·접근 권한 관련 DOM ID 및 스크립트 로드 순서는 유지.
+  style.css / app.js 캐시 버전과 화면 표시 버전을 함께 갱신.
 -->
 <html lang="ko">
 <head>
@@ -10,7 +11,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#08111f" />
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.2.23" />
+  <link rel="stylesheet" href="style.css?v=1.2.24" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -62,7 +63,7 @@
 
       <div class="sidebar-foot">
         <span class="status-dot"></span>
-        <span>사이트 버전 v1.2.23</span>
+        <span>사이트 버전 v1.2.24</span>
       </div>
     </aside>
 
@@ -338,7 +339,7 @@
         </section>
 
         <footer class="site-footer">
-          <strong>http://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.23</span>
+          <strong>https://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.24</span>
         </footer>
       </main>
     </div>
@@ -346,6 +347,6 @@
 
   <button id="mobileMenuBackdrop" class="mobile-menu-backdrop" type="button" aria-label="메뉴 닫기"></button>
   <div id="modal-root"></div>
-  <script src="app.js?v=1.2.23"></script>
+  <script src="app.js?v=1.2.24"></script>
 </body>
 </html>
