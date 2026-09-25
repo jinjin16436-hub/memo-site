@@ -1,6 +1,8 @@
-/* app.js - v1.2.17
+/* app.js - v1.2.18
  * 변경사항:
- * - 기본 과목/이동수업 과목의 [수행]/[숙제] 배지를 실제 과목 옆에 각각 표시
+ * - 이동수업 과목의 [수행]/[숙제] 배지를 해당 이동수업 과목 옆에 분리 표시
+ * - 한국 시간 16:35부터 홈 자동 시간표를 다음 수업일 기준으로 조회
+ * - 모바일 Google 로그인은 redirect, PC는 popup 방식으로 분리
  * - 시간표의 날짜·교시·과목과 숙제를 자동 매칭해 [숙제] 배지 표시
  * - 수행평가 [수행] + 숙제 [숙제] 배지를 한 줄에 함께 표시 가능
  * - 수행평가는 보라색, 숙제는 주황색, 둘 다 있으면 혼합 강조
@@ -308,7 +310,22 @@ const initTabs = ()=>{
 };
 
 // ===== 로그인 =====
-loginBtn.addEventListener('click', async ()=>{ await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); });
+loginBtn.addEventListener('click', async ()=>{
+  const provider = new firebase.auth.GoogleAuthProvider();
+  const isMobile = window.matchMedia('(max-width: 820px)').matches
+    || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  try{
+    if(isMobile){
+      await auth.signInWithRedirect(provider);
+      return;
+    }
+    await auth.signInWithPopup(provider);
+  }catch(e){
+    console.error('Google 로그인 오류:', e);
+    alert(`로그인 오류: ${e.message || e}`);
+  }
+});
 logoutBtn.addEventListener('click', async ()=>{ await auth.signOut(); });
 
 // ===== 공지 ON/OFF =====
@@ -810,24 +827,25 @@ const isPeriodWithinTaskRange = (period, task={})=>{
   return p >= Math.min(start,end) && p <= Math.max(start,end);
 };
 
-const getMatchingTasksForTimetable = (items, date, period, subject)=>{
-  const subjectKey = normalizeSubjectName(subject);
-  if(!subjectKey) return [];
+const getMatchingTasksForTimetable = (items, date, period, subject, alternate=null)=>{
+  const names = new Set([
+    normalizeSubjectName(subject),
+    normalizeSubjectName(alternate?.alternateSubject || '')
+  ].filter(Boolean));
+
   return items.filter(item=>{
     const task = item.data || item;
-    return normalizeSubjectName(task.subject || '') === subjectKey
+    return names.has(normalizeSubjectName(task.subject || ''))
       && isDateWithinTaskRange(date, task)
       && isPeriodWithinTaskRange(period, task);
   });
 };
 
-const getTimetableTaskFlags = (date, period, subject)=>({
-  hasPerformance: getMatchingTasksForTimetable(performanceTaskItems, date, period, subject).length > 0,
-  hasHomework: getMatchingTasksForTimetable(homeworkTaskItems, date, period, subject).length > 0,
-});
+const getPerformanceTasksForTimetable = (date, period, subject, alternate=null)=>
+  getMatchingTasksForTimetable(performanceTaskItems, date, period, subject, alternate);
 
-const renderTimetableTaskBadges = (flags={})=>
-  `${flags.hasPerformance ? '<span class="timetable-performance-badge">[수행]</span>' : ''}${flags.hasHomework ? '<span class="timetable-homework-badge">[숙제]</span>' : ''}`;
+const getHomeworkTasksForTimetable = (date, period, subject, alternate=null)=>
+  getMatchingTasksForTimetable(homeworkTaskItems, date, period, subject, alternate);
 
 const safeLoadTasks = async (cat)=>{
   const ul = getListForCat(cat);
@@ -1502,20 +1520,41 @@ const fmtTTDate = (d)=>{
   return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())} (${weekdayText[d.getDay()]})`;
 };
 
-// 토/일요일에는 다음 월요일 시간표를 홈에 자동 표시합니다.
-const getAutoTimetableDate = (baseDate=new Date())=>{
-  const target = new Date(baseDate);
-  target.setHours(0,0,0,0);
-
-  const day = target.getDay();
-  if(day === 6){       // 토요일 → 다음 월요일
-    target.setDate(target.getDate() + 2);
-  }else if(day === 0){ // 일요일 → 다음 월요일
-    target.setDate(target.getDate() + 1);
-  }
-
-  return target;
+// 홈 자동 시간표는 한국 시간(KST)을 기준으로 선택합니다.
+// 16:35부터는 다음 수업일을 표시하고, 주말은 다음 월요일로 넘깁니다.
+const getKoreaDateTimeParts = (baseDate=new Date())=>{
+  const parts = new Intl.DateTimeFormat('en-US',{
+    timeZone:'Asia/Seoul',
+    year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+  }).formatToParts(baseDate);
+  const values = Object.fromEntries(parts.map(part=>[part.type, part.value]));
+  return {
+    year:Number(values.year), month:Number(values.month), day:Number(values.day),
+    hour:Number(values.hour), minute:Number(values.minute)
+  };
 };
+
+const getAutoTimetableInfo = (baseDate=new Date())=>{
+  const kst = getKoreaDateTimeParts(baseDate);
+  const target = new Date(kst.year, kst.month - 1, kst.day, 12, 0, 0, 0);
+  const afterCutoff = kst.hour > 16 || (kst.hour === 16 && kst.minute >= 35);
+
+  if(afterCutoff) target.setDate(target.getDate() + 1);
+
+  // 토/일이면 다음 월요일로 이동합니다.
+  if(target.getDay() === 6) target.setDate(target.getDate() + 2);
+  else if(target.getDay() === 0) target.setDate(target.getDate() + 1);
+
+  const todayKst = new Date(kst.year, kst.month - 1, kst.day, 12, 0, 0, 0);
+  const shifted = target.getFullYear() !== todayKst.getFullYear()
+    || target.getMonth() !== todayKst.getMonth()
+    || target.getDate() !== todayKst.getDate();
+
+  return { targetDate:target, shifted, afterCutoff };
+};
+
+const getAutoTimetableDate = (baseDate=new Date())=> getAutoTimetableInfo(baseDate).targetDate;
 
 const isWeekendDate = (date)=> date.getDay() === 0 || date.getDay() === 6;
 
@@ -1638,19 +1677,23 @@ const renderTTWeek = (items=[])=>{
       const timetableConfig = { grade: ttGrade?.value, classNm: ttClass?.value };
       const alternate = getAlternateSubject(name, timetableConfig);
       const location = getTimetableLocation(name, timetableConfig);
-      const baseFlags = getTimetableTaskFlags(date, perio, name);
-      const alternateFlags = alternate
-        ? getTimetableTaskFlags(date, perio, alternate.alternateSubject)
-        : { hasPerformance:false, hasHomework:false };
-      const hasPerformance = baseFlags.hasPerformance || alternateFlags.hasPerformance;
-      const hasHomework = baseFlags.hasHomework || alternateFlags.hasHomework;
+      const basePerformance = getPerformanceTasksForTimetable(date, perio, name).length > 0;
+      const baseHomework = getHomeworkTasksForTimetable(date, perio, name).length > 0;
+      const alternatePerformance = alternate
+        ? getPerformanceTasksForTimetable(date, perio, alternate.alternateSubject).length > 0
+        : false;
+      const alternateHomework = alternate
+        ? getHomeworkTasksForTimetable(date, perio, alternate.alternateSubject).length > 0
+        : false;
+      const hasPerformance = basePerformance || alternatePerformance;
+      const hasHomework = baseHomework || alternateHomework;
       if(hasPerformance) li.classList.add('timetable-performance');
       if(hasHomework) li.classList.add('timetable-homework');
 
       li.innerHTML = `
-        <div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)} ${renderTimetableTaskBadges(baseFlags)}</div>
+        <div class="title">${escapeHTML(perio)}교시 - ${escapeHTML(name)} ${basePerformance ? '<span class="timetable-performance-badge">[수행]</span>' : ''}${baseHomework ? '<span class="timetable-homework-badge">[숙제]</span>' : ''}</div>
         ${location ? `<div class="meta timetable-location">장소: ${escapeHTML(location)}</div>` : ''}
-        ${alternate ? `<div class="meta">${escapeHTML(alternate.moveClass)} 이동수업: ${escapeHTML(alternate.alternateSubject)} ${renderTimetableTaskBadges(alternateFlags)}</div>` : ''}
+        ${alternate ? `<div class="meta">${escapeHTML(alternate.moveClass)} 이동수업: ${escapeHTML(alternate.alternateSubject)} ${alternatePerformance ? '<span class="timetable-performance-badge">[수행]</span>' : ''}${alternateHomework ? '<span class="timetable-homework-badge">[숙제]</span>' : ''}</div>` : ''}
       `;
       ttList.appendChild(li);
     });
@@ -1680,20 +1723,24 @@ const renderTodayTimetable = (rows=[], date=new Date(), { weekendRedirect=false 
     const name = r.ITRT_CNTNT || r.SUBJECT || r.TI_NM || '과목 정보 없음';
     const alternate = getAlternateSubject(name);
     const location = getTimetableLocation(name);
-    const baseFlags = getTimetableTaskFlags(date, perio, name);
-    const alternateFlags = alternate
-      ? getTimetableTaskFlags(date, perio, alternate.alternateSubject)
-      : { hasPerformance:false, hasHomework:false };
-    const hasPerformance = baseFlags.hasPerformance || alternateFlags.hasPerformance;
-    const hasHomework = baseFlags.hasHomework || alternateFlags.hasHomework;
+    const basePerformance = getPerformanceTasksForTimetable(date, perio, name).length > 0;
+    const baseHomework = getHomeworkTasksForTimetable(date, perio, name).length > 0;
+    const alternatePerformance = alternate
+      ? getPerformanceTasksForTimetable(date, perio, alternate.alternateSubject).length > 0
+      : false;
+    const alternateHomework = alternate
+      ? getHomeworkTasksForTimetable(date, perio, alternate.alternateSubject).length > 0
+      : false;
+    const hasPerformance = basePerformance || alternatePerformance;
+    const hasHomework = baseHomework || alternateHomework;
     const item = el('div',{class:`today-period${hasPerformance ? ' timetable-performance' : ''}${hasHomework ? ' timetable-homework' : ''}`});
     item.innerHTML = `
       <span class="period-no">${escapeHTML(perio)}교시</span>
       <div class="period-subject-wrap">
-        <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)} ${renderTimetableTaskBadges(baseFlags)}</span>
+        <span class="period-subject" title="${escapeHTML(name)}">${escapeHTML(name)} ${basePerformance ? '<span class="timetable-performance-badge">[수행]</span>' : ''}${baseHomework ? '<span class="timetable-homework-badge">[숙제]</span>' : ''}</span>
         ${location ? `<small class="period-location">${escapeHTML(location)}</small>` : ''}
         ${alternate ? `
-          <small class="period-alternate">${escapeHTML(alternate.moveClass)} · ${escapeHTML(alternate.alternateSubject)} ${renderTimetableTaskBadges(alternateFlags)}</small>
+          <small class="period-alternate">${escapeHTML(alternate.moveClass)} · ${escapeHTML(alternate.alternateSubject)} ${alternatePerformance ? '<span class="timetable-performance-badge">[수행]</span>' : ''}${alternateHomework ? '<span class="timetable-homework-badge">[숙제]</span>' : ''}</small>
         ` : ''}
       </div>
     `;
@@ -1711,11 +1758,12 @@ const loadTodayTimetable = async ()=>{
   }
 
   const now = new Date();
-  const weekendRedirect = isWeekendDate(now);
-  const targetDate = getAutoTimetableDate(now);
+  const autoInfo = getAutoTimetableInfo(now);
+  const targetDate = autoInfo.targetDate;
+  const weekendRedirect = autoInfo.shifted;
 
-  todayTimetableMeta.textContent = weekendRedirect
-    ? '주말이라 다음 월요일 시간표를 불러오는 중...'
+  todayTimetableMeta.textContent = autoInfo.shifted
+    ? (autoInfo.afterCutoff ? '오늘 일과가 종료되어 다음 수업일 시간표를 불러오는 중...' : '주말이라 다음 수업일 시간표를 불러오는 중...')
     : '오늘 시간표를 자동으로 불러오는 중...';
   todayTimetableList.innerHTML = `<div class="today-timetable-empty">불러오는 중...</div>`;
 
