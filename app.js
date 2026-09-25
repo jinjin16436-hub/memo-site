@@ -1,31 +1,6 @@
-/* app.js - v1.2.19
+/* app.js - v1.2.20
  * 변경사항:
- * - 홈 자동 시간표 조회 중 경과 시간 표시 및 완료/실패 시 소요 시간 표시
- * - v1.2.17의 기본/이동수업 과목별 [수행]/[숙제] 배지 표시 로직 유지
- * - 한국 시간 16:35부터 홈 자동 시간표를 다음 수업일 기준으로 조회
- * - 모바일 redirect 로그인을 제거하고 PC/모바일 모두 Google popup 로그인으로 복원
- * - 시간표의 날짜·교시·과목과 숙제를 자동 매칭해 [숙제] 배지 표시
- * - 수행평가 [수행] + 숙제 [숙제] 배지를 한 줄에 함께 표시 가능
- * - 수행평가는 보라색, 숙제는 주황색, 둘 다 있으면 혼합 강조
- * - 시간표 카드 높이를 늘리지 않도록 수행평가/숙제 상세 내용은 표시하지 않음
- * - 선택과목 이동수업 과목에 등록된 수행평가도 함께 매칭
- * - 과목명 기준 수업 장소 관리 기능 추가 (예: 미적분 I → 수학실)
- * - 선택과목/이동수업 설정을 Firestore 관리자 UI로 이동
- * - 이동수업을 교시가 아닌 최종 과목명 기준으로 매칭
- * - 날짜+교시 기준 임시 시간표 변경/추가/삭제 기능 추가
- * - 관리자와 부관리자 모두 시간표 관리 가능, 도메인 관리는 관리자 전용 유지
- * - 홈 시간표 선택과목 보조 문구를 "2-3 · 과목명" 형식으로 간소화
- * - 긴 선택과목명과 함께 표시할 때 PC 가독성 개선 대응
- * - 전체 다크 대시보드 UI 리뉴얼 대응
- * - PC 사이드바 / 모바일 슬라이드 메뉴 지원
- * - 빠른 메뉴 및 오늘 날짜 표시 추가
- * - 기존 Firebase / Firestore / 권한 / NEIS 로직 유지
- * - 설명/내용에서 **굵게**, __밑줄__ 간단 서식 지원
- * - 홈 요약 카드에 Firestore 일정/시험/수행평가/숙제 현황 연동
- * - 주말 자동 시간표는 다음 월요일 기준으로 조회
- * - NEIS 오류 응답의 본문을 읽어 실제 오류 원인을 확인 가능하도록 개선
- * - 2-2 선택과목 시간표에 2-3 이동수업 과목을 함께 표시
- * - 홈 자동 시간표에서 이동수업을 별도 줄로 분리해 말줄임 문제 수정
+ * - 급식 추가
  */
 
 if (!window.firebaseConfig) {
@@ -282,6 +257,7 @@ const initTabs = ()=>{
       task: $('#panel_task'),
       homework: $('#panel_homework'),
       timetable: $('#panel_timetable'),
+      meal: $('#panel_meal'),
       admin: $('#panel_admin'),
     };
 
@@ -1149,6 +1125,7 @@ const refreshTimetableViews = async ()=>{
   await Promise.allSettled([
     loadTodayTimetable(),
     loadTimetableWeek({ silent:true }),
+    loadMealAuto(),
   ]);
 };
 
@@ -1921,3 +1898,116 @@ const initDashboardUI = ()=>{
 };
 
 initDashboardUI();
+
+
+/* =========================
+   v1.2.20 NEIS 급식 (KST 16:35 자동 전환)
+   기존 시간표 및 Firebase 로직과 독립적으로 동작
+========================= */
+const mealDateInput = $('#mealDate');
+const mealStatus = $('#mealStatus');
+const mealDaily = $('#mealDaily');
+const mealWeek = $('#mealWeek');
+const mealWeekStatus = $('#mealWeekStatus');
+let mealRequestId = 0;
+let mealAutoKey = '';
+const mealCache = new Map();
+const mealEsc = (value)=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mealDateFromValue = (v)=>{
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');
+  if(!m) return null;
+  const d = new Date(+m[1],+m[2]-1,+m[3],12);
+  return dateInputValue(d)===v?d:null;
+};
+const mealMonday = (d)=>{
+  const x = new Date(d);
+  x.setDate(x.getDate() - ((x.getDay()+6)%7));
+  return x;
+};
+const mealPlain = (s)=>String(s||'').replace(/<br\s*\/?\s*>/gi,'\n').replace(/<[^>]*>/g,'').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').trim();
+const mealList = (s)=>mealPlain(s).split(/\n+/).map(x=>x.trim()).filter(Boolean);
+const mealEntry = (row)=>{
+  const dishes = mealList(row.DDISH_NM).map(line=>{
+    const allergens = [...line.matchAll(/\((\d+(?:[.,]\s*\d+)*)\)/g)].flatMap(m=>m[1].split(/[.,]/).map(x=>x.trim()));
+    return {name:line.replace(/\(\d+(?:[.,]\s*\d+)*\)/g,'').trim(),allergens};
+  });
+  return {name:row.MMEAL_SC_NM||'급식',dishes,calorie:mealPlain(row.CAL_INFO),nutrition:mealList(row.NTR_INFO)};
+};
+const mealCard = (entry, compact=false)=>`<article class="meal-card"><h3>${mealEsc(entry.name)}</h3><ul class="meal-dishes">${entry.dishes.map(d=>`<li>${mealEsc(d.name)}${d.allergens.length?` <small class="meal-allergen">${mealEsc(d.allergens.join(', '))}</small>`:''}</li>`).join('')}</ul>${entry.calorie?`<div class="meal-calorie">🔥 ${mealEsc(entry.calorie)}</div>`:''}${entry.nutrition&&!compact?`<details class="meal-nutrition"><summary>영양 정보</summary><ul>${entry.nutrition.map(n=>`<li>${mealEsc(n)}</li>`).join('')}</ul></details>`:''}</article>`;
+const mealEmpty = '<div class="meal-empty">이 날짜에는 등록된 급식이 없습니다.</div>';
+const mealFetch = async (d)=>{
+  const key=ymdFromDate(d);
+  if(mealCache.has(key)) return mealCache.get(key);
+  if(!PROXY) throw new Error('NEIS_PROXY_BASE가 설정되지 않았습니다.');
+  const url=`${PROXY}/api/meal?schoolName=${encodeURIComponent(TIMETABLE_DEFAULTS.schoolName)}&ymd=${key}`;
+  const r=await fetch(url,{headers:{Accept:'application/json'}});
+  const data=await r.json().catch(()=>{throw new Error('Worker가 올바른 JSON을 반환하지 않았습니다.');});
+  if(!r.ok||data.error) throw new Error(data.error||`급식 조회 오류 (HTTP ${r.status})`);
+  if(!Array.isArray(data.rows)) throw new Error('Worker 급식 응답 형식이 올바르지 않습니다.');
+  const entries=data.rows.map(mealEntry);
+  mealCache.set(key,entries);
+  return entries;
+};
+const mealTimer = (element,message)=>{
+  const start=performance.now();
+  const update=()=>{if(element)element.textContent=`${message} (${((performance.now()-start)/1000).toFixed(1)}초 경과)`;};
+  update();const id=setInterval(update,100);
+  return (end)=>{clearInterval(id);if(element)element.textContent=`${end} (${((performance.now()-start)/1000).toFixed(1)}초 소요)`;};
+};
+const loadMealHome = async ()=>{
+  const info=getAutoTimetableInfo();
+  const key=dateInputValue(info.targetDate);
+  mealAutoKey=key;
+  const meta=$('#homeMealMeta'), content=$('#homeMealContent');
+  if(!meta||!content)return;
+  content.innerHTML='';
+  const finish=mealTimer(meta,info.shifted?'16:35 전환 또는 주말 기준 다음 수업일 급식을 불러오는 중...':'오늘 급식을 불러오는 중...');
+  try{
+    const rows=await mealFetch(info.targetDate);
+    finish(`${fmtTTDate(info.targetDate)} 급식 조회 완료`);
+    content.innerHTML=rows.length?rows.map(x=>mealCard(x,true)).join(''):mealEmpty;
+  }catch(e){finish(`급식 조회 실패: ${e.message}`);content.innerHTML='<div class="meal-empty">급식 정보를 불러오지 못했습니다.</div>';}
+};
+const loadMealDaily = async ()=>{
+  const d=mealDateFromValue(mealDateInput?.value);
+  if(!d)return;
+  const request=++mealRequestId;
+  mealDaily.innerHTML='';
+  const finish=mealTimer(mealStatus,`${fmtTTDate(d)} 급식을 불러오는 중...`);
+  try{
+    const rows=await mealFetch(d);
+    if(request!==mealRequestId){finish('이전 조회 취소');return;}
+    finish(`${fmtTTDate(d)} 급식 조회 완료`);
+    mealDaily.innerHTML=rows.length?rows.map(x=>mealCard(x)).join(''):mealEmpty;
+  }catch(e){finish(`급식 조회 실패: ${e.message}`);if(request===mealRequestId)mealDaily.innerHTML='<div class="meal-empty">급식 정보를 불러오지 못했습니다.</div>';}
+};
+let mealWeekRequestId=0;
+const loadMealWeek = async ()=>{
+  const selected=mealDateFromValue(mealDateInput?.value);
+  if(!selected)return;
+  const request=++mealWeekRequestId;
+  const monday=mealMonday(selected);
+  mealWeek.innerHTML='';
+  const finish=mealTimer(mealWeekStatus,'주간 급식을 불러오는 중...');
+  const dates=Array.from({length:5},(_,i)=>{const d=new Date(monday);d.setDate(d.getDate()+i);return d;});
+  // 각 날짜별 독립 조회: 특정 날짜에 데이터가 없어도 다른 날짜는 표시
+  const result=await Promise.allSettled(dates.map(d=>mealFetch(d)));
+  if(request!==mealWeekRequestId){finish('이전 조회 취소');return;}
+  finish('주간 급식 조회 완료');
+  mealWeek.innerHTML=result.map((r,i)=>`<section class="meal-week-day"><h3>${mealEsc(fmtTTDate(dates[i]))}</h3>${r.status==='rejected'?`<div class="meal-empty">조회 실패: ${mealEsc(r.reason?.message||'오류')}</div>`:r.value.length?r.value.map(x=>mealCard(x,true)).join(''):mealEmpty}</section>`).join('');
+};
+const loadMealAuto=async ()=>{
+  if(!mealDateInput)return;
+  mealDateInput.value=dateInputValue(getAutoTimetableDate());
+  await Promise.allSettled([loadMealHome(),loadMealDaily(),loadMealWeek()]);
+};
+mealDateInput?.addEventListener('change',()=>{loadMealDaily();loadMealWeek();});
+$('#mealPrev')?.addEventListener('click',()=>{const d=mealDateFromValue(mealDateInput.value);if(!d)return;d.setDate(d.getDate()-1);mealDateInput.value=dateInputValue(d);loadMealDaily();loadMealWeek();});
+$('#mealNext')?.addEventListener('click',()=>{const d=mealDateFromValue(mealDateInput.value);if(!d)return;d.setDate(d.getDate()+1);mealDateInput.value=dateInputValue(d);loadMealDaily();loadMealWeek();});
+$('#mealAuto')?.addEventListener('click',loadMealAuto);
+$('#mealWeekRefresh')?.addEventListener('click',()=>{mealCache.clear();loadMealWeek();});
+// 페이지를 켜 둔 상태에서도 한국 시간 16:35가 지나면 홈 급식 자동 갱신
+setInterval(()=>{
+  const key=dateInputValue(getAutoTimetableDate());
+  if(mealAutoKey&&mealAutoKey!==key){mealCache.clear();loadMealHome();}
+},30000);
