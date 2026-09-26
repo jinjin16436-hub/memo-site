@@ -1,5 +1,5 @@
-/* app.js - v1.2.24
- * 홈: 급식/시간표 2열 + 다가오는 일정 전체 너비 배치 (CSS에서 담당).
+/* app.js - v1.2.25
+ * 홈: 급식/시간표 2열 + 다가오는 일정 PC 최대 8개·모바일 최대 5개.
  * 기존 Firestore 실시간 조회 결과를 일정 미리보기에 재사용 (추가 요청 없음).
  * 기존 Google Popup 로그인, Firestore 권한, NEIS 자동/수동 조회,
  * 선택과목/이동수업/수업 장소, 수행평가·숙제 배지, 급식 조회 유지.
@@ -751,7 +751,7 @@ const renderHomeUpcoming = ()=>{
   ).filter(({data})=>{
     const {end} = itemDateRange(data);
     return end && end >= toDateOnly(new Date());
-  }).sort((a,b)=>itemDateRange(a.data).end-itemDateRange(b.data).end).slice(0,5);
+  }).sort((a,b)=>itemDateRange(a.data).end-itemDateRange(b.data).end).slice(0,8);
   host.replaceChildren();
   if(!entries.length){
     host.textContent = Object.values(upcomingCache).some(v=>v===null)
