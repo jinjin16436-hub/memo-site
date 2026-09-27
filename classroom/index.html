@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<!-- classroom/index.html - v1.2.27: 2학년 2반 교실 전용 공개 대시보드. -->
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08111f">
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>부광고 · 2-2 교실 모드</title>
+  <link rel="stylesheet" href="../classroom.css?v=1.2.27">
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script defer src="../env.js"></script>
+  <script defer src="../classroom.js?v=1.2.27"></script>
+</head>
+<body>
+  <main class="classroom">
+    <header class="class-header">
+      <div class="class-ident">
+        <div class="school">부광고</div>
+        <h1>2-2</h1>
+        <div class="class-date" id="classDate">날짜를 확인하는 중...</div>
+      </div>
+      <div class="header-right">
+        <time id="classClock" class="clock" aria-label="현재 한국 시간">--:--</time>
+        <div class="header-buttons">
+          <span id="refreshStatus" class="refresh-status" role="status" aria-live="polite">불러오는 중...</span>
+          <button id="refreshBtn" type="button">↻ 새로고침</button>
+          <button id="fullscreenBtn" type="button">⛶ 전체 화면</button>
+        </div>
+      </div>
+    </header>
+    <section class="daily-grid" aria-label="시간표와 급식">
+      <article class="panel timetable-panel">
+        <div class="panel-header">
+          <h2>📚 오늘의 시간표</h2>
+          <span id="timetableDate" class="panel-subtitle"></span>
+        </div>
+        <div id="nextClass" class="next-class" aria-live="polite">수업 시간을 확인하는 중...</div>
+        <div id="timetableList" class="period-list" aria-live="polite">
+          <div class="empty">시간표를 불러오는 중...</div>
+        </div>
+      </article>
+      <article class="panel meal-panel">
+        <div class="panel-header">
+          <h2>🍱 오늘의 급식</h2>
+          <span id="mealDate" class="panel-subtitle"></span>
+        </div>
+        <div id="mealList" class="meals" aria-live="polite">
+          <div class="empty">급식을 불러오는 중...</div>
+        </div>
+      </article>
+    </section>
+    <section class="panel upcoming-panel">
+      <div class="panel-header">
+        <h2>📌 다가오는 일정</h2>
+        <span class="panel-subtitle">일정 · 시험 · 수행평가 · 숙제</span>
+      </div>
+      <div id="upcomingList" class="upcoming-list" aria-live="polite">
+        <div class="empty">일정을 불러오는 중...</div>
+      </div>
+    </section>
+    <footer>부광고 · 2-2 &nbsp;|&nbsp; 교실 모드 v1.2.27 &nbsp;·&nbsp; <a href="../">일반 사이트</a></footer>
+  </main>
+</body>
+</html>
