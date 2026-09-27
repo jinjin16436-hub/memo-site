@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<!-- index.html - v1.2.26
+<!-- index.html - v1.2.27
+  v1.2.27: 공개 교실 모드(/classroom/) 링크 추가.
   홈: 급식(40%) + 시간표(60%)를 같은 행에, 다가오는 일정은 전체 너비로 표시하며 PC 최대 8개, 모바일 최대 5개를 노출. PC 급식 카드 높이는 시간표에 맞추고 칼로리를 카드 하단에 배치.
   모바일: 급식 → 시간표 → 일정 순서로 세로 배치.
   기존 탭·입력 폼·접근 권한 관련 DOM ID 및 스크립트 로드 순서는 유지.
@@ -11,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#08111f" />
   <title>부광고 웹 한국</title>
-  <link rel="stylesheet" href="style.css?v=1.2.26" />
+  <link rel="stylesheet" href="style.css?v=1.2.27" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -32,6 +33,9 @@
       <nav id="tabs" class="tabs">
         <a class="sidebar-link home-link" href="#dashboardTop" aria-label="홈으로 이동">
           <span class="nav-icon">⌂</span><span>홈</span>
+        </a>
+        <a class="sidebar-link" href="classroom/" target="_blank" rel="noopener" aria-label="교실 모드 새 탭으로 열기">
+          <span class="nav-icon">🖥️</span><span>교실 모드</span>
         </a>
         <a class="sidebar-link" href="#sec_notice">
           <span class="nav-icon">📢</span><span>전달사항</span>
@@ -63,7 +67,7 @@
 
       <div class="sidebar-foot">
         <span class="status-dot"></span>
-        <span>사이트 버전 v1.2.26</span>
+        <span>사이트 버전 v1.2.27</span>
       </div>
     </aside>
 
@@ -339,7 +343,7 @@
         </section>
 
         <footer class="site-footer">
-          <strong>https://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.26</span>
+          <strong>https://bghs.kro.kr</strong><span>부광고.웹.한국 · v1.2.27</span>
         </footer>
       </main>
     </div>
@@ -347,6 +351,6 @@
 
   <button id="mobileMenuBackdrop" class="mobile-menu-backdrop" type="button" aria-label="메뉴 닫기"></button>
   <div id="modal-root"></div>
-  <script src="app.js?v=1.2.26"></script>
+  <script src="app.js?v=1.2.27"></script>
 </body>
 </html>
