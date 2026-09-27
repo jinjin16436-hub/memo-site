@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- classroom/index.html - v1.2.27: 2학년 2반 교실 전용 공개 대시보드. -->
+<!-- classroom/index.html - v1.2.28: 2학년 2반 교실 전용 공개 대시보드. -->
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -7,11 +7,11 @@
   <meta name="theme-color" content="#08111f">
   <meta http-equiv="Cache-Control" content="no-cache">
   <title>부광고 · 2-2 교실 모드</title>
-  <link rel="stylesheet" href="../classroom.css?v=1.2.27">
+  <link rel="stylesheet" href="../classroom.css?v=1.2.28">
   <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script defer src="../env.js"></script>
-  <script defer src="../classroom.js?v=1.2.27"></script>
+  <script defer src="../classroom.js?v=1.2.28"></script>
 </head>
 <body>
   <main class="classroom">
@@ -31,6 +31,15 @@
       </div>
     </header>
     <section class="daily-grid" aria-label="시간표와 급식">
+      <article class="panel meal-panel">
+        <div class="panel-header">
+          <h2>🍱 오늘의 급식</h2>
+          <span id="mealDate" class="panel-subtitle"></span>
+        </div>
+        <div id="mealList" class="meals" aria-live="polite">
+          <div class="empty">급식을 불러오는 중...</div>
+        </div>
+      </article>
       <article class="panel timetable-panel">
         <div class="panel-header">
           <h2>📚 오늘의 시간표</h2>
@@ -39,15 +48,6 @@
         <div id="nextClass" class="next-class" aria-live="polite">수업 시간을 확인하는 중...</div>
         <div id="timetableList" class="period-list" aria-live="polite">
           <div class="empty">시간표를 불러오는 중...</div>
-        </div>
-      </article>
-      <article class="panel meal-panel">
-        <div class="panel-header">
-          <h2>🍱 오늘의 급식</h2>
-          <span id="mealDate" class="panel-subtitle"></span>
-        </div>
-        <div id="mealList" class="meals" aria-live="polite">
-          <div class="empty">급식을 불러오는 중...</div>
         </div>
       </article>
     </section>
@@ -60,7 +60,7 @@
         <div class="empty">일정을 불러오는 중...</div>
       </div>
     </section>
-    <footer>부광고 · 2-2 &nbsp;|&nbsp; 교실 모드 v1.2.27 &nbsp;·&nbsp; <a href="../">일반 사이트</a></footer>
+    <footer>부광고 · 2-2 &nbsp;|&nbsp; 교실 모드 v1.2.28 &nbsp;·&nbsp; <a href="../">일반 사이트</a></footer>
   </main>
 </body>
 </html>
