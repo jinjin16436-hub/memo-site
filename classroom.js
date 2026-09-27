@@ -1,5 +1,5 @@
-/* classroom.js - v1.2.28
- * v1.2.28: 급식/시간표 좌우 배치와 카드 높이 조정은 HTML/CSS만 변경.
+/* classroom.js - v1.2.29
+ * v1.2.29: 화면 높이에 맞춰 일정 카드의 윗부분을 첫 화면 아래로 배치.\n * v1.2.28: 급식/시간표 좌우 배치와 카드 높이 조정은 HTML/CSS만 변경.
  * 공개 읽기 전용 교실 모드. 기존 app.js와 Worker 코드를 수정하지 않습니다.
  * KST 16:35 시간표/급식 전환 및 선택과목·수업 장소·과목별 수행/숙제 배지를 유지.
  */
@@ -10,6 +10,19 @@ const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<
 const cfg=window.firebaseConfig, uid=window.PUBLIC_UID, proxy=String(window.NEIS_PROXY_BASE||'').replace(/\/+$/,'');
 const school='부광고등학교', grade='2', classNm='2';
 const weekdays=['일','월','화','수','목','금','토'];
+// 일정은 기본적으로 스크롤해야 보이도록 첫 화면 아래에 놓습니다.
+function adjustUpcomingGap(){
+ const daily=document.querySelector('.daily-grid');
+ const upcoming=document.querySelector('.upcoming-panel');
+ if(!daily||!upcoming)return;
+ // 현재 보이는 브라우저 높이를 기준으로 계산하며, 시간표가 길면 추가 간격을 만들지 않습니다.
+ const bottom=daily.getBoundingClientRect().bottom;
+ const viewport=window.innerHeight||document.documentElement.clientHeight;
+ const minimumGap=18;
+ const extra=Math.max(minimumGap,Math.ceil(viewport-bottom+12));
+ document.documentElement.style.setProperty('--upcoming-gap',extra+'px');
+}
+window.addEventListener('resize',adjustUpcomingGap);
 const classTimes=[['08:50','09:40'],['09:50','10:40'],['10:50','11:40'],['11:50','12:40'],['13:40','14:30'],['14:40','15:30'],['15:45','16:35']];
 let db, classRows=[],classDateKey='',lastDataDate='',lastRender=0,refreshing=false;
 let subjectRules=[],locationRules=[],overrides=[],tasks=[],homeworks=[],upcoming=[];
@@ -172,6 +185,7 @@ async function refresh(){
   const failed=fetched.filter(x=>x.status==='rejected').length+results.filter(x=>x.status==='rejected').length;
   text('refreshStatus',failed?`일부 정보 조회 실패 (${failed}건)`:'최신 정보 표시 중');
   lastDataDate=key;lastRender=Date.now();
+  adjustUpcomingGap();
  }catch(err){
   text('refreshStatus','조회 오류');
   $('upcomingList').innerHTML=`<div class="empty">데이터 조회 오류: ${escapeHTML(err.message)}</div>`;
@@ -183,6 +197,7 @@ $('fullscreenBtn').addEventListener('click',async()=>{
 });
 $('refreshBtn').addEventListener('click',refresh);
 updateClock();setInterval(updateClock,1000);
+requestAnimationFrame(adjustUpcomingGap);
 if(!cfg||!uid){
  text('refreshStatus','Firebase 설정 오류');
  for(const id of ['timetableList','mealList','upcomingList'])$(id).innerHTML='<div class="empty">사이트 설정을 확인해주세요.</div>';

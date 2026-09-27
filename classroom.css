@@ -1,4 +1,4 @@
-/* classroom.css - v1.2.28: 급식 왼쪽 40%, 시간표 오른쪽 60%; 급식 카드 넘침 해결. */
+/* classroom.css - v1.2.29: 화면 높이에 따라 일정 시작 위치 확보; 기존 급식·시간표 유지. */
 :root{color-scheme:dark;font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif;background:#08111f;color:#f3f7ff}
 *{box-sizing:border-box}
 body{margin:0;min-width:320px;background:radial-gradient(circle at top left,#14253b 0,#08111f 55%)}
@@ -39,7 +39,7 @@ h2{margin:0;font-size:clamp(20px,1.6vw,29px)}
 /* 급식은 해당 행 안에서만 높이를 채우며, 일정 영역을 침범하지 않습니다. */
 .meal-panel{display:flex;flex-direction:column;min-width:0}
 .meal-entry ul{overflow-wrap:anywhere}
-.upcoming-panel{margin-top:18px}
+.upcoming-panel{margin-top:max(18px,var(--upcoming-gap,18px))}
 .upcoming-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .upcoming-item{background:#14283f;border:1px solid #304761;border-radius:12px;padding:14px;min-width:0}
 .upcoming-label{color:#bcd7f7;font-weight:800;font-size:12px}
