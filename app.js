@@ -53,10 +53,8 @@ const escapeHTML = (value='') => String(value)
   .replace(/'/g, '&#39;');
 
 const formatRichText = (value='') => escapeHTML(value)
-  .replace(/\*\*([^
-]+?)\*\*/g, '<strong>$1</strong>')
-  .replace(/__([^
-]+?)__/g, '<u>$1</u>');
+  .replace(/\*\*([^\n]+?)\*\*/g, '<strong>$1</strong>')
+  .replace(/__([^\n]+?)__/g, '<u>$1</u>');
 
 const userInfo  = $('#userInfo');
 const loginBtn  = $('#loginBtn');
@@ -1968,10 +1966,8 @@ const mealMonday = (d)=>{
   x.setDate(x.getDate() - ((x.getDay()+6)%7));
   return x;
 };
-const mealPlain = (s)=>String(s||'').replace(/<br\s*\/?\s*>/gi,'
-').replace(/<[^>]*>/g,'').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').trim();
-const mealList = (s)=>mealPlain(s).split(/
-+/).map(x=>x.trim()).filter(Boolean);
+const mealPlain = (s)=>String(s||'').replace(/<br\s*\/?\s*>/gi,'\n').replace(/<[^>]*>/g,'').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').trim();
+const mealList = (s)=>mealPlain(s).split(/\n+/).map(x=>x.trim()).filter(Boolean);
 const mealEntry = (row)=>{
   const dishes = mealList(row.DDISH_NM).map(line=>{
     const allergens = [...line.matchAll(/\((\d+(?:[.,]\s*\d+)*)\)/g)].flatMap(m=>m[1].split(/[.,]/).map(x=>x.trim()));
