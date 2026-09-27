@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!-- index.html - v1.2.27
-  v1.2.27: 공개 교실 모드(/classroom/) 링크 추가.\n  홈: 급식(40%) + 시간표(60%)를 같은 행에, 다가오는 일정은 전체 너비로 표시하며 PC 최대 8개, 모바일 최대 5개를 노출. PC 급식 카드 높이는 시간표에 맞추고 칼로리를 카드 하단에 배치.
+  v1.2.27: 공개 교실 모드(/classroom/) 링크 추가.
+  홈: 급식(40%) + 시간표(60%)를 같은 행에, 다가오는 일정은 전체 너비로 표시하며 PC 최대 8개, 모바일 최대 5개를 노출. PC 급식 카드 높이는 시간표에 맞추고 칼로리를 카드 하단에 배치.
   모바일: 급식 → 시간표 → 일정 순서로 세로 배치.
   기존 탭·입력 폼·접근 권한 관련 DOM ID 및 스크립트 로드 순서는 유지.
   style.css / app.js 캐시 버전과 화면 표시 버전을 함께 갱신.
@@ -33,7 +34,10 @@
         <a class="sidebar-link home-link" href="#dashboardTop" aria-label="홈으로 이동">
           <span class="nav-icon">⌂</span><span>홈</span>
         </a>
-        <a class="sidebar-link" href="classroom/" target="_blank" rel="noopener" aria-label="교실 모드 새 탭으로 열기">\n          <span class="nav-icon">🖥️</span><span>교실 모드</span>\n        </a>\n        <a class="sidebar-link" href="#sec_notice">
+        <a class="sidebar-link" href="classroom/" target="_blank" rel="noopener" aria-label="교실 모드 새 탭으로 열기">
+          <span class="nav-icon">🖥️</span><span>교실 모드</span>
+        </a>
+        <a class="sidebar-link" href="#sec_notice">
           <span class="nav-icon">📢</span><span>전달사항</span>
         </a>
         <button class="tab-btn active" data-tab="schedule" type="button">
