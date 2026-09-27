@@ -1,6 +1,7 @@
 /* app.js - v1.2.27
  * 홈: 급식/시간표 2열(PC 동일 높이) + 다가오는 일정 PC 최대 8개·모바일 최대 5개.
- * v1.2.27: 독립 교실 모드 파일을 추가하며 기존 JS 기능은 변경하지 않음.\n * v1.2.26: 높이 및 칼로리 위치 조정은 CSS만 변경 (JS 동작 동일).
+ * v1.2.27: 독립 교실 모드 파일을 추가하며 기존 JS 기능은 변경하지 않음.
+ * v1.2.26: 높이 및 칼로리 위치 조정은 CSS만 변경 (JS 동작 동일).
  * 기존 Firestore 실시간 조회 결과를 일정 미리보기에 재사용 (추가 요청 없음).
  * 기존 Google Popup 로그인, Firestore 권한, NEIS 자동/수동 조회,
  * 선택과목/이동수업/수업 장소, 수행평가·숙제 배지, 급식 조회 유지.
@@ -52,8 +53,10 @@ const escapeHTML = (value='') => String(value)
   .replace(/'/g, '&#39;');
 
 const formatRichText = (value='') => escapeHTML(value)
-  .replace(/\*\*([^\n]+?)\*\*/g, '<strong>$1</strong>')
-  .replace(/__([^\n]+?)__/g, '<u>$1</u>');
+  .replace(/\*\*([^
+]+?)\*\*/g, '<strong>$1</strong>')
+  .replace(/__([^
+]+?)__/g, '<u>$1</u>');
 
 const userInfo  = $('#userInfo');
 const loginBtn  = $('#loginBtn');
@@ -1965,8 +1968,10 @@ const mealMonday = (d)=>{
   x.setDate(x.getDate() - ((x.getDay()+6)%7));
   return x;
 };
-const mealPlain = (s)=>String(s||'').replace(/<br\s*\/?\s*>/gi,'\n').replace(/<[^>]*>/g,'').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').trim();
-const mealList = (s)=>mealPlain(s).split(/\n+/).map(x=>x.trim()).filter(Boolean);
+const mealPlain = (s)=>String(s||'').replace(/<br\s*\/?\s*>/gi,'
+').replace(/<[^>]*>/g,'').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').trim();
+const mealList = (s)=>mealPlain(s).split(/
++/).map(x=>x.trim()).filter(Boolean);
 const mealEntry = (row)=>{
   const dishes = mealList(row.DDISH_NM).map(line=>{
     const allergens = [...line.matchAll(/\((\d+(?:[.,]\s*\d+)*)\)/g)].flatMap(m=>m[1].split(/[.,]/).map(x=>x.trim()));
