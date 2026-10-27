@@ -1,4 +1,5 @@
-/* classroom.js - v1.2.29
+/* classroom.js - v1.2.30
+ * v1.2.30: 교시 종료 정각부터 다음 수업으로 전환하도록 경계 조건 수정.
  * v1.2.29: 화면 높이에 맞춰 일정 카드의 윗부분을 첫 화면 아래로 배치.\n * v1.2.28: 급식/시간표 좌우 배치와 카드 높이 조정은 HTML/CSS만 변경.
  * 공개 읽기 전용 교실 모드. 기존 app.js와 Worker 코드를 수정하지 않습니다.
  * KST 16:35 시간표/급식 전환 및 선택과목·수업 장소·과목별 수행/숙제 배지를 유지.
@@ -54,7 +55,7 @@ function nextPeriod(parts){
   const period=Number(r.PERIO||r.ORD),start=classTimes[period-1];
   if(!start)continue;
   const [sh,sm]=start[0].split(':').map(Number),[eh,em]=start[1].split(':').map(Number);
-  if(minutes<=eh*60+em)return{period,minutes,start:sh*60+sm,end:eh*60+em};
+  if(minutes<eh*60+em)return{period,minutes,start:sh*60+sm,end:eh*60+em};
  }
  return null;
 }

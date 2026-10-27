@@ -1,4 +1,4 @@
-/* classroom.css - v1.2.29: 화면 높이에 따라 일정 시작 위치 확보; 기존 급식·시간표 유지. */
+/* classroom.css - v1.2.30: 화면 높이에 따라 일정 시작 위치 확보; 기존 급식·시간표 유지. */
 :root{color-scheme:dark;font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif;background:#08111f;color:#f3f7ff}
 *{box-sizing:border-box}
 body{margin:0;min-width:320px;background:radial-gradient(circle at top left,#14253b 0,#08111f 55%)}
